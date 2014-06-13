@@ -61,7 +61,7 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 MainWindow::~MainWindow()
-{   
+{
     disconnectDevice();
 
     delete central_widget;
