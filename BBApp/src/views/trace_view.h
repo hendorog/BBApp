@@ -43,6 +43,9 @@ public:
     TraceView(Session *session, QWidget *parent = 0);
     ~TraceView();
 
+    // Could also use QOpenGLFunctions::hasOpenGLFeature(FrameBuffer) ?
+    bool HasOpenGL3() const { return hasOpenGL3; }
+
 protected:
     bool InitPersistFBO();
 
@@ -114,8 +117,9 @@ private:
     QFont textFont, divFont;
 
     bool persist_on;
+    bool hasOpenGL3; // true when gl version greater than 3.*
     bool clear_persistence; // When true, clears buffer next frame update
-    GLProgram *persist_program; // Shaders for persistence
+    std::unique_ptr<GLProgram> persist_program; // Shaders for persistence
     GLuint persist_fbo; // Frame-Buffer-Object for persistent
     GLuint persist_depth; // FBO depth buffer
     GLuint persist_tex; // Offscreen persist buffer

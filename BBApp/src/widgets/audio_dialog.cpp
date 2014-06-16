@@ -157,8 +157,8 @@ void AudioDialog::Reconfigure()
     if(config.CenterFreq() < low_limit || config.CenterFreq() > high_limit) {
         bbInitiate(device_id, BB_AUDIO_DEMOD, 0);
 
-        low_limit = config.CenterFreq() - 8.0e6;
-        high_limit = config.CenterFreq() + 8.0e6;
+        low_limit = config.CenterFreq() - 1.75e6;
+        high_limit = config.CenterFreq() + 1.75e6;
     }
 
     frequency_entry->SetFrequency(config.CenterFreq());

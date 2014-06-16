@@ -108,7 +108,8 @@ TraceView::TraceView(Session *session, QWidget *parent)
       clear_persistence(false),
       waterfall_state(WaterfallOFF),
       textFont("Arial", 14),
-      divFont("Arial", 12)
+      divFont("Arial", 12),
+      hasOpenGL3(false)
 {
     setAutoBufferSwap(false);
     setMouseTracking(true);
@@ -162,10 +163,19 @@ TraceView::TraceView(Session *session, QWidget *parent)
     glBufferData(GL_ARRAY_BUFFER, grat_border.size()*sizeof(float),
                  &grat_border[0], GL_STATIC_DRAW);
 
-    persist_program = new GLProgram(persist_vs, persist_fs);
-    persist_program->Compile(this);
+    // Setup persistence if openGL version 3 available
+    const unsigned char *version = glGetString(GL_VERSION);
+    if(version) {
+        char v = version[0];
+        if(atoi(&v) >= 3) {
+            persist_program = std::unique_ptr<GLProgram>(
+                        new GLProgram(persist_vs, persist_fs));
+            persist_program->Compile(this);
 
-    InitPersistFBO();
+            InitPersistFBO();
+            hasOpenGL3 = true;
+        }
+    }
 
     waterfall_tex = get_texture_from_file(":/color_spectrogram.png");
 
@@ -190,7 +200,6 @@ TraceView::~TraceView()
     doneCurrent();
 
     delete swap_thread;
-    delete persist_program;
     ClearWaterfall();
 
     Sleep(100);
