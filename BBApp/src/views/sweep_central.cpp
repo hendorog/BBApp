@@ -60,6 +60,13 @@ SweepCentral::SweepCentral(QWidget *parent)
     tool_bar->addWidget(persistence_clear);
     connect(persistence_clear, SIGNAL(clicked()), trace_view, SLOT(clearPersistence()));
 
+    if(!trace_view->HasOpenGL3()) {
+        persistence_check->setEnabled(false);
+        persistence_check->setToolTip(tr("Persistence requires OpenGL version 3.0 or greater"));
+        persistence_clear->setEnabled(false);
+        persistence_clear->setToolTip(tr("Persistence requires OpenGL version 3.0 or greater"));
+    }
+
     tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
     tool_bar->addSeparator();
 
@@ -212,7 +219,7 @@ void SweepCentral::Reconfigure()
     }
 
     QString diagnostics;
-    diagnostics.sprintf("%.2f C  --  %.2f V", session_ptr->device->Temperature(),
+    diagnostics.sprintf("%.2f C  --  %.2f V", session_ptr->device->CurrentTemp(),
                         session_ptr->device->Voltage());
     MainWindow::GetStatusBar()->SetDiagnostics(diagnostics);
 

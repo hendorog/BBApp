@@ -21,7 +21,7 @@ void Device::UpdateDiagnostics()
     float temp_now, voltage_now, current_now;
     bbGetDeviceDiagnostics(id, &temp_now, &voltage_now, &current_now);
 
-    if(temp_now != current_temp || voltage_now != voltage || current_now != current) {
+    if((temp_now != current_temp) || (voltage_now != voltage) || (current_now != current)) {
         update_diagnostics_string = true;
     }
 

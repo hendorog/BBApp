@@ -161,7 +161,7 @@ bool DeviceBB60A::GetSweep(const SweepSettings *s, Trace *t)
     // Print new diagnostics only when a value changed
     if(update_diagnostics_string) {
         QString diagnostics;
-        diagnostics.sprintf("%.2f C  --  %.2f V", Temperature(), Voltage());
+        diagnostics.sprintf("%.2f C  --  %.2f V", CurrentTemp(), Voltage());
         MainWindow::GetStatusBar()->SetDiagnostics(diagnostics);
         update_diagnostics_string = false;
     }

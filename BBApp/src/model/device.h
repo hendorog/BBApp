@@ -54,7 +54,8 @@ public:
     int FirmwareVer() const { return firmware_ver; }
     int DeviceType() const { return device_type; }
 
-    float Temperature() const { return last_temp; }
+    float LastConfiguredTemp() const { return last_temp; }
+    float CurrentTemp() const { return current_temp; }
     float Voltage() const { return voltage; }
     virtual bool IsPowered() const = 0;
     bool ADCOverflow() const { return adc_overflow; }

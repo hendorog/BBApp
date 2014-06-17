@@ -37,7 +37,8 @@ SOURCES += src/main.cpp \
     src/widgets/status_bar.cpp \
     src/model/device.cpp \
     src/model/import_table.cpp \
-    src/widgets/preferences_dialog.cpp
+    src/widgets/preferences_dialog.cpp \
+    src/model/demod_settings.cpp
 
 HEADERS += src/mainwindow.h \
     src/lib/frequency.h \
@@ -72,7 +73,9 @@ HEADERS += src/mainwindow.h \
     src/widgets/status_bar.h \
     src/widgets/progress_dialog.h \
     src/model/import_table.h \
-    src/widgets/preferences_dialog.h
+    src/widgets/preferences_dialog.h \
+    src/model/demod_settings.h \
+    src/widgets/demod_panel.h
 
 OTHER_FILES += \
     style_sheet.css \
