@@ -15,6 +15,9 @@
 
 #define M_PI 3.14159265
 
+#pragma warning(disable:4305)
+#pragma warning(disable:4267)
+
 static void normalize(float* f)
 {
     float invMag , mag;
@@ -298,7 +301,7 @@ void TraceView::mousePressEvent(QMouseEvent *e)
     QGLWidget::mousePressEvent(e);
 }
 
-void TraceView::mouseReleaseEvent(QMouseEvent *e)
+void TraceView::mouseReleaseEvent(QMouseEvent *)
 {
     dragging = false;
 }

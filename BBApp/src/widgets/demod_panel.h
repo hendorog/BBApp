@@ -12,7 +12,7 @@ class DemodPanel : public DockPanel {
 public:
     DemodPanel(const QString &title,
                QWidget *parent,
-               const SweepSettings *settings);
+               const DemodSettings *settings);
     ~DemodPanel();
 
 private:
@@ -21,7 +21,7 @@ private:
     AmplitudeEntry triggerAmplitudeEntry; // Only for video triggers
 
 public slots:
-    void updateTriggerSettings(TriggerSettings &ts);
+    //void updateTriggerSettings(TriggerSettings &ts);
 
 signals:
     void triggerSettingsChanged(TriggerSettings &ts);

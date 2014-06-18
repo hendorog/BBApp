@@ -38,7 +38,8 @@ SOURCES += src/main.cpp \
     src/model/device.cpp \
     src/model/import_table.cpp \
     src/widgets/preferences_dialog.cpp \
-    src/model/demod_settings.cpp
+    src/model/demod_settings.cpp \
+    src/views/demod_central.cpp
 
 HEADERS += src/mainwindow.h \
     src/lib/frequency.h \
@@ -75,7 +76,9 @@ HEADERS += src/mainwindow.h \
     src/model/import_table.h \
     src/widgets/preferences_dialog.h \
     src/model/demod_settings.h \
-    src/widgets/demod_panel.h
+    src/widgets/demod_panel.h \
+    src/views/demod_central.h \
+    src/views/central_stack.h
 
 OTHER_FILES += \
     style_sheet.css \

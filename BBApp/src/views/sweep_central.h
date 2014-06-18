@@ -1,10 +1,10 @@
 #ifndef SWEEP_CENTRAL_H
 #define SWEEP_CENTRAL_H
 
-#include <QWidget>
 #include <thread>
 #include <atomic>
 
+#include "views/central_stack.h"
 #include "../model/session.h"
 #include "../widgets/entry_widgets.h"
 
@@ -14,29 +14,28 @@ class QSplitter;
 class TraceView;
 class WaterfallView;
 
-class SweepCentral : public QWidget {
+class SweepCentral : public CentralWidget {
     Q_OBJECT
 
     const static int TOOLBAR_H = 30;
 public:
-    SweepCentral(QWidget *parent = 0);
+    SweepCentral(Session *sPtr, QWidget *parent = 0, Qt::WindowFlags f = 0);
     ~SweepCentral();
 
-    void GetViewImage(QImage &image);
-    void StopStreaming();
     void StartStreaming();
+    void StopStreaming();
+    void ResetView();
+    void GetViewImage(QImage &image);
     Frequency GetCurrentCenterFreq() const {
         return session_ptr->sweep_settings->Center(); }
     // Force view back to initial start-up values
     // No persistence, waterfall, etc.
-    void ResetView();
 
 protected:
     void resizeEvent(QResizeEvent *);
     void keyPressEvent(QKeyEvent *);
 
 private:
-
     void Reconfigure();
     void SweepThread();
     void PlaybackThread();
@@ -65,9 +64,10 @@ private:
 
 signals:
     void updateView();
+    void presetDevice();
 
 public slots:
-    void changeMode(int new_state);
+    void changeMode(int newState);
     void settingsChanged(const SweepSettings *ss);
 
 private slots:

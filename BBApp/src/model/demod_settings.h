@@ -47,6 +47,13 @@ struct IQDescriptor {
     int sampleRate;
     int decimation;
     double timeDelta; // Delta 'time' per sample in seconds?
+    int totalSamples;
+};
+
+struct
+
+struct IQCapture {
+
 };
 
 #endif // DEMOD_SETTINGS_H

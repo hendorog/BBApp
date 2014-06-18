@@ -50,8 +50,17 @@ MainWindow::MainWindow(QWidget *parent)
 
     InitMenuBar();
 
-    central_widget = new SweepCentral(this);
-    setCentralWidget(central_widget);
+    centralStack = new CentralStack(this);
+
+    sweepCentral = new SweepCentral(session);
+    connect(sweepCentral, SIGNAL(presetDevice()), this, SLOT(presetDevice()));
+    centralStack->AddWidget(sweepCentral);
+
+    demodCentral = new DemodCentral(session);
+    centralStack->AddWidget(demodCentral);
+
+    setCentralWidget(centralStack);
+    centralStack->setCurrentWidget(demodCentral);
 
     RestoreState();
 
@@ -64,7 +73,8 @@ MainWindow::~MainWindow()
 {
     disconnectDevice();
 
-    delete central_widget;
+    //delete central_widget;
+    delete centralStack;
     delete session;
 
     delete sweep_panel;
@@ -355,7 +365,8 @@ void MainWindow::PresetDeviceInThread()
 
     // Stop all operation
     // Preset -> Close -> Wait -> Open
-    central_widget->changeMode(BB_IDLE);
+    //central_widget->changeMode(BB_IDLE);
+    centralStack->CurrentWidget()->changeMode(BB_IDLE);
     session->device->Preset();
     session->device->CloseDevice();
 
@@ -389,8 +400,10 @@ void MainWindow::connectDevice()
 void MainWindow::disconnectDevice()
 {
     // Stop any sweeping
-    central_widget->changeMode(BB_IDLE);
-    central_widget->ResetView();
+    //central_widget->changeMode(BB_IDLE);
+    //central_widget->ResetView();
+    centralStack->CurrentWidget()->changeMode(BB_IDLE);
+    centralStack->CurrentWidget()->ResetView();
 
     //session->sweep_settings->LoadDefaults();
     session->trace_manager->Reset();
@@ -436,7 +449,8 @@ void MainWindow::deviceConnected(bool success)
 
         status_bar->SetDeviceType(session->device->GetDeviceString());
         status_bar->UpdateDeviceInfo(device_string);
-        central_widget->changeMode(BB_SWEEPING);
+        //central_widget->changeMode(BB_SWEEPING);
+        centralStack->CurrentWidget()->changeMode(BB_SWEEPING);
 
         if(session->device->DeviceType() == BB_DEVICE_BB60A) {
             SweepSettings::maxRealTimeSpan = BB60A_MAX_RT_SPAN;
@@ -464,7 +478,8 @@ void MainWindow::printView()
 
     //view->render(&painter);
     QImage image;
-    central_widget->GetViewImage(image);
+    //central_widget->GetViewImage(image);
+    centralStack->CurrentWidget()->GetViewImage(image);
 
     QSize size = image.size();
     size.scale(rect.size(), Qt::KeepAspectRatio);
@@ -483,7 +498,8 @@ void MainWindow::saveAsImage()
     if(file_name.isNull()) return;
 
     QImage image;
-    central_widget->GetViewImage(image);
+    //central_widget->GetViewImage(image);
+    centralStack->CurrentWidget()->GetViewImage(image);
 
     image.save(file_name);
 }
@@ -521,9 +537,11 @@ void MainWindow::saveAsDefaultColorScheme()
 
 void MainWindow::loadDefaultSettings()
 {
-    central_widget->StopStreaming();
+    //central_widget->StopStreaming();
+    centralStack->CurrentWidget()->StopStreaming();
     session->LoadDefaults();
-    central_widget->StartStreaming();
+    //central_widget->StartStreaming();
+    centralStack->CurrentWidget()->StartStreaming();
 }
 
 /*
@@ -590,16 +608,19 @@ void MainWindow::loadPresetNames()
 
 void MainWindow::modeChanged(QAction *a)
 {
-    central_widget->changeMode(a->data().toInt());
+    //central_widget->changeMode(a->data().toInt());
+    centralStack->CurrentWidget()->changeMode(a->data().toInt());
 }
 
 void MainWindow::startAudioPlayer()
 {
     int temp_mode = session->sweep_settings->Mode();
 
-    central_widget->changeMode(MODE_IDLE);
+    //central_widget->changeMode(MODE_IDLE);
+    centralStack->CurrentWidget()->changeMode(MODE_IDLE);
     // Start the Audio Dialog with the active center frequency
-    session->audio_settings->setCenterFrequency(central_widget->GetCurrentCenterFreq());
+    session->audio_settings->setCenterFrequency(
+                centralStack->CurrentWidget()->GetCurrentCenterFreq());
 
     AudioDialog *dlg = new AudioDialog(session->device, session->audio_settings);
 
@@ -607,7 +628,8 @@ void MainWindow::startAudioPlayer()
     *session->audio_settings = *dlg->Configuration();
     delete dlg;
 
-    central_widget->changeMode(temp_mode);
+    //central_widget->changeMode(temp_mode);
+    centralStack->CurrentWidget()->changeMode(temp_mode);
 }
 
 void MainWindow::aboutToShowTimebaseMenu()

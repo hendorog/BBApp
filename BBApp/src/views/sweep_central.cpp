@@ -14,24 +14,22 @@
 #include "../widgets/entry_widgets.h"
 #include "../widgets/audio_dialog.h"
 
-SweepCentral::SweepCentral(QWidget *parent)
-    : QWidget(parent)
-{
-    session_ptr = ((MainWindow*)parent)->GetSession();
+SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
+    : CentralWidget(parent, f),
+      session_ptr(sPtr)
 
+{
     trace_view = new TraceView(session_ptr, this);
     connect(this, SIGNAL(updateView()), trace_view, SLOT(update()));
 
     tool_bar = new QToolBar(this);
     tool_bar->layout()->setContentsMargins(0, 0, 0, 0);
     tool_bar->layout()->setSpacing(0);
-
     tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
 
     Label *waterfall_label = new Label(tr("Spectrogram"), tool_bar);
     waterfall_label->resize(100, 25);
     tool_bar->addWidget(waterfall_label);
-
     tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
 
     waterfall_combo = new ComboBox(tool_bar);
@@ -99,7 +97,8 @@ SweepCentral::SweepCentral(QWidget *parent)
     preset_button->setFixedSize(120, TOOLBAR_H - 4);
     tool_bar->addWidget(preset_button);
 
-    connect(preset_button, SIGNAL(clicked()), ((MainWindow*)parent), SLOT(presetDevice()));
+    connect(preset_button, SIGNAL(clicked()),
+            this, SIGNAL(presetDevice()));
 
     tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
 
@@ -140,11 +139,6 @@ SweepCentral::~SweepCentral()
     session_ptr->device->CloseDevice();
 }
 
-void SweepCentral::GetViewImage(QImage &image)
-{
-    image = trace_view->grabFrameBuffer();
-}
-
 void SweepCentral::changeMode(int new_state)
 {
     StopStreaming();
@@ -154,14 +148,6 @@ void SweepCentral::changeMode(int new_state)
 
     if(new_state == BB_SWEEPING || new_state == BB_REAL_TIME) {
         StartStreaming();
-    }
-}
-
-void SweepCentral::StopStreaming()
-{
-    if(thread_handle.joinable()) {
-        sweeping = false;
-        thread_handle.join();
     }
 }
 
@@ -183,10 +169,23 @@ void SweepCentral::StartStreaming()
 //    }
 }
 
+void SweepCentral::StopStreaming()
+{
+    if(thread_handle.joinable()) {
+        sweeping = false;
+        thread_handle.join();
+    }
+}
+
 void SweepCentral::ResetView()
 {
     persistence_check->setChecked(false);
     waterfall_combo->setCurrentIndex(WaterfallOFF);
+}
+
+void SweepCentral::GetViewImage(QImage &image)
+{
+    image = trace_view->grabFrameBuffer();
 }
 
 void SweepCentral::resizeEvent(QResizeEvent *)

@@ -10,8 +10,9 @@
 #include "widgets/sweep_panel.h"
 #include "widgets/status_bar.h"
 #include "widgets/progress_dialog.h"
-
-class SweepCentral;
+#include "views/central_stack.h"
+#include "views/sweep_central.h"
+#include "views/demod_central.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -54,7 +55,10 @@ private:
     SweepPanel *sweep_panel;
     MeasurePanel *measure_panel;
 
-    SweepCentral *central_widget;
+    CentralStack *centralStack;
+    SweepCentral *sweepCentral;
+    DemodCentral *demodCentral;
+
     static BBStatusBar *status_bar;
 
     // Used for opening/closing BB60
