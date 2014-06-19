@@ -50,8 +50,6 @@ struct IQDescriptor {
     int totalSamples;
 };
 
-struct
-
 struct IQCapture {
 
 };

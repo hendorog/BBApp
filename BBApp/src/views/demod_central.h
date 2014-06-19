@@ -4,6 +4,7 @@
 #include <QToolBar>
 #include <QBoxLayout>
 #include <QMdiArea>
+#include <QMdiSubWindow>
 
 #include "lib/bb_lib.h"
 #include "model/session.h"

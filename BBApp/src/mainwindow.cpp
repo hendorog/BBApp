@@ -458,7 +458,10 @@ void MainWindow::deviceConnected(bool success)
             SweepSettings::maxRealTimeSpan = BB60C_MAX_RT_SPAN;
         }
     } else {
-        status_bar->UpdateDeviceInfo("No Device Connected");
+        QMessageBox::information(this, tr("Connection Status"),
+                                 tr("No device found. Use the file menu to"
+                                    " open a device once connected."));
+        status_bar->SetDeviceType("No Device Connected");
     }
 
     if(device_thread.joinable()) device_thread.join();

@@ -15,7 +15,7 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     for(int i = 0; i < 6; i++) {
         QWidget *w = new QWidget();
         w->resize(200, 200);
-        demodArea->addSubWindow(w);
+        QMdiSubWindow *sw = demodArea->addSubWindow(w);
         demodArea->tileSubWindows();
     }
 }
