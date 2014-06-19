@@ -8,7 +8,10 @@
 
 #include "lib/bb_lib.h"
 #include "model/session.h"
-#include "views/central_stack.h"
+
+#include "central_stack.h"
+
+class DemodIQTimePlot;
 
 class DemodCentral : public CentralWidget {
     Q_OBJECT
@@ -31,10 +34,18 @@ protected:
     void resizeEvent(QResizeEvent *);
 
 private:
+    void StreamThread();
+    void UpdateView();
+
     Session *sessionPtr; // Copy, does not own
 
     QToolBar *toolBar;
     QMdiArea *demodArea;
+    DemodIQTimePlot *plot;
+
+    std::atomic<int> captureCount;
+    std::thread threadHandle;
+    bool streaming;
 
 public slots:
     void changeMode(int newState);
@@ -42,6 +53,7 @@ public slots:
 private slots:
 
 signals:
+    void updateView();
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DemodCentral)

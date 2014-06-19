@@ -22,36 +22,47 @@ class TriggerSettings {
 public:
 
 private:
-    TriggerType triggerType;
-    TriggerEdge triggerEdge;
-    Amplitude triggerAmplitude;
 };
 
 class DemodSettings {
 public:
     DemodSettings();
-    ~DemodSettings() {}
+    ~DemodSettings();
 
 private:
 
     Amplitude inputPower;
     Frequency centerFreq;
-    int atten;
     int gain;
+    int atten;
     int decimationFactor;
     Frequency bandwidth;
     Frequency vbw;
+    Time sweepTime;
+
+    TriggerType triggerType;
+    TriggerEdge triggerEdge;
+    Amplitude triggerAmplitude;
 };
 
 struct IQDescriptor {
+    IQDescriptor() {
+        totalSamples = 0;
+    }
+
     int sampleRate;
     int decimation;
     double timeDelta; // Delta 'time' per sample in seconds?
     int totalSamples;
+    double bandwidth;
 };
 
+// Represents a single
 struct IQCapture {
+    IQCapture() : capture(nullptr) {}
 
+    complex_f *capture;
+    IQDescriptor desc;
 };
 
 #endif // DEMOD_SETTINGS_H

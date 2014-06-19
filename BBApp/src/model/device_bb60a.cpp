@@ -1,8 +1,5 @@
 #include "device_bb60a.h"
-#include "../model/sweep_settings.h"
-#include "../model/trace.h"
-
-#include "../mainwindow.h"
+#include "mainwindow.h"
 
 #define STATUS_CHECK(status) \
     lastStatus = status; \
@@ -148,6 +145,29 @@ bool DeviceBB60A::Reconfigure(const SweepSettings *s, Trace *t)
     t->SetFreq(binSize, startFreq);
 
     bbGetDeviceDiagnostics(id, &last_temp, &voltage, &current);
+
+    return true;
+}
+
+bool DeviceBB60A::Reconfigure(const DemodSettings *ds, IQCapture *iqc)
+{
+    bbAbort(id);
+
+    bbConfigureCenterSpan(id, 1.0e9, 20.0e6);
+    bbConfigureIQ(id, 128, 0.25e6);
+    bbConfigureLevel(id, -20.0, BB_AUTO_ATTEN);
+    bbConfigureGain(id, BB_AUTO_GAIN);
+
+    bbInitiate(id, BB_STREAMING, BB_STREAM_IQ);
+    bbQueryStreamInfo(id, &iqc->desc.totalSamples,
+                      &iqc->desc.bandwidth, &iqc->desc.sampleRate);
+
+    return true;
+}
+
+bool DeviceBB60A::GetIQ(DemodSettings *ds, IQCapture *iqc)
+{
+    bbFetchRaw(id, (float*)iqc->capture, nullptr);
 
     return true;
 }

@@ -16,6 +16,8 @@ public:
     bool Preset();
     bool Reconfigure(const SweepSettings *s, Trace *t);
     bool GetSweep(const SweepSettings *s, Trace *t);
+    bool Reconfigure(const DemodSettings *s, IQCapture *iqc);
+    bool GetIQ(DemodSettings *ds, IQCapture *iqc);
 
     bool IsPowered() const;
 

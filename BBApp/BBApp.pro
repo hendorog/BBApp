@@ -39,7 +39,9 @@ SOURCES += src/main.cpp \
     src/model/import_table.cpp \
     src/widgets/preferences_dialog.cpp \
     src/model/demod_settings.cpp \
-    src/views/demod_central.cpp
+    src/views/demod_central.cpp \
+    src/views/demod_iq_time_plot.cpp \
+    src/widgets/demod_panel.cpp
 
 HEADERS += src/mainwindow.h \
     src/lib/frequency.h \
@@ -78,7 +80,8 @@ HEADERS += src/mainwindow.h \
     src/model/demod_settings.h \
     src/widgets/demod_panel.h \
     src/views/demod_central.h \
-    src/views/central_stack.h
+    src/views/central_stack.h \
+    src/views/demod_iq_time_plot.h
 
 OTHER_FILES += \
     style_sheet.css \

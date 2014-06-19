@@ -3,8 +3,13 @@
 
 #include <QObject>
 
-#include "../lib/bb_api.h"
-#include "../lib/macros.h"
+#include "lib/bb_lib.h"
+#include "lib/bb_api.h"
+#include "lib/macros.h"
+
+#include "model/sweep_settings.h"
+#include "model/demod_settings.h"
+#include "model/trace.h"
 
 const int TIMEBASE_INTERNAL = 0;
 const int TIMEBASE_EXT_AC = 1;
@@ -12,8 +17,6 @@ const int TIMEBASE_EXT_DC = 2;
 
 const char* device_type_to_string(int type);
 
-class SweepSettings;
-class Trace;
 class Preferences;
 
 class Device : public QObject {
@@ -33,6 +36,8 @@ public:
     virtual bool Reconfigure(const SweepSettings *s, Trace *t) = 0;
     // Returns false on an unfixable error
     virtual bool GetSweep(const SweepSettings *s, Trace *t) = 0;
+    virtual bool Reconfigure(const DemodSettings *s, IQCapture *capture) = 0;
+    virtual bool GetIQ(DemodSettings *ds, IQCapture *iqc) = 0;
 
     bool IsOpen() const { return open; }
     int Handle() const { return id; }

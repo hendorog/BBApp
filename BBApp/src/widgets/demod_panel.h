@@ -16,15 +16,24 @@ public:
     ~DemodPanel();
 
 private:
-    CheckBoxEntry triggerTypeEntry;
-    CheckBoxEntry triggerEdgeEntry;
+    AmplitudeEntry inputPowerEntry;
+    FrequencyEntry centerEntry;
+    ComboEntry *gainEntry;
+    ComboEntry *attenEntry;
+    ComboEntry *decimationEntry;
+    FrequencyEntry *bandwidthEntry;
+    FrequencyEntry *vbwEntry;
+    TimeEntry *sweepTimeEntry;
+
+    ComboEntry triggerTypeEntry;
+    ComboEntry triggerEdgeEntry;
     AmplitudeEntry triggerAmplitudeEntry; // Only for video triggers
 
 public slots:
     //void updateTriggerSettings(TriggerSettings &ts);
 
 signals:
-    void triggerSettingsChanged(TriggerSettings &ts);
+    void demodSettingsChanged(DemodSettings &ts);
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DemodPanel)

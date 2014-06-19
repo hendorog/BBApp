@@ -4,6 +4,7 @@
 #include "device_bb60a.h"
 
 #include "sweep_settings.h"
+#include "demod_settings.h"
 #include "trace_manager.h"
 #include "audio_settings.h"
 #include "color_prefs.h"
@@ -27,9 +28,15 @@ public:
     static QString title;
 
     Device *device;
+    // Sweep/Real-time related
     SweepSettings *sweep_settings;
     TraceManager *trace_manager;
+    // Demod related
+    DemodSettings *demod_settings;
+    IQCapture *iq_capture;
+    // Audio related
     AudioSettings *audio_settings;
+    // Preferences/General Settings
     ColorPrefs colors;
     Preferences prefs;
 };

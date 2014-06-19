@@ -60,7 +60,7 @@ MainWindow::MainWindow(QWidget *parent)
     centralStack->AddWidget(demodCentral);
 
     setCentralWidget(centralStack);
-    centralStack->setCurrentWidget(demodCentral);
+    //centralStack->setCurrentWidget(demodCentral);
 
     RestoreState();
 

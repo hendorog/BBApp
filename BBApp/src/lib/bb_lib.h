@@ -22,6 +22,8 @@
 class Trace;
 
 typedef unsigned long ulong;
+typedef struct complex_f { float re, im; } complex_f;
+
 typedef QVector<QPointF> LineList;
 typedef std::vector<float> GLVector;
 

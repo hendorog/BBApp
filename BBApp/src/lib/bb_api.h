@@ -54,7 +54,7 @@
 #define BB_MAX_TG_SPAN           20.0e6
 #define BB_MIN_SWEEP_TIME        0.00001 // 10us in zero-span
 #define BB_MIN_USB_VOLTAGE       4.4f
-#define BB_MIN_IQ_BW             200.0e3 // 200 kHz
+#define BB_MIN_IQ_BW             50.0e3 // 50 kHz min bandwidth
 
 #define BB_AUTO_ATTEN           -1.0
 #define BB_MAX_REFERENCE         20.0 // dBM
@@ -115,10 +115,11 @@
 #define BB_DEMOD_LSB             0x3
 #define BB_DEMOD_CW              0x4
 
+// Streaming flags
+#define BB_STREAM_IQ             0x0
+#define BB_STREAM_IF             0x1
+#define BB_DIRECT_RF             0x2 // BB60C only
 #define BB_TIME_STAMP            0x10
-#define BB_STREAM_IQ
-#define BB_STREAM_IF
-#define BB_DIRECT_RF             0x3 // BB60C only
 
 #define BB_NO_TRIGGER            0x0
 #define BB_VIDEO_TRIGGER         0x1
@@ -198,13 +199,7 @@ enum bbStatus
 extern "C" {
 #endif
 
-BB_API bbStatus bbGetSerialNumberList(int *serialNumbers, int *deviceType,
-                                      int *deviceOpen, int *devicesConnected);
-
 BB_API bbStatus bbOpenDevice(int *device); // Open the first device found
-BB_API bbStatus bbOpenDeviceByType(int *device, int model); //
-BB_API bbStatus bbOpenDeviceWithSerial(int *device, int serialNumber); // Open device by serial number
-
 BB_API bbStatus bbCloseDevice(int device);
 
 BB_API bbStatus bbConfigureAcquisition(int device, unsigned int detector, unsigned int scale);
@@ -221,18 +216,6 @@ BB_API bbStatus bbConfigureRawSweep(int device, int start, int ppf, int steps, i
 BB_API bbStatus bbConfigureIO(int device, unsigned int port1, unsigned int port2);
 BB_API bbStatus bbConfigureDemod(int device, int modulationType, double freq, float IFBW,
                                  float audioLowPassFreq, float audioHighPassFreq, float FMDeemphasis);
-///
-// Configure the IQ streaming decimation
-// Max possible bandwidths for individual downsampling factors
-// Downsample Factor : SampleRate(MS/s IQ) : Max Bandwidth(MHz)
-// 1                   40.0                  20.0 (BB60A) 27.0 (BB60C)
-// 2                   20.0                  17.6
-// 4                   10.0                  8.0
-// 8                   5.0                   4.0
-// 16                  2.5
-// 32                  1.25
-// 64                  0.625
-// 128                 0.3125
 BB_API bbStatus bbConfigureIQ(int device, int downsampleFactor, double bandwidth);
 
 BB_API bbStatus bbInitiate(int device, unsigned int mode, unsigned int flag);
@@ -240,7 +223,7 @@ BB_API bbStatus bbInitiate(int device, unsigned int mode, unsigned int flag);
 BB_API bbStatus bbFetchTrace_32f(int device, int arraySize, float *min, float *max);
 BB_API bbStatus bbFetchTrace(int device, int arraySize, double *min, double *max);
 BB_API bbStatus bbFetchAudio(int device, float *audio);
-BB_API bbStatus bbFetchRaw(int device, float *buffer, int *triggers);
+BB_API bbStatus bbFetchRaw(int device, float *buffer, int triggers[64]);
 BB_API bbStatus bbFetchRawSweep(int device, short *buffer);
 BB_API bbStatus bbStartRawSweepLoop(int device, void(*sweep_callback)(short *buffer, int len));
 
@@ -253,9 +236,6 @@ BB_API bbStatus bbPreset(int device);
 BB_API bbStatus bbSelfCal(int device);
 BB_API bbStatus bbSyncCPUtoGPS(int comPort, int baudRate);
 
-// Takeout, not an actual fix
-BB_API bbStatus bbSetTransferTimeout(int device, int timeout); // timeout in ms range:[250,5000]
-
 BB_API bbStatus bbGetDeviceType(int device, int *type);
 BB_API bbStatus bbGetSerialNumber(int device, unsigned int *sid);
 BB_API bbStatus bbGetFirmwareVersion(int device, int *version);
@@ -263,6 +243,12 @@ BB_API bbStatus bbGetDeviceDiagnostics(int device, float *temperature, float *us
 
 BB_API const char* bbGetAPIVersion();
 BB_API const char* bbGetErrorString(bbStatus status);
+
+// Convenience function for converting digital 32-bit float samples to signed shorts
+// dst[i] = (short)(src[i] * 2^scaleFactor)
+BB_API void bbConvert_32f16s(const float *src, short *dst, int scaleFactor, int len);
+// dst[i] = (float)(src[i] * 2^scaleFactor)
+BB_API void bbConvert_16s32f(const short *src, float *dst, int scaleFactor, int len);
 
 BB_DEPRECATED("is deprecated and is no longer applicable for streaming, please see the API manual for the changes to I/Q streaming")
 BB_API bbStatus bbFetchRaw_s(int device, short *buffer, int *triggers);

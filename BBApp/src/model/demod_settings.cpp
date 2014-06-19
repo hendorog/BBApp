@@ -30,3 +30,13 @@ void get_next_iq_bandwidth(Frequency current,
 
 
 }
+
+DemodSettings::DemodSettings()
+{
+
+}
+
+DemodSettings::~DemodSettings()
+{
+
+}
