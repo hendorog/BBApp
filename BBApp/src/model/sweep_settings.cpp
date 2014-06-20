@@ -11,13 +11,11 @@ SweepSettings::SweepSettings()
     LoadDefaults();    
 }
 
-// Copy Constructor
 SweepSettings::SweepSettings(const SweepSettings &other)
 {
     *this = other;
 }
 
-// Copy
 SweepSettings& SweepSettings::operator=(const SweepSettings &other)
 {
     mode = other.mode;
@@ -50,7 +48,6 @@ SweepSettings& SweepSettings::operator=(const SweepSettings &other)
     return *this;
 }
 
-// Equivalence
 bool SweepSettings::operator==(const SweepSettings &other) const
 {
     if(mode != other.mode) return false;

@@ -3,6 +3,8 @@
 
 #include "lib/bb_lib.h"
 
+#include <QSettings>
+
 void get_next_iq_bandwidth(Frequency current, Frequency &next, int &decimationRate);
 void get_prev_iq_bandwidth(Frequency current, Frequency &prev, int &decimationRate);
 void get_clamped_iq_bandwidth(Frequency &bw, int downsampleFactor);
@@ -18,19 +20,34 @@ enum TriggerEdge {
     TriggerEdgeFalling = 1
 };
 
-class TriggerSettings {
-public:
-
-private:
-};
-
 class DemodSettings {
 public:
     DemodSettings();
-    ~DemodSettings();
+    DemodSettings(const DemodSettings &other);
+    ~DemodSettings() {}
+
+    DemodSettings& operator=(const DemodSettings &other);
+    bool operator==(const DemodSettings &other) const;
+    bool operator!=(const DemodSettings &other) const;
+
+    void LoadDefaults();
+    bool Load(QSettings &s);
+    bool Save(QSettings &s) const;
+
+    Amplitude InputPower() const { return inputPower; }
+    Frequency CenterFreq() const { return centerFreq; }
+    int Gain() const { return gain; }
+    int Atten() const { return atten; }
+    int DecimationFactor() const { return decimationFactor; }
+    Frequency Bandwidth() const { return bandwidth; }
+    Frequency VBW() const { return vbw; }
+    Time SweepTime() const { return sweepTime; }
+
+    TriggerType TrigType() const { return trigType; }
+    TriggerEdge TrigEdge() const { return trigEdge; }
+    Amplitude TrigAmplitude() const { return trigAmplitude; }
 
 private:
-
     Amplitude inputPower;
     Frequency centerFreq;
     int gain;
@@ -40,9 +57,9 @@ private:
     Frequency vbw;
     Time sweepTime;
 
-    TriggerType triggerType;
-    TriggerEdge triggerEdge;
-    Amplitude triggerAmplitude;
+    TriggerType trigType;
+    TriggerEdge trigEdge;
+    Amplitude trigAmplitude;
 };
 
 struct IQDescriptor {

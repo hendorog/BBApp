@@ -16,8 +16,8 @@ public:
     ~DemodPanel();
 
 private:
-    AmplitudeEntry inputPowerEntry;
-    FrequencyEntry centerEntry;
+    AmplitudeEntry *inputPowerEntry;
+    FrequencyEntry *centerEntry;
     ComboEntry *gainEntry;
     ComboEntry *attenEntry;
     ComboEntry *decimationEntry;
@@ -25,9 +25,9 @@ private:
     FrequencyEntry *vbwEntry;
     TimeEntry *sweepTimeEntry;
 
-    ComboEntry triggerTypeEntry;
-    ComboEntry triggerEdgeEntry;
-    AmplitudeEntry triggerAmplitudeEntry; // Only for video triggers
+    ComboEntry *triggerTypeEntry;
+    ComboEntry *triggerEdgeEntry;
+    AmplitudeEntry *triggerAmplitudeEntry; // Only for video triggers
 
 public slots:
     //void updateTriggerSettings(TriggerSettings &ts);
