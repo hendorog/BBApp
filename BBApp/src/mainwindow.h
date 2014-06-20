@@ -57,7 +57,7 @@ private:
 
     CentralStack *centralStack;
     SweepCentral *sweepCentral;
-    DemodCentral *demodCentral;
+    //DemodCentral *demodCentral;
 
     static BBStatusBar *status_bar;
 

@@ -56,8 +56,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(sweepCentral, SIGNAL(presetDevice()), this, SLOT(presetDevice()));
     centralStack->AddWidget(sweepCentral);
 
-    demodCentral = new DemodCentral(session);
-    centralStack->AddWidget(demodCentral);
+    //demodCentral = new DemodCentral(session);
+    //centralStack->AddWidget(demodCentral);
 
     setCentralWidget(centralStack);
     //centralStack->setCurrentWidget(demodCentral);
@@ -73,7 +73,6 @@ MainWindow::~MainWindow()
 {
     disconnectDevice();
 
-    //delete central_widget;
     delete centralStack;
     delete session;
 
