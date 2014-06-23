@@ -7,16 +7,6 @@
 #include "lib/bb_lib.h"
 #include "model/session.h"
 
-#define OFFSET(x) ((GLvoid*)x)
-
-inline void glQColor(QColor c) {
-    glColor3f(c.redF(), c.greenF(), c.blueF());
-}
-
-inline void glQClearColor(QColor c, float alpha = 0.0) {
-    glClearColor(c.redF(), c.greenF(), c.blueF(), alpha);
-}
-
 class DemodIQTimePlot : public QGLWidget, public QOpenGLFunctions {
     Q_OBJECT
 

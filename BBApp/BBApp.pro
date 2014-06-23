@@ -81,7 +81,8 @@ HEADERS += src/mainwindow.h \
     src/widgets/demod_panel.h \
     src/views/demod_central.h \
     src/views/central_stack.h \
-    src/views/demod_iq_time_plot.h
+    src/views/demod_iq_time_plot.h \
+    src/views/gl_sub_view.h
 
 OTHER_FILES += \
     style_sheet.css \

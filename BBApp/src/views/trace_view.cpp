@@ -166,18 +166,16 @@ TraceView::TraceView(Session *session, QWidget *parent)
     glBufferData(GL_ARRAY_BUFFER, grat_border.size()*sizeof(float),
                  &grat_border[0], GL_STATIC_DRAW);
 
-    // Setup persistence if openGL version 3 available
-    const unsigned char *version = glGetString(GL_VERSION);
-    if(version) {
-        char v = version[0];
-        if(atoi(&v) >= 3) {
-            persist_program = std::unique_ptr<GLProgram>(
-                        new GLProgram(persist_vs, persist_fs));
-            persist_program->Compile(this);
+    // Only make persistence available if framebuffers and shaders
+    //  are available
+    if(hasOpenGLFeature(QOpenGLFunctions::Framebuffers) &&
+            hasOpenGLFeature(QOpenGLFunctions::Shaders)) {
+        persist_program = std::unique_ptr<GLProgram>(
+                    new GLProgram(persist_vs, persist_fs));
+        persist_program->Compile(this);
 
-            InitPersistFBO();
-            hasOpenGL3 = true;
-        }
+        InitPersistFBO();
+        hasOpenGL3 = true;
     }
 
     waterfall_tex = get_texture_from_file(":/color_spectrogram.png");
@@ -464,7 +462,7 @@ void TraceView::RenderGraticule()
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, gratVBO);
-    glVertexPointer(2, GL_FLOAT, 0, OFFSET(0));
+    glVertexPointer(2, GL_FLOAT, 0, INDEX_OFFSET(0));
     glDrawArrays(GL_LINES, 0, graticule.size()/2);
 
     if(session_ptr->prefs.graticule_stipple) {
@@ -473,7 +471,7 @@ void TraceView::RenderGraticule()
 
     // Border
     glBindBuffer(GL_ARRAY_BUFFER, borderVBO);
-    glVertexPointer(2, GL_FLOAT, 0, OFFSET(0));
+    glVertexPointer(2, GL_FLOAT, 0, INDEX_OFFSET(0));
     glDrawArrays(GL_LINE_STRIP, 0, grat_border.size()/2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -683,16 +681,16 @@ void TraceView::DrawTrace(const Trace *t, const GLVector &v)
     glBindBuffer(GL_ARRAY_BUFFER, traceVBO);
     glBufferData(GL_ARRAY_BUFFER, v.size()*sizeof(float),
                  &v[0], GL_DYNAMIC_DRAW);
-    glVertexPointer(2, GL_FLOAT, 0, OFFSET(0));
+    glVertexPointer(2, GL_FLOAT, 0, INDEX_OFFSET(0));
 
     // Draw fill
     glDrawArrays(GL_TRIANGLE_STRIP, 0, v.size() / 2);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // Draw lines
-    glVertexPointer(2, GL_FLOAT, 16, OFFSET(0));
+    glVertexPointer(2, GL_FLOAT, 16, INDEX_OFFSET(0));
     glDrawArrays(GL_LINE_STRIP, 0, v.size() / 4);
-    glVertexPointer(2, GL_FLOAT, 16, OFFSET(8));
+    glVertexPointer(2, GL_FLOAT, 16, INDEX_OFFSET(8));
     glDrawArrays(GL_LINE_STRIP, 0, v.size() / 4);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 

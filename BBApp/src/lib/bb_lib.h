@@ -10,16 +10,19 @@
 #include <atomic>
 #include <memory>
 
-#include <QOpenGLFunctions>
 #include <QDateTime>
 #include <QWaitCondition>
 #include <QDebug>
+#include <QOpenGLFunctions>
+#include <QColor>
 
 #include "frequency.h"
 #include "amplitude.h"
 #include "time_type.h"
 
 class Trace;
+
+#define INDEX_OFFSET(x) ((GLvoid*)x)
 
 typedef unsigned long ulong;
 typedef struct complex_f { float re, im; } complex_f;
@@ -65,19 +68,6 @@ enum GLShaderType {
     FRAGMENT_SHADER
 };
 
-class SleepEvent {
-public:
-    SleepEvent() { mut.lock(); }
-    ~SleepEvent() { Wake(); mut.unlock(); }
-
-    void Sleep(ulong ms = 0xFFFFFFFFUL) { wait_con.wait(&mut, ms); }
-    void Wake() { wait_con.wakeAll(); }
-
-private:
-    QMutex mut;
-    QWaitCondition wait_con;
-};
-
 class GLShader {
 public:
     GLShader(GLShaderType type, char *file_name);
@@ -117,6 +107,19 @@ private:
     GLuint program_handle;
     GLShader vertex_shader, fragment_shader;
     int compiled;
+};
+
+class SleepEvent {
+public:
+    SleepEvent() { mut.lock(); }
+    ~SleepEvent() { Wake(); mut.unlock(); }
+
+    void Sleep(ulong ms = 0xFFFFFFFFUL) { wait_con.wait(&mut, ms); }
+    void Wake() { wait_con.wakeAll(); }
+
+private:
+    QMutex mut;
+    QWaitCondition wait_con;
 };
 
 #if !defined(_WIN32) || defined(_WIN64)
@@ -165,39 +168,17 @@ private:
 
 #endif // Semaphore
 
-
-///*
-// * Semaphore/WaitCondition
-// * Utilizing only C++11 standard library
-// * Handles spurious wake ups
-// */
-//class semaphore {
-//    std::mutex m;
-//    std::condition_variable cv;
-//    bool set;
-
-//public:
-//    semaphore() : set(false) {}
-//    ~semaphore() { cv.notify_all(); }
-
-//    void wait() {
-//        std::unique_lock<std::mutex> lg(m);
-//        while(!set) { // while() handles spurious wakeup
-//            cv.wait(lg);//, [=]{ return set; });
-//        }
-//        set = false;
-//    }
-
-//    void notify() {
-//        std::lock_guard<std::mutex> lg(m);
-//        if(!set) {
-//            set = true;
-//            cv.notify_all();
-//        }
-//    }
-//};
-
 GLuint get_texture_from_file(const QString &file_name);
+
+inline void glQColor(QColor c)
+{
+    glColor3f(c.redF(), c.greenF(), c.blueF());
+}
+
+inline void glQClearColor(QColor c, float alpha = 0.0)
+{
+    glClearColor(c.redF(), c.greenF(), c.blueF(), alpha);
+}
 
 namespace bb_lib {
 
@@ -264,19 +245,19 @@ inline void dbm_to_mv(float *srcDst, int len) {
     }
 }
 
-/*
- * a ^ n
- */
+// a ^ n
 inline double power(double a, int n)
 {
     assert(n >= 0);
 
-    if(n == 0)
+    if(n == 0) {
         return 1.0;
+    }
 
     int r = a;
-    for(int i = 0; i < n-1; i++)
+    for(int i = 0; i < n-1; i++) {
         r *= a;
+    }
     return r;
 }
 

@@ -14,20 +14,11 @@
 #include "../lib/bb_lib.h"
 #include "persistence_view.h"
 
-#define OFFSET(x) ((GLvoid*)x)
 #define MAX_WATERFALL_LINES 128
 
 class Session;
 class SwapThread;
 class Trace;
-
-inline void glQColor(QColor c) {
-    glColor3f(c.redF(), c.greenF(), c.blueF());
-}
-
-inline void glQClearColor(QColor c, float alpha = 0.0) {
-    glClearColor(c.redF(), c.greenF(), c.blueF(), alpha);
-}
 
 class TraceView : public QGLWidget, public QOpenGLFunctions {
     Q_OBJECT

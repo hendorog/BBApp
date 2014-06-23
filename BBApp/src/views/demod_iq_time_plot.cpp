@@ -109,7 +109,7 @@ void DemodIQTimePlot::paintEvent(QPaintEvent *)
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, gratVBO);
-    glVertexPointer(2, GL_FLOAT, 0, OFFSET(0));
+    glVertexPointer(2, GL_FLOAT, 0, INDEX_OFFSET(0));
     glDrawArrays(GL_LINES, 0, grat.size()/2);
 
     if(session_ptr->prefs.graticule_stipple) {
@@ -118,7 +118,7 @@ void DemodIQTimePlot::paintEvent(QPaintEvent *)
 
     // Border
     glBindBuffer(GL_ARRAY_BUFFER, gratBorderVBO);
-    glVertexPointer(2, GL_FLOAT, 0, OFFSET(0));
+    glVertexPointer(2, GL_FLOAT, 0, INDEX_OFFSET(0));
     glDrawArrays(GL_LINE_STRIP, 0, gratBorder.size()/2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -196,16 +196,16 @@ void DemodIQTimePlot::DrawTrace(const GLVector &v)
     glBindBuffer(GL_ARRAY_BUFFER, traceVBO);
     glBufferData(GL_ARRAY_BUFFER, v.size()*sizeof(float),
                  &v[0], GL_DYNAMIC_DRAW);
-    glVertexPointer(2, GL_FLOAT, 0, OFFSET(0));
+    glVertexPointer(2, GL_FLOAT, 0, INDEX_OFFSET(0));
 
     // Draw fill
     glDrawArrays(GL_TRIANGLE_STRIP, 0, v.size() / 2);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // Draw lines
-    glVertexPointer(2, GL_FLOAT, 16, OFFSET(0));
+    glVertexPointer(2, GL_FLOAT, 16, INDEX_OFFSET(0));
     glDrawArrays(GL_LINE_STRIP, 0, v.size() / 4);
-    glVertexPointer(2, GL_FLOAT, 16, OFFSET(8));
+    glVertexPointer(2, GL_FLOAT, 16, INDEX_OFFSET(8));
     glDrawArrays(GL_LINE_STRIP, 0, v.size() / 4);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
