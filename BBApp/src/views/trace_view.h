@@ -11,8 +11,8 @@
 #include <QMutex>
 #include <QApplication>
 
-#include "../lib/bb_lib.h"
-#include "persistence_view.h"
+#include "lib/bb_lib.h"
+#include "gl_sub_view.h"
 
 #define MAX_WATERFALL_LINES 128
 
@@ -20,7 +20,7 @@ class Session;
 class SwapThread;
 class Trace;
 
-class TraceView : public QGLWidget, public QOpenGLFunctions {
+class TraceView : public GLSubView {
     Q_OBJECT
     friend class SwapThread;
 
@@ -28,9 +28,9 @@ class TraceView : public QGLWidget, public QOpenGLFunctions {
     static const int MARGIN = 20;
 
 public:
-    enum TextAlignment {
-        LEFT_ALIGNED, RIGHT_ALIGNED, CENTER_ALIGNED
-    };
+//    enum TextAlignment {
+//        LEFT_ALIGNED, RIGHT_ALIGNED, CENTER_ALIGNED
+//    };
 
     TraceView(Session *session, QWidget *parent = 0);
     ~TraceView();
@@ -73,23 +73,23 @@ private:
     }
 
     // Strings are subject to matrix transformations ?
-    void DrawString(const QString &s, const QFont &f,
-                    QPoint p, TextAlignment align);
-    void DrawString(const QString &s, const QFont &f,
-                    int x, int y, TextAlignment align) {
-        DrawString(s, f, QPoint(x, y), align);
-    }
-    // Get width of string in pixels
-    int GetTextWidth(const QString &s, const QFont &f) const {
-        QFontMetrics metrics(f);
-        return metrics.width(s);
-    }
+//    void DrawString(const QString &s, const QFont &f,
+//                    QPoint p, TextAlignment align);
+//    void DrawString(const QString &s, const QFont &f,
+//                    int x, int y, TextAlignment align) {
+//        DrawString(s, f, QPoint(x, y), align);
+//    }
+//    // Get width of string in pixels
+//    int GetTextWidth(const QString &s, const QFont &f) const {
+//        QFontMetrics metrics(f);
+//        return metrics.width(s);
+//    }
     // Flips point so (0,0) is lower left corner
     QPoint WindowToGLSpace(const QPoint &p) const {
         return QPoint(p.x() - grat_ll.x(), p.y() - grat_ll.y());
     }
 
-    Session *session_ptr; // Pointer copy, does not own
+//    Session *session_ptr; // Pointer copy, does not own
     QTime time; // Used for sweep time display
     GLVector graticule, grat_border; // Point lists for graticule
     GLuint gratVBO, borderVBO; // GL VBOs for graticule
@@ -106,7 +106,8 @@ private:
     GLuint traceVBO, textureVBO;
 
     QString plotTitle;
-    QFont textFont, divFont;
+    //QFont textFont, divFont;
+    GLFont textFont, divFont;
 
     bool persist_on;
     bool hasOpenGL3; // true when gl version greater than 3.*

@@ -62,9 +62,14 @@ private:
     Amplitude trigAmplitude;
 };
 
+// Descriptor for the device IQ stream
 struct IQDescriptor {
     IQDescriptor() {
+        sampleRate = 0;
+        decimation = 0;
+        timeDelta = 0.0;
         totalSamples = 0;
+        bandwidth = 0.0;
     }
 
     int sampleRate;
@@ -76,10 +81,24 @@ struct IQDescriptor {
 
 // Represents a single
 struct IQCapture {
-    IQCapture() : capture(nullptr) {}
+    IQCapture() :
+        capture(nullptr)
+    {
+        simdZero_32s(triggers, 70);
+    }
+    ~IQCapture()
+    {
+        if(capture) delete [] capture;
+    }
 
-    complex_f *capture;
     IQDescriptor desc;
+    complex_f *capture;
+    int triggers[70];
+};
+
+// One full sweep
+struct IQSweep {
+    complex_f *sweep;
 };
 
 #endif // DEMOD_SETTINGS_H

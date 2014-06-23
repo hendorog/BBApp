@@ -75,7 +75,7 @@ void DemodCentral::changeMode(int newState)
 void DemodCentral::StreamThread()
 {
     sessionPtr->device->Reconfigure(sessionPtr->demod_settings,
-                                    sessionPtr->iq_capture);
+                                    &sessionPtr->iq_capture->desc);
     sessionPtr->iq_capture->capture = new complex_f[1 << 20];
 
     while(streaming) {

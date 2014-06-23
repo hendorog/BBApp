@@ -19,7 +19,7 @@
 #define BUTTON_R1_X 10
 #define BUTTON_R2_X 140
 
-#define BB_PI 3.14159265358979323
+#define BB_PI (3.14159265358979323)
 #define BB_TWO_PI (2 * BB_PI)
 #define BB_FOUR_PI (4 * BB_PI)
 

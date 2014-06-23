@@ -13,44 +13,13 @@
 #define PERSIST_WIDTH 1280
 #define PERSIST_HEIGHT 720
 
-#define M_PI 3.14159265
 
 #pragma warning(disable:4305)
 #pragma warning(disable:4267)
 
-static void normalize(float* f)
-{
-    float invMag , mag;
-    mag = sqrt(f[0]*f[0] + f[1]*f[1] + f[2]*f[2]);
-    if(mag == 0) mag = 0.1e-5f;
-    invMag = (float)1.0 / mag;
-    f[0] *= invMag;
-    f[1] *= invMag;
-    f[2] *= invMag;
-}
-
-static void cross(float* r , float* a , float* b)
-{
-    r[0] = a[1]*b[2] - a[2]*b[1];
-    r[1] = a[2]*b[0] - a[0]*b[2];
-    r[2] = a[0]*b[1] - a[1]*b[0];
-}
-
-static inline float det(float a, float b, float c, float d)
-{
-    return a*d - b*c;
-}
-
-static inline void swap(float* f1, float* f2)
-{
-    float temp = *f1;
-    *f1 = *f2;
-    *f2 = temp;
-}
-
 void glPerspective(float angle, float aRatio, float near_val, float far_val)
 {
-    float R = tan((angle * (M_PI / 360.0f))) * near_val;
+    float R = tan((angle * (BB_PI / 360.0f))) * near_val;
     float T = R * aRatio;
 
     glFrustum(-T, T, -R, R, near_val, far_val);
@@ -77,9 +46,9 @@ void glLookAt(float ex, float ey, float ez,
     UP[2] = uz;
     normalize(UP);
     // Find s and u
-    cross(s, f, UP);
+    cross_product(s, f, UP);
     normalize(s);
-    cross(u, s, f);
+    cross_product(u, s, f);
 
     // Build Look At Matrix
     LA[0] = s[0]; LA[1] = u[0]; LA[2] = -f[0]; LA[3] = 0;
@@ -91,22 +60,14 @@ void glLookAt(float ex, float ey, float ez,
     glTranslatef(-ex, -ey, -ez);
 }
 
-static void sphereToCart(float theta, float phi, float rho,
-                         float *x, float *y, float *z)
-{
-    *x = rho*sin(phi)*cos(theta);
-    *y = rho*sin(phi)*sin(theta);
-    *z = rho*cos(phi);
-}
-
-static float rho = 1, theta = -0.5 * M_PI, phi = 0.4 * M_PI;
+static float rho = 1, theta = -0.5 * BB_PI, phi = 0.4 * BB_PI;
 static int mx, my;
 static bool dragging = false;
 static const float RPP = 0.01;
 
 TraceView::TraceView(Session *session, QWidget *parent)
-    : QGLWidget(parent),
-      session_ptr(session),
+    : GLSubView(session, parent),
+      //session_ptr(session),
       persist_on(false),
       clear_persistence(false),
       waterfall_state(WaterfallOFF),
@@ -288,7 +249,7 @@ void TraceView::mousePressEvent(QMouseEvent *e)
         if(x_pos < 0 || x_pos > grat_sz.x())
             return;
 
-        session_ptr->trace_manager->PlaceMarker((double)x_pos / grat_sz.x());
+        GetSession()->trace_manager->PlaceMarker((double)x_pos / grat_sz.x());
 
     } else if (waterfall_state == Waterfall3D) {
         dragging = true;
@@ -307,7 +268,7 @@ void TraceView::mouseReleaseEvent(QMouseEvent *)
 void TraceView::mouseMoveEvent(QMouseEvent *e)
 {   
     if(PointInGrat(e->pos())) {
-        const SweepSettings *s = session_ptr->sweep_settings;
+        const SweepSettings *s = GetSession()->sweep_settings;
         double x, xScale, y, yScale;
 
         xScale = s->Span() / grat_sz.x();
@@ -333,10 +294,10 @@ void TraceView::mouseMoveEvent(QMouseEvent *e)
         int dx = e->pos().x() - mx, dy = e->pos().y() - my;
         theta -= dx * RPP;
         phi -= dy * RPP;
-        if(phi < 0.1 * M_PI) phi = 0.1 * M_PI;
-        if(phi > 0.5 * M_PI) phi = 0.5 * M_PI;
-        if(theta < -0.75 * M_PI) theta = -0.75 * M_PI;
-        if(theta > -0.25 * M_PI) theta = -0.25 * M_PI;
+        if(phi < 0.1 * BB_PI) phi = 0.1 * BB_PI;
+        if(phi > 0.5 * BB_PI) phi = 0.5 * BB_PI;
+        if(theta < -0.75 * BB_PI) theta = -0.75 * BB_PI;
+        if(theta > -0.25 * BB_PI) theta = -0.25 * BB_PI;
         mx = e->pos().x();
         my = e->pos().y();
         update();
@@ -368,7 +329,7 @@ void TraceView::Paint()
 
     makeCurrent();
 
-    glQClearColor(session_ptr->colors.background, 0.0);
+    glQClearColor(GetSession()->colors.background, 0.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Must be called for textures to be drawn properly
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
@@ -384,7 +345,7 @@ void TraceView::Paint()
     QPoint grat_upper_left = QPoint(60, size().height() - 50);
     QPoint grat_size = QPoint(width() - 80, height() - 100);
 
-    if(!session_ptr->GetTitle().isNull()) {
+    if(!GetSession()->GetTitle().isNull()) {
         grat_upper_left = QPoint(60, size().height() - 70);
         grat_size = QPoint(width() - 80, height() - 120);
     }
@@ -408,14 +369,14 @@ void TraceView::Paint()
 
     RenderGraticule(); // Graticule always shown
 
-    if(!session_ptr->device->IsOpen()) {
-        glQColor(session_ptr->colors.text);
-        DrawString(tr("No Device Connected"), QFont("Arial", 14),
+    if(!GetSession()->device->IsOpen()) {
+        glQColor(GetSession()->colors.text);
+        DrawString(tr("No Device Connected"), textFont,
                    QPoint(grat_ul.x(), grat_ul.y() + 5), LEFT_ALIGNED);
 
-    } else if(session_ptr->sweep_settings->Mode() == BB_IDLE) {
-        glQColor(session_ptr->colors.text);
-        DrawString(tr("Device Idle"), QFont("Arial", 14),
+    } else if(GetSession()->sweep_settings->Mode() == BB_IDLE) {
+        glQColor(GetSession()->colors.text);
+        DrawString(tr("Device Idle"), textFont,
                    QPoint(grat_ul.x(), grat_ul.y() + 5), LEFT_ALIGNED);
     } else {
 
@@ -452,11 +413,11 @@ void TraceView::RenderGraticule()
     glLoadIdentity();
     glOrtho(0, size().width(), 0, size().height(), -1, 1);
 
-    glLineWidth(session_ptr->prefs.graticule_width);
-    glQColor(session_ptr->colors.graticule);
+    glLineWidth(GetSession()->prefs.graticule_width);
+    glQColor(GetSession()->colors.graticule);
 
     // Draw inner grat
-    if(session_ptr->prefs.graticule_stipple) {
+    if(GetSession()->prefs.graticule_stipple) {
         glLineStipple(1, 0x8888);
         glEnable(GL_LINE_STIPPLE);
     }
@@ -465,7 +426,7 @@ void TraceView::RenderGraticule()
     glVertexPointer(2, GL_FLOAT, 0, INDEX_OFFSET(0));
     glDrawArrays(GL_LINES, 0, graticule.size()/2);
 
-    if(session_ptr->prefs.graticule_stipple) {
+    if(GetSession()->prefs.graticule_stipple) {
         glDisable(GL_LINE_STIPPLE);
     }
 
@@ -485,7 +446,7 @@ void TraceView::RenderGraticule()
 
 void TraceView::RenderGratText()
 {
-    glQColor(session_ptr->colors.text);
+    glQColor(GetSession()->colors.text);
 
     //glViewport(0, 0, size().width(), size().height());
 
@@ -497,17 +458,17 @@ void TraceView::RenderGratText()
     glLoadIdentity();
     glOrtho(0, size().width(), 0, size().height(), -1, 1);
 
-    const SweepSettings *s = session_ptr->sweep_settings;
-    TraceManager *tm = session_ptr->trace_manager;
+    const SweepSettings *s = GetSession()->sweep_settings;
+    TraceManager *tm = GetSession()->trace_manager;
     QVariant elapsed = time.restart();
     Frequency freq_off = tm->FreqOffset();
     QString str;
 
     double div = s->RefLevel().IsLogScale() ? s->Div() : (s->RefLevel().Val() / 10.0);
 
-    str = session_ptr->GetTitle();
+    str = GetSession()->GetTitle();
     if(!str.isNull()) {
-        DrawString(str, QFont("Arial", 20), width() / 2, height() - 22, CENTER_ALIGNED);
+        DrawString(str, GLFont("Arial", 20), width() / 2, height() - 22, CENTER_ALIGNED);
     }
 
     str.sprintf("Elapsed %d, SweepSize %d", elapsed.toInt(),
@@ -554,7 +515,7 @@ void TraceView::RenderGratText()
     }
 
     // Amplitude high warning
-    if(session_ptr->trace_manager->LastTraceAboveReference()) {
+    if(GetSession()->trace_manager->LastTraceAboveReference()) {
         glColor3f(1.0, 0.0, 0.0);
         DrawString("*Warning* : Signal Level Higher Than Reference Level", textFont,
                    (grat_ul.x() + grat_sz.x()) / 2.0, grat_ul.y() - 22, CENTER_ALIGNED);
@@ -564,17 +525,17 @@ void TraceView::RenderGratText()
     bool uncal = false;
     int uncal_x = grat_ul.x() + 5, uncal_y = grat_ul.y() - 22;
     glColor3f(1.0, 0.0, 0.0);
-    if(!session_ptr->device->IsPowered()) {
+    if(!GetSession()->device->IsPowered()) {
         uncal = true;
         DrawString("Low Voltage", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
         uncal_y -= 16;
     }
-    if(session_ptr->device->ADCOverflow()) {
+    if(GetSession()->device->ADCOverflow()) {
         uncal = true;
         DrawString("IF Overload", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
         uncal_y -= 16;
     }
-    if(session_ptr->device->NeedsTempCal()) {
+    if(GetSession()->device->NeedsTempCal()) {
         uncal = true;
         DrawString("Device Temp", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
         uncal_y -= 16;
@@ -591,7 +552,7 @@ void TraceView::RenderGratText()
 
 void TraceView::RenderTraces()
 {
-    TraceManager *manager = session_ptr->trace_manager;
+    TraceManager *manager = GetSession()->trace_manager;
 
     // Un-buffer persist/waterfall data
     if(persist_on || (waterfall_state != WaterfallOFF)) {
@@ -633,7 +594,7 @@ void TraceView::RenderTraces()
     glEnable(GL_LINE_SMOOTH);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBlendEquation(GL_FUNC_ADD);
-    glLineWidth(session_ptr->prefs.trace_width);
+    glLineWidth(GetSession()->prefs.trace_width);
 
     manager->Lock();
 
@@ -703,8 +664,8 @@ void TraceView::DrawTrace(const Trace *t, const GLVector &v)
  */
 void TraceView::RenderMarkers()
 {
-    SweepSettings *s = session_ptr->sweep_settings;
-    TraceManager *tm = session_ptr->trace_manager;
+    SweepSettings *s = GetSession()->sweep_settings;
+    TraceManager *tm = GetSession()->trace_manager;
 
     // Viewport on grat, full pixel scale
     glPushAttrib(GL_VIEWPORT_BIT);
@@ -747,12 +708,12 @@ void TraceView::RenderMarkers()
         }
         // Does not have to be in view to draw the delta values
         if(m->DeltaActive()) {
-            glQColor(session_ptr->colors.markerText);
+            glQColor(GetSession()->colors.markerText);
             DrawString("Mkr " + QVariant(i+1).toString() + " Delta: " + m->DeltaText(),
                        textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
             y_print -= 20;
         } else if(m->Active()) {
-            glQColor(session_ptr->colors.markerText);
+            glQColor(GetSession()->colors.markerText);
             DrawString("Mkr " + QVariant(i+1).toString() + ": " + m->Text(),
                        textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
             y_print -= 20;
@@ -829,27 +790,27 @@ void TraceView::DrawDeltaMarker(int x, int y, int num)
                QPoint(x, y+11), CENTER_ALIGNED);
 }
 
-void TraceView::DrawString(const QString &s,
-                           const QFont &f,
-                           QPoint p,
-                           TextAlignment align)
-{
-    if(align == RIGHT_ALIGNED) {
-        p -= QPoint(GetTextWidth(s, f), 0);
-    } else if(align == CENTER_ALIGNED) {
-        p -= QPoint(GetTextWidth(s, f)/2, 0);
-    }
+//void TraceView::DrawString(const QString &s,
+//                           const QFont &f,
+//                           QPoint p,
+//                           TextAlignment align)
+//{
+//    if(align == RIGHT_ALIGNED) {
+//        p -= QPoint(GetTextWidth(s, f), 0);
+//    } else if(align == CENTER_ALIGNED) {
+//        p -= QPoint(GetTextWidth(s, f)/2, 0);
+//    }
 
-    renderText(p.x(), p.y(), 0, s, f);
-}
+//    renderText(p.x(), p.y(), 0, s, f);
+//}
 
 void TraceView::RenderChannelPower()
 {
-    const ChannelPower *cp = session_ptr->trace_manager->GetChannelPowerInfo();
+    const ChannelPower *cp = GetSession()->trace_manager->GetChannelPowerInfo();
     if(!cp->IsEnabled()) return;
 
-    double start = session_ptr->sweep_settings->Start();
-    double stop = session_ptr->sweep_settings->Stop();
+    double start = GetSession()->sweep_settings->Start();
+    double stop = GetSession()->sweep_settings->Stop();
     double span = stop - start;
     if(span == 0.0) return;
 
@@ -885,7 +846,7 @@ void TraceView::RenderChannelPower()
         glEnd();
 
         // Draw Channel power text
-        glQColor(session_ptr->colors.text);
+        glQColor(GetSession()->colors.text);
         QString cp_string;
         cp_string.sprintf("%f", cp->GetChannelPower(i));
         DrawString(cp_string, textFont, xCen * grat_sz.x(), 40, CENTER_ALIGNED);
@@ -941,7 +902,7 @@ void TraceView::DrawLimitLines(const Trace *limitTrace, const GLVector &v)
     if(limitTrace->Length() < 1) return;
 
     glLineWidth(3.0);
-    glQColor(session_ptr->colors.limitLines);
+    glQColor(GetSession()->colors.limitLines);
 
     glBindBuffer(GL_ARRAY_BUFFER, traceVBO);
     glBufferData(GL_ARRAY_BUFFER, v.size() * sizeof(float),

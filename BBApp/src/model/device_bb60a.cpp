@@ -149,18 +149,25 @@ bool DeviceBB60A::Reconfigure(const SweepSettings *s, Trace *t)
     return true;
 }
 
-bool DeviceBB60A::Reconfigure(const DemodSettings *ds, IQCapture *iqc)
-{
+bool DeviceBB60A::Reconfigure(const DemodSettings *ds, IQDescriptor *desc)
+{   
     bbAbort(id);
 
-    bbConfigureCenterSpan(id, 1.0e9, 20.0e6);
-    bbConfigureIQ(id, 128, 0.25e6);
-    bbConfigureLevel(id, -20.0, BB_AUTO_ATTEN);
-    bbConfigureGain(id, BB_AUTO_GAIN);
+    int gain = ds->Gain() - 1, atten = (ds->Atten() - 1) * 10.0;
+    if(gain < 0) gain = BB_AUTO_GAIN;
+    if(atten < 0) atten = BB_AUTO_ATTEN;
+    int decimation = 0x1 << (ds->DecimationFactor() - 1);
+
+    bbConfigureCenterSpan(id, ds->CenterFreq(), 20.0e6);
+    bbConfigureIQ(id, decimation, ds->Bandwidth());
+    bbConfigureLevel(id, ds->InputPower().Val(), atten);
+    bbConfigureGain(id, gain);
 
     bbInitiate(id, BB_STREAMING, BB_STREAM_IQ);
-    bbQueryStreamInfo(id, &iqc->desc.totalSamples,
-                      &iqc->desc.bandwidth, &iqc->desc.sampleRate);
+    bbQueryStreamInfo(id, &desc->totalSamples, &desc->bandwidth, &desc->sampleRate);
+
+    desc->timeDelta = 1.0 / (double)desc->sampleRate;
+    desc->decimation = decimation;
 
     return true;
 }

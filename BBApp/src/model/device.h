@@ -36,7 +36,7 @@ public:
     virtual bool Reconfigure(const SweepSettings *s, Trace *t) = 0;
     // Returns false on an unfixable error
     virtual bool GetSweep(const SweepSettings *s, Trace *t) = 0;
-    virtual bool Reconfigure(const DemodSettings *s, IQCapture *capture) = 0;
+    virtual bool Reconfigure(const DemodSettings *s, IQDescriptor *capture) = 0;
     virtual bool GetIQ(DemodSettings *ds, IQCapture *iqc) = 0;
 
     bool IsOpen() const { return open; }

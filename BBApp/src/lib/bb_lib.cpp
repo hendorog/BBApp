@@ -577,3 +577,60 @@ void normalize_trace(const Trace *t, LineList &ll, QSize grat_size)
         }
     }
 }
+
+void build_blackman_window(float *window, int len)
+{
+    for(int i = 0; i < len; i++) {
+        window[i] = 0.42659
+                - 0.49656 * cos(2*BB_PI*i/(len-1))
+                + 0.076849 * cos(4*BB_PI*i/(len-1));
+
+    }
+
+    double windowAvg = 0.0, invAvg = 0.0;
+
+    for(int i = 0; i < len; i++) {
+        windowAvg += window[i];
+    }
+
+    invAvg = len / windowAvg;
+
+    for(int i = 0; i < len; i++) {
+        window[i] *= invAvg;
+    }
+}
+
+void demod_am(const complex_f *src, float *dst, int len)
+{
+    for(int i = 0; i < len; i++) {
+        dst[i] = src[i].re * src[i].re + src[i].im * src[i].im;
+        dst[i] = 10.0 * log10(dst[i]);
+    }
+
+    // if(linScale), convert to milliVolts?
+//    for(int i = 0; i < len; i++) {
+//        dst[i] = 223.6 * sqrt(src[i].re * src[i].re + src[i].im * src[i].im);
+//    }
+}
+
+void demod_fm(const complex_f *src, float *dst, int len, double *phase)
+{
+    double lastPhase = (phase) ? (*phase) : 0.0;
+
+    for(int i = 0; i < len; i++) {
+        double newPhase = atan2(src[i].im, src[i].re);
+        double delPhase = newPhase - lastPhase;
+        lastPhase = newPhase;
+
+        if(delPhase > BB_PI) delPhase -= BB_TWO_PI;
+        else if(delPhase < (-BB_PI)) delPhase += BB_TWO_PI;
+
+        dst[i] = delPhase;
+    }
+
+    for(int i = 0; i < len; i++) {
+        dst[i] *= PHASE_TO_FREQ;
+    }
+
+    if(phase) *phase = lastPhase;
+}

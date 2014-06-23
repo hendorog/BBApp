@@ -10,6 +10,8 @@
 #include <atomic>
 #include <memory>
 
+#include <malloc.h>
+
 #include <QDateTime>
 #include <QWaitCondition>
 #include <QDebug>
@@ -180,6 +182,76 @@ inline void glQClearColor(QColor c, float alpha = 0.0)
     glClearColor(c.redF(), c.greenF(), c.blueF(), alpha);
 }
 
+inline void normalize(float *f) // float f[3]
+{
+    float invMag , mag;
+    mag = sqrt(f[0]*f[0] + f[1]*f[1] + f[2]*f[2]);
+    if(mag == 0) mag = 0.1e-5f;
+    invMag = (float)1.0 / mag;
+    f[0] *= invMag;
+    f[1] *= invMag;
+    f[2] *= invMag;
+}
+
+inline void cross_product(float* r , float* a , float* b)
+{
+    r[0] = a[1]*b[2] - a[2]*b[1];
+    r[1] = a[2]*b[0] - a[0]*b[2];
+    r[2] = a[0]*b[1] - a[1]*b[0];
+}
+
+// 2x2 matrix determinant
+inline float determinant(float a, float b, float c, float d)
+{
+    return a*d - b*c;
+}
+
+inline void swap(float* f1, float* f2)
+{
+    float temp = *f1;
+    *f1 = *f2;
+    *f2 = temp;
+}
+
+inline void sphereToCart(float theta, float phi, float rho,
+                         float *x, float *y, float *z)
+{
+    *x = rho*sin(phi)*cos(theta);
+    *y = rho*sin(phi)*sin(theta);
+    *z = rho*cos(phi);
+}
+
+inline float* simdMalloc_32f(int len)
+{
+    return (float*)_aligned_malloc(len * sizeof(float), 32);
+}
+
+inline complex_f* simdMalloc_32fc(int len)
+{
+    return (complex_f*)_aligned_malloc(len * sizeof(complex_f), 32);
+}
+
+inline void simdFree(void *ptr)
+{
+    if(!ptr) return;
+    _aligned_free(ptr);
+}
+
+inline void simdCopy_32f(const float *src, float *dst, int len)
+{
+    memcpy(dst, src, len * sizeof(float));
+}
+
+inline void simdMove_32f(const float *src, float *dst, int len)
+{
+    memmove(dst, src, len * sizeof(float));
+}
+
+inline void simdZero_32s(int *srcDst, int len)
+{
+    memset(srcDst, 0, len * sizeof(int));
+}
+
 namespace bb_lib {
 
 // Returns true if a new value was retrieved
@@ -345,5 +417,10 @@ inline QString get_time_string(int64_t ms_since_epoch) {
 
 void normalize_trace(const Trace *t, GLVector &vector, QPoint grat_size);
 //void normalize_trace(const Trace *t, LineList &ll, QSize grat_size);
+
+void build_blackman_window(float *dst, int len);
+
+void demod_am(const complex_f *src, float *dst, int len);
+void demod_fm(const complex_f *src, float *dst, int len, double *phase);
 
 #endif // BB_LIB_H

@@ -14,9 +14,11 @@ public:
     bool CloseDevice();
     bool Abort();
     bool Preset();
+    // Sweep
     bool Reconfigure(const SweepSettings *s, Trace *t);
     bool GetSweep(const SweepSettings *s, Trace *t);
-    bool Reconfigure(const DemodSettings *s, IQCapture *iqc);
+    // Stream
+    bool Reconfigure(const DemodSettings *s, IQDescriptor *iqc);
     bool GetIQ(DemodSettings *ds, IQCapture *iqc);
 
     bool IsPowered() const;
