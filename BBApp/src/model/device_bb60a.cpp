@@ -164,7 +164,7 @@ bool DeviceBB60A::Reconfigure(const DemodSettings *ds, IQDescriptor *desc)
     bbConfigureGain(id, gain);
 
     bbInitiate(id, BB_STREAMING, BB_STREAM_IQ);
-    bbQueryStreamInfo(id, &desc->totalSamples, &desc->bandwidth, &desc->sampleRate);
+    bbQueryStreamInfo(id, &desc->returnLen, &desc->bandwidth, &desc->sampleRate);
 
     desc->timeDelta = 1.0 / (double)desc->sampleRate;
     desc->decimation = decimation;
@@ -172,9 +172,9 @@ bool DeviceBB60A::Reconfigure(const DemodSettings *ds, IQDescriptor *desc)
     return true;
 }
 
-bool DeviceBB60A::GetIQ(DemodSettings *ds, IQCapture *iqc)
+bool DeviceBB60A::GetIQ(IQCapture *iqc)
 {
-    bbFetchRaw(id, (float*)iqc->capture, nullptr);
+    STATUS_CHECK(bbFetchRaw(id, (float*)(&iqc->capture[0]), iqc->triggers));
 
     return true;
 }

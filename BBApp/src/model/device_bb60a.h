@@ -19,7 +19,7 @@ public:
     bool GetSweep(const SweepSettings *s, Trace *t);
     // Stream
     bool Reconfigure(const DemodSettings *s, IQDescriptor *iqc);
-    bool GetIQ(DemodSettings *ds, IQCapture *iqc);
+    bool GetIQ(IQCapture *iqc);
 
     bool IsPowered() const;
 

@@ -30,10 +30,7 @@ private:
     AmplitudeEntry *triggerAmplitudeEntry; // Only for video triggers
 
 public slots:
-    //void updateTriggerSettings(TriggerSettings &ts);
-
-signals:
-    void demodSettingsChanged(DemodSettings &ts);
+    void updatePanel(const DemodSettings *ds);
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DemodPanel)

@@ -4,7 +4,8 @@
 
 DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     CentralWidget(parent, f),
-    sessionPtr(sPtr)
+    sessionPtr(sPtr),
+    reconfigure(false)
 {
     toolBar = new QToolBar(this);
     toolBar->move(0, 0);
@@ -15,15 +16,19 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     demodArea = new QMdiArea(this);
     demodArea->move(0, TOOLBAR_HEIGHT);
 
-    plot = new DemodIQTimePlot(sPtr);
-    demodArea->addSubWindow(plot);
-    demodArea->tileSubWindows();
-    connect(this, SIGNAL(updateView()), plot, SLOT(update()));
+//    plot = new DemodIQTimePlot(sPtr);
+//    demodArea->addSubWindow(plot);
+//    demodArea->tileSubWindows();
+//    connect(this, SIGNAL(updateView()), plot, SLOT(update()));
 
     plot = new DemodIQTimePlot(sPtr);
     demodArea->addSubWindow(plot);
     demodArea->tileSubWindows();
+
     connect(this, SIGNAL(updateView()), plot, SLOT(update()));
+
+    connect(sessionPtr->demod_settings, SIGNAL(updated(const DemodSettings*)),
+            this, SLOT(updateSettings(const DemodSettings*)));
 }
 
 DemodCentral::~DemodCentral()
@@ -67,33 +72,71 @@ void DemodCentral::changeMode(int newState)
     StopStreaming();
     captureCount = -1;
 
-    if(newState == BB_SWEEPING) {
+    if(newState == MODE_ZERO_SPAN) {
         StartStreaming();
     }
 }
 
+void DemodCentral::Reconfigure(DemodSettings *ds, IQCapture *iqc)
+{
+    if(!sessionPtr->device->Reconfigure(ds, &iqc->desc)) {
+        *ds = lastConfig;
+    } else {
+        lastConfig = *ds;
+    }
+
+    // Resize single capture size and full sweep
+    iqc->capture.resize(iqc->desc.returnLen);
+
+    int sweepLen = ds->SweepTime().Val() / iqc->desc.timeDelta;
+    sweepLen = iqc->desc.returnLen;
+
+    sessionPtr->iq_capture.len = sweepLen;
+    sessionPtr->iq_capture.sweep.resize(sweepLen*4);
+
+    qDebug() << sweepLen << "\n";
+
+    reconfigure = false;
+}
+
 void DemodCentral::StreamThread()
 {
-    sessionPtr->device->Reconfigure(sessionPtr->demod_settings,
-                                    &sessionPtr->iq_capture->desc);
-    sessionPtr->iq_capture->capture = new complex_f[1 << 20];
+    IQCapture iqc;
+    Reconfigure(sessionPtr->demod_settings, &iqc);
 
     while(streaming) {
 
         if(captureCount) {
-            sessionPtr->device->GetIQ(sessionPtr->demod_settings,
-                                      sessionPtr->iq_capture);
+            if(reconfigure) Reconfigure(sessionPtr->demod_settings, &iqc);
+            qint64 start = bb_lib::get_ms_since_epoch();
+
+//            for(int i = 0; i < 4; i++) {
+//                sessionPtr->device->GetIQ(&iqc);
+//                for(int j = 0, k = i * iqc.desc.returnLen; j < iqc.desc.returnLen; j++, k++) {
+//                    sessionPtr->iq_capture.sweep[k] = iqc.capture[j];
+//                }
+//            }
+
+            sessionPtr->device->GetIQ(&iqc);
+            sessionPtr->iq_capture.sweep = iqc.capture;
 
             UpdateView();
-            Sleep(100);
 
+            // Force 30 fps update rate
+            qint64 elapsed = bb_lib::get_ms_since_epoch() - start;
+            if(elapsed < 64) Sleep(64 - elapsed);
             if(captureCount > 0) {
                 captureCount--;
             }
         } else {
-            Sleep(100);
+            Sleep(64);
         }
     }
+}
+
+void DemodCentral::updateSettings(const DemodSettings *ds)
+{
+    reconfigure = true;
 }
 
 void DemodCentral::UpdateView()

@@ -8,7 +8,6 @@ Session::Session()
     sweep_settings = new SweepSettings();
     trace_manager = new TraceManager();
     demod_settings = new DemodSettings();
-    iq_capture = new IQCapture();
     audio_settings = new AudioSettings();
 
     connect(trace_manager, SIGNAL(changeCenterFrequency(Frequency)),
@@ -22,7 +21,6 @@ Session::~Session()
     delete sweep_settings;
     delete trace_manager;
     delete demod_settings;
-    delete iq_capture;
     delete audio_settings;
     // Delete device last
     delete device;

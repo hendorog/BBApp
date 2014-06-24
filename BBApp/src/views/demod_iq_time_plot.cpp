@@ -139,13 +139,13 @@ void DemodIQTimePlot::DrawIQLines()
     traces[0].clear();
     traces[1].clear();
 
-    if(!session_ptr->iq_capture->capture) return;
+    const std::vector<complex_f> &iq = session_ptr->iq_capture.sweep;
 
-    const complex_f *iq = session_ptr->iq_capture->capture;
+    if(iq.size() <= 0) return;
 
     glColor3f(1.0, 0.0, 0.0);
 
-    for(int i = 0; i < 1024; i++) {
+    for(int i = 0; i < iq.size(); i++) {
         traces[0].push_back(i);
         traces[0].push_back(iq[i].re);
         traces[1].push_back(i);
@@ -161,7 +161,7 @@ void DemodIQTimePlot::DrawIQLines()
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, 1024, -0.5, 0.5, -1, 1);
+    glOrtho(0, iq.size(), -0.5, 0.5, -1, 1);
 
     // Nice lines, doesn't smooth quads
     glEnable(GL_BLEND);

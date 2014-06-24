@@ -60,6 +60,32 @@ DemodPanel::DemodPanel(const QString &title,
 
     AddPage(demodPage);
     AddPage(triggerPage);
+
+    updatePanel(settings);
+
+    connect(settings, SIGNAL(updated(const DemodSettings*)),
+            this, SLOT(updatePanel(const DemodSettings*)));
+
+    connect(inputPowerEntry, SIGNAL(amplitudeChanged(Amplitude)),
+            settings, SLOT(setInputPower(Amplitude)));
+    connect(centerEntry, SIGNAL(freqViewChanged(Frequency)),
+            settings, SLOT(setCenterFreq(Frequency)));
+    connect(gainEntry, SIGNAL(comboIndexChanged(int)),
+            settings, SLOT(setGain(int)));
+    connect(attenEntry, SIGNAL(comboIndexChanged(int)),
+            settings, SLOT(setAtten(int)));
+    connect(decimationEntry, SIGNAL(comboIndexChanged(int)),
+            settings, SLOT(setDecimation(int)));
+    connect(vbwEntry, SIGNAL(freqViewChanged(Frequency)),
+            settings, SLOT(setVBW(Frequency)));
+    connect(sweepTimeEntry, SIGNAL(timeChanged(Time)),
+            settings, SLOT(setSweepTime(Time)));
+    connect(triggerTypeEntry, SIGNAL(comboIndexChanged(int)),
+            settings, SLOT(setTrigType(int)));
+    connect(triggerEdgeEntry, SIGNAL(comboIndexChanged(int)),
+            settings, SLOT(setTrigEdge(int)));
+    connect(triggerAmplitudeEntry, SIGNAL(amplitudeChanged(Amplitude)),
+            settings, SLOT(setTrigAmplitude(Amplitude)));
 }
 
 DemodPanel::~DemodPanel()
@@ -67,4 +93,18 @@ DemodPanel::~DemodPanel()
 
 }
 
+void DemodPanel::updatePanel(const DemodSettings *ds)
+{
+    inputPowerEntry->SetAmplitude(ds->InputPower());
+    centerEntry->SetFrequency(ds->CenterFreq());
+    gainEntry->setComboIndex(ds->Gain());
+    attenEntry->setComboIndex(ds->Atten());
+    decimationEntry->setComboIndex(ds->DecimationFactor());
+    bandwidthEntry->SetFrequency(ds->Bandwidth());
+    vbwEntry->SetFrequency(ds->VBW());
+    sweepTimeEntry->SetTime(ds->SweepTime());
 
+    triggerTypeEntry->setComboIndex(ds->TrigType());
+    triggerEdgeEntry->setComboIndex(ds->TrigEdge());
+    triggerAmplitudeEntry->SetAmplitude(ds->TrigAmplitude());
+}

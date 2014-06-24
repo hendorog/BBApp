@@ -33,7 +33,7 @@ public:
     TraceManager *trace_manager;
     // Demod related
     DemodSettings *demod_settings;
-    IQCapture *iq_capture;
+    IQSweep iq_capture;
     // Audio related
     AudioSettings *audio_settings;
     // Preferences/General Settings

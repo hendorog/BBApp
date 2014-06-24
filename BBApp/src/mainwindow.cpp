@@ -41,9 +41,12 @@ MainWindow::MainWindow(QWidget *parent)
     measure_panel = new MeasurePanel(tr("Traces and Markers"), this,
                                      session->trace_manager);
     measure_panel->setObjectName("TraceMarkerPanel");
+    demodPanel = new DemodPanel(tr("Demod Settings"), this, session->demod_settings);
+    demodPanel->setObjectName("DemodSettingsPanel");
 
     addDockWidget(Qt::RightDockWidgetArea, sweep_panel);
     addDockWidget(Qt::LeftDockWidgetArea, measure_panel);
+    addDockWidget(Qt::RightDockWidgetArea, demodPanel);
 
     status_bar = new BBStatusBar();
     setStatusBar(status_bar);
@@ -56,13 +59,16 @@ MainWindow::MainWindow(QWidget *parent)
     connect(sweepCentral, SIGNAL(presetDevice()), this, SLOT(presetDevice()));
     centralStack->AddWidget(sweepCentral);
 
-    //demodCentral = new DemodCentral(session);
-    //centralStack->AddWidget(demodCentral);
+    demodCentral = new DemodCentral(session);
+    centralStack->AddWidget(demodCentral);
 
     setCentralWidget(centralStack);
-    //centralStack->setCurrentWidget(demodCentral);
 
     RestoreState();
+
+    sweep_panel->show();
+    measure_panel->show();
+    demodPanel->hide();
 
     connect(session->device, SIGNAL(connectionIssues()), this, SLOT(forceDisconnectDevice()));
 
@@ -204,15 +210,10 @@ void MainWindow::InitMenuBar()
     mode_action->setCheckable(true);
     mode_action_group->addAction(mode_action);
 
-//    mode_action = mode_menu->addAction(tr("Zero-Span"));
-//    mode_action->setData(MODE_ZERO_SPAN);
-//    mode_action->setCheckable(true);
-//    mode_action_group->addAction(mode_action);
-
-//    mode_action = mode_menu->addAction(tr("Time-Gate"));
-//    mode_action->setData(MODE_TIME_GATE);
-//    mode_action->setCheckable(true);
-//    mode_action_group->addAction(mode_action);
+    mode_action = mode_menu->addAction(tr("Zero-Span"));
+    mode_action->setData(MODE_ZERO_SPAN);
+    mode_action->setCheckable(true);
+    mode_action_group->addAction(mode_action);
 
     connect(mode_action_group, SIGNAL(triggered(QAction*)),
             this, SLOT(modeChanged(QAction*)));
@@ -252,6 +253,7 @@ void MainWindow::SaveState()
 
     sweep_panel->SaveState(settings);
     measure_panel->SaveState(settings);
+    demodPanel->SaveState(settings);
 }
 
 /*
@@ -291,6 +293,7 @@ void MainWindow::RestoreState()
 
     sweep_panel->RestoreState(settings);
     measure_panel->RestoreState(settings);
+    demodPanel->RestoreState(settings);
 }
 
 /*
@@ -448,8 +451,16 @@ void MainWindow::deviceConnected(bool success)
 
         status_bar->SetDeviceType(session->device->GetDeviceString());
         status_bar->UpdateDeviceInfo(device_string);
-        //central_widget->changeMode(BB_SWEEPING);
+
         centralStack->CurrentWidget()->changeMode(BB_SWEEPING);
+
+//        QList<QAction*> mode_list = mode_menu->actions();
+//        for(QAction *action : mode_list) {
+//            if(action->data().toInt() == MODE_SWEEPING) {
+//                mode_menu->setActiveAction(action);
+//                break;
+//            }
+//        }
 
         if(session->device->DeviceType() == BB_DEVICE_BB60A) {
             SweepSettings::maxRealTimeSpan = BB60A_MAX_RT_SPAN;
@@ -610,8 +621,23 @@ void MainWindow::loadPresetNames()
 
 void MainWindow::modeChanged(QAction *a)
 {
-    //central_widget->changeMode(a->data().toInt());
-    centralStack->CurrentWidget()->changeMode(a->data().toInt());
+    centralStack->CurrentWidget()->StopStreaming();
+
+    int newMode = a->data().toInt();
+
+    if(newMode == MODE_ZERO_SPAN) {
+        centralStack->setCurrentWidget(demodCentral);
+        sweep_panel->hide();
+        measure_panel->hide();
+        demodPanel->show();
+    } else {
+        demodPanel->hide();
+        sweep_panel->show();
+        measure_panel->show();
+        centralStack->setCurrentWidget(sweepCentral);
+    }
+
+    centralStack->CurrentWidget()->changeMode(newMode);
 }
 
 void MainWindow::startAudioPlayer()

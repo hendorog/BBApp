@@ -20,7 +20,9 @@ enum TriggerEdge {
     TriggerEdgeFalling = 1
 };
 
-class DemodSettings {
+class DemodSettings : public QObject {
+    Q_OBJECT
+
 public:
     DemodSettings();
     DemodSettings(const DemodSettings &other);
@@ -48,10 +50,13 @@ public:
     Amplitude TrigAmplitude() const { return trigAmplitude; }
 
 private:
+    // Call before updating, configures an appropriate sweep time value
+    void ClampSweepTime();
+
     Amplitude inputPower;
     Frequency centerFreq;
-    int gain;
-    int atten;
+    int gain; // Index, 0 == auto
+    int atten; // Index, 0 == auto
     int decimationFactor;
     Frequency bandwidth;
     Frequency vbw;
@@ -60,6 +65,23 @@ private:
     TriggerType trigType;
     TriggerEdge trigEdge;
     Amplitude trigAmplitude;
+
+public slots:
+    void setInputPower(Amplitude);
+    void setCenterFreq(Frequency);
+    void setGain(int);
+    void setAtten(int);
+    void setDecimation(int);
+    void setBandwidth(Frequency);
+    void setVBW(Frequency);
+    void setSweepTime(Time);
+
+    void setTrigType(int);
+    void setTrigEdge(int);
+    void setTrigAmplitude(Amplitude);
+
+signals:
+    void updated(const DemodSettings*);
 };
 
 // Descriptor for the device IQ stream
@@ -68,37 +90,34 @@ struct IQDescriptor {
         sampleRate = 0;
         decimation = 0;
         timeDelta = 0.0;
-        totalSamples = 0;
+        returnLen = 0;
         bandwidth = 0.0;
     }
 
     int sampleRate;
     int decimation;
     double timeDelta; // Delta 'time' per sample in seconds?
-    int totalSamples;
+    int returnLen;
     double bandwidth;
 };
 
 // Represents a single
 struct IQCapture {
-    IQCapture() :
-        capture(nullptr)
+    IQCapture()
     {
         simdZero_32s(triggers, 70);
     }
-    ~IQCapture()
-    {
-        if(capture) delete [] capture;
-    }
+    ~IQCapture() {}
 
     IQDescriptor desc;
-    complex_f *capture;
+    std::vector<complex_f> capture;
     int triggers[70];
 };
 
 // One full sweep
-struct IQSweep {
-    complex_f *sweep;
-};
+typedef struct IQSweep {
+    std::vector<complex_f> sweep;
+    int len;
+} IQSweep;
 
 #endif // DEMOD_SETTINGS_H

@@ -34,6 +34,7 @@ protected:
     void resizeEvent(QResizeEvent *);
 
 private:
+    void Reconfigure(DemodSettings *ds, IQCapture *iqc);
     void StreamThread();
     void UpdateView();
 
@@ -43,12 +44,15 @@ private:
     QMdiArea *demodArea;
     DemodIQTimePlot *plot;
 
+    DemodSettings lastConfig;
     std::atomic<int> captureCount;
     std::thread threadHandle;
     bool streaming;
+    bool reconfigure;
 
 public slots:
     void changeMode(int newState);
+    void updateSettings(const DemodSettings *ds);
 
 private slots:
 
