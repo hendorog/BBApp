@@ -41,7 +41,9 @@ SOURCES += src/main.cpp \
     src/model/demod_settings.cpp \
     src/views/demod_central.cpp \
     src/views/demod_iq_time_plot.cpp \
-    src/widgets/demod_panel.cpp
+    src/widgets/demod_panel.cpp \
+    src/kiss_fft/kiss_fft.c \
+    src/views/demod_spectrum.cpp
 
 HEADERS += src/mainwindow.h \
     src/lib/frequency.h \
@@ -82,7 +84,10 @@ HEADERS += src/mainwindow.h \
     src/views/demod_central.h \
     src/views/central_stack.h \
     src/views/demod_iq_time_plot.h \
-    src/views/gl_sub_view.h
+    src/views/gl_sub_view.h \
+    src/kiss_fft/kiss_fft.h \
+    src/kiss_fft/kissfft.hh \
+    src/views/demod_spectrum.h
 
 OTHER_FILES += \
     style_sheet.css \
@@ -92,7 +97,7 @@ OTHER_FILES += \
 LIBS += \
     -Ldebug -lbb_api
 
-INCLUDEPATH += src
+INCLUDEPATH += src external_libraries
 
 RC_FILE = bb_app.rc
 

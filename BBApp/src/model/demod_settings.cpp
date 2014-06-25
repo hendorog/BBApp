@@ -214,13 +214,13 @@ void DemodSettings::setSweepTime(Time t)
 
 void DemodSettings::setTrigType(int tt)
 {
-    trigType = tt;
+    trigType = (TriggerType)tt;
     emit updated(this);
 }
 
 void DemodSettings::setTrigEdge(int te)
 {
-    trigEdge = te;
+    trigEdge = (TriggerEdge)te;
     emit updated(this);
 }
 
