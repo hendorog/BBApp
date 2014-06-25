@@ -600,6 +600,17 @@ void build_blackman_window(float *window, int len)
     }
 }
 
+void build_blackman_window(complex_f *dst, int len)
+{
+    std::vector<float> temp;
+    temp.resize(len);
+    build_blackman_window(&temp[0], len);
+
+    for(int i = 0; i < len; i++) {
+        dst[i].re = dst[i].im = temp[i];
+    }
+}
+
 void demod_am(const complex_f *src, float *dst, int len)
 {
     for(int i = 0; i < len; i++) {

@@ -1,8 +1,7 @@
 #include "demod_iq_time_plot.h"
 
 DemodIQTimePlot::DemodIQTimePlot(Session *session, QWidget *parent) :
-    QGLWidget(parent),
-    session_ptr(session)
+    GLSubView(session, parent)
 {
     for(int i = 0; i < 11; i++) {
         grat.push_back(0.0);
@@ -30,7 +29,6 @@ DemodIQTimePlot::DemodIQTimePlot(Session *session, QWidget *parent) :
     gratBorder.push_back(0.0);
 
     makeCurrent();
-    initializeOpenGLFunctions();
 
     glShadeModel(GL_SMOOTH);
     glClearDepth(1.0);

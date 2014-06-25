@@ -21,6 +21,7 @@
 #include "frequency.h"
 #include "amplitude.h"
 #include "time_type.h"
+#include "kiss_fft/kissfft.hh"
 
 class Trace;
 
@@ -252,6 +253,16 @@ inline void simdZero_32s(int *srcDst, int len)
     memset(srcDst, 0, len * sizeof(int));
 }
 
+// In-place possible
+inline void simdMul_32fc(const complex_f *src1, const complex_f *src2, complex_f *dst, int len)
+{
+    for(int i = 0 ; i < len; i++) {
+        float r = src1[i].re * src2[i].re - src1[i].im * src2[i].im;
+        dst[i].im = src1[i].re * src2[i].im + src1[i].im * src2[i].re;
+        dst[i].re = r;
+    }
+}
+
 namespace bb_lib {
 
 // Returns true if a new value was retrieved
@@ -419,8 +430,38 @@ void normalize_trace(const Trace *t, GLVector &vector, QPoint grat_size);
 //void normalize_trace(const Trace *t, LineList &ll, QSize grat_size);
 
 void build_blackman_window(float *dst, int len);
+void build_blackman_window(complex_f *dst, int len);
 
 void demod_am(const complex_f *src, float *dst, int len);
 void demod_fm(const complex_f *src, float *dst, int len, double *phase);
+
+// FFT complex-to-complex
+// Blackman window
+class FFT {
+    typedef std::complex<float> kiss_cplx;
+    typedef kissfft<float> fft_32f;
+public:
+    FFT(int len, bool inverse = false) :
+        fft_length(len)
+    {
+        fft_state = std::unique_ptr<fft_32f>(new fft_32f(fft_length, inverse));
+        window.resize(fft_length);
+        work.resize(fft_length);
+        build_blackman_window(&window[0], fft_length);
+    }
+    ~FFT() {}
+
+    void Transform(const complex_f *input, complex_f *output)
+    {
+        simdMul_32fc(input, &window[0], &work[0], fft_length); // Window data
+        fft_state->transform((kiss_cplx*)(&work[0]), (kiss_cplx*)output);
+    }
+
+private:
+    std::unique_ptr<fft_32f> fft_state;
+    std::vector<complex_f> window;
+    std::vector<complex_f> work;
+    int fft_length;
+};
 
 #endif // BB_LIB_H

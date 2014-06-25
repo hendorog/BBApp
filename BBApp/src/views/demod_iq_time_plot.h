@@ -1,13 +1,12 @@
 #ifndef DEMOD_IQ_TIME_PLOT_H
 #define DEMOD_IQ_TIME_PLOT_H
 
-#include <QOpenGLFunctions>
-#include <QGLWidget>
+#include "gl_sub_view.h"
 
 #include "lib/bb_lib.h"
 #include "model/session.h"
 
-class DemodIQTimePlot : public QGLWidget, public QOpenGLFunctions {
+class DemodIQTimePlot : public GLSubView {
     Q_OBJECT
 
 public:

@@ -2,6 +2,8 @@
 #include <complex>
 #include <vector>
 
+#pragma warning(disable:4267)
+
 namespace kissfft_utils {
 
 template <typename T_scalar>
@@ -264,7 +266,11 @@ class kissfft
             cpx_type * twiddles = &_twiddles[0];
             cpx_type t;
             int Norig = _nfft;
-            cpx_type scratchbuf[p];
+
+            std::vector<cpx_type> scratchbuf;
+            scratchbuf.resize(p);
+            // Replaced with above
+            //cpx_type scratchbuf[p];
 
             for ( u=0; u<m; ++u ) {
                 k=u;
