@@ -1,6 +1,7 @@
 #include "demod_central.h"
 
 #include "demod_iq_time_plot.h"
+#include "demod_spectrum_plot.h"
 
 DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     CentralWidget(parent, f),
@@ -16,15 +17,16 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     demodArea = new QMdiArea(this);
     demodArea->move(0, TOOLBAR_HEIGHT);
 
-//    plot = new DemodIQTimePlot(sPtr);
-//    demodArea->addSubWindow(plot);
-//    demodArea->tileSubWindows();
-//    connect(this, SIGNAL(updateView()), plot, SLOT(update()));
+    DemodSpectrumPlot *freqPlt = new DemodSpectrumPlot(sPtr);
+    freqPlt->setWindowTitle(tr("Spectrum Plot"));
+    demodArea->addSubWindow(freqPlt);
+    demodArea->tileSubWindows();
+    connect(this, SIGNAL(updateView()), freqPlt, SLOT(update()));
 
     plot = new DemodIQTimePlot(sPtr);
+    plot->setWindowTitle(tr("IQ Plot"));
     demodArea->addSubWindow(plot);
     demodArea->tileSubWindows();
-
     connect(this, SIGNAL(updateView()), plot, SLOT(update()));
 
     connect(sessionPtr->demod_settings, SIGNAL(updated(const DemodSettings*)),

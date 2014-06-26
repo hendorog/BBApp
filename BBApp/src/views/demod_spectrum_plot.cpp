@@ -1,7 +1,7 @@
-#include "demod_iq_time_plot.h"
+#include "demod_spectrum_plot.h"
 
-DemodIQTimePlot::DemodIQTimePlot(Session *session, QWidget *parent) :
-    GLSubView(session, parent),
+DemodSpectrumPlot::DemodSpectrumPlot(Session *sPtr, QWidget *parent) :
+    GLSubView(sPtr, parent),
     textFont("Arial", 14)
 {
     for(int i = 0; i < 11; i++) {
@@ -50,9 +50,11 @@ DemodIQTimePlot::DemodIQTimePlot(Session *session, QWidget *parent) :
                  &gratBorder[0], GL_STATIC_DRAW);
 
     doneCurrent();
+
+    fft = std::unique_ptr<FFT>(new FFT(1024, false));
 }
 
-DemodIQTimePlot::~DemodIQTimePlot()
+DemodSpectrumPlot::~DemodSpectrumPlot()
 {
     makeCurrent();
 
@@ -63,7 +65,7 @@ DemodIQTimePlot::~DemodIQTimePlot()
     doneCurrent();
 }
 
-void DemodIQTimePlot::resizeEvent(QResizeEvent *)
+void DemodSpectrumPlot::resizeEvent(QResizeEvent *)
 {
     grat_ll = QPoint(60, 50);
     grat_ul = QPoint(60, size().height() - 50);
@@ -72,7 +74,7 @@ void DemodIQTimePlot::resizeEvent(QResizeEvent *)
                      size().height() - 100);
 }
 
-void DemodIQTimePlot::paintEvent(QPaintEvent *)
+void DemodSpectrumPlot::paintEvent(QPaintEvent *)
 {
     makeCurrent();
 
@@ -127,41 +129,42 @@ void DemodIQTimePlot::paintEvent(QPaintEvent *)
 
     glLineWidth(1.0);
 
-    DrawIQLines();
-    DrawPlotText();
+    DrawSpectrum();
 
     swapBuffers();
     doneCurrent();
 }
 
-void DemodIQTimePlot::DrawIQLines()
+void DemodSpectrumPlot::DrawSpectrum()
 {
-    traces[0].clear();
-    traces[1].clear();
+    spectrum.clear();
 
-    const std::vector<complex_f> &iq = GetSession()->iq_capture.sweep;
+    postTransform.resize(1024);
 
-    if(iq.size() <= 0) return;
+    FFT fff(1024, false);
+    fff.Transform(&GetSession()->iq_capture.sweep[0], &postTransform[0]);
+    for(int i = 0; i < 1024; i++) {
+        postTransform[i].re /= 1024.0;
+        postTransform[i].im /= 1024.0;
+    }
 
-    glColor3f(1.0, 0.0, 0.0);
-
-    for(int i = 0; i < 1024/* iq.size()*/; i++) {
-        traces[0].push_back(i);
-        traces[0].push_back(iq[i].re);
-        traces[1].push_back(i);
-        traces[1].push_back(iq[i].im);
+    for(int i = 0; i < 1024; i++) {
+        spectrum.push_back((double)i / 1024.0);
+        double mag = postTransform[i].re * postTransform[i].re + postTransform[i].im * postTransform[i].im;
+        mag = 10.0 * log10(mag);
+        spectrum.push_back(mag);
     }
 
     glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    glScalef(1, 1, 1);
+    //glScalef(1, 1, 1);
 
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, iq.size(), -0.5, 0.5, -1, 1);
+    glOrtho(0, 1.0, -100.0, 0.0, -1, 1);
 
     // Nice lines, doesn't smooth quads
     glEnable(GL_BLEND);
@@ -171,9 +174,8 @@ void DemodIQTimePlot::DrawIQLines()
     glLineWidth(GetSession()->prefs.trace_width);
 
     qglColor(QColor(255, 0, 0));
-    DrawTrace(traces[0]);
-    qglColor(QColor(0, 255, 0));
-    DrawTrace(traces[1]);
+    DrawTrace(spectrum);
+    DrawPlotText();
 
     // Disable nice lines
     glLineWidth(1.0);
@@ -186,15 +188,14 @@ void DemodIQTimePlot::DrawIQLines()
     glPopMatrix();
 }
 
-void DemodIQTimePlot::DrawTrace(const GLVector &v)
+void DemodSpectrumPlot::DrawTrace(const GLVector &v)
 {
     if(v.size() < 2) {
         return;
     }
 
-    // Put the trace in the vbo
     glBindBuffer(GL_ARRAY_BUFFER, traceVBO);
-    glBufferData(GL_ARRAY_BUFFER, v.size()*sizeof(float),
+    glBufferData(GL_ARRAY_BUFFER, v.size() * sizeof(float),
                  &v[0], GL_DYNAMIC_DRAW);
     glVertexPointer(2, GL_FLOAT, 0, INDEX_OFFSET(0));
 
@@ -202,11 +203,10 @@ void DemodIQTimePlot::DrawTrace(const GLVector &v)
     glDrawArrays(GL_LINE_STRIP, 0, v.size() / 2);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    // Unbind array
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void DemodIQTimePlot::DrawPlotText()
+void DemodSpectrumPlot::DrawPlotText()
 {
     glPushAttrib(GL_VIEWPORT_BIT);
     glViewport(0, 0, width(), height());
@@ -222,31 +222,12 @@ void DemodIQTimePlot::DrawPlotText()
     const DemodSettings *ds = GetSession()->demod_settings;
     QString str;
 
-    glColor3f(1.0, 0.0, 0.0);
-    glBegin(GL_QUADS);
-    glVertex2i(grat_ul.x(), grat_ul.y() + 10); glVertex2i(grat_ul.x() + 15, grat_ul.y() + 10);
-    glVertex2i(grat_ul.x() + 15, grat_ul.y() + 25); glVertex2i(grat_ul.x(), grat_ul.y() + 25);
-    glVertex2i(grat_ul.x(), grat_ul.y() + 10);
-    glEnd();
-
-    glColor3f(0.0, 1.0, 0.0);
-    glBegin(GL_QUADS);
-    glVertex2i(grat_ul.x() + 40, grat_ul.y() + 10); glVertex2i(grat_ul.x() + 55, grat_ul.y() + 10);
-    glVertex2i(grat_ul.x() + 55, grat_ul.y() + 25); glVertex2i(grat_ul.x() + 40, grat_ul.y() + 25);
-    glVertex2i(grat_ul.x() + 40, grat_ul.y() + 10);
-    glEnd();
-
     glQColor(GetSession()->colors.text);
 
-    DrawString("I", textFont, QPoint(grat_ul.x() + 20, grat_ul.y() + 10), LEFT_ALIGNED);
-    DrawString("Q", textFont, QPoint(grat_ul.x() + 60, grat_ul.y() + 10), LEFT_ALIGNED);
-
-    str = "IF Bandwidth " + ds->Bandwidth().GetFreqString();
+    str = "Center Freq " + ds->CenterFreq().GetFreqString();
     DrawString(str, textFont, QPoint(grat_ll.x(), grat_ll.y() - 30), LEFT_ALIGNED);
-    str = "Capture Len " + ds->SweepTime().GetString();
+    str = "Span " + ds->Bandwidth().GetFreqString();
     DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x(), grat_ll.y() - 30), RIGHT_ALIGNED);
-    str = "Sample Rate " + QVariant(40.0 / (1 << ds->DecimationFactor())).toString() + " MS/s";
-    DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x(), grat_ul.y() + 10), RIGHT_ALIGNED);
 
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();

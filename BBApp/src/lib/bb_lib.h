@@ -243,6 +243,11 @@ inline void simdCopy_32f(const float *src, float *dst, int len)
     memcpy(dst, src, len * sizeof(float));
 }
 
+inline void simdCopy_32fc(const complex_f *src, complex_f *dst, int len)
+{
+    memcpy(dst, src, len * sizeof(complex_f));
+}
+
 inline void simdMove_32f(const float *src, float *dst, int len)
 {
     memmove(dst, src, len * sizeof(float));
@@ -454,7 +459,10 @@ public:
     void Transform(const complex_f *input, complex_f *output)
     {
         simdMul_32fc(input, &window[0], &work[0], fft_length); // Window data
-        fft_state->transform((kiss_cplx*)(&work[0]), (kiss_cplx*)output);
+        fft_state->transform((kiss_cplx*)(&work[0]), (kiss_cplx*)&output[0]);
+        simdCopy_32fc(&output[fft_length/2], &work[0], fft_length/2);
+        simdCopy_32fc(&output[0], &output[fft_length/2], fft_length/2);
+        simdCopy_32fc(&work[0], &output[0], fft_length/2);
     }
 
 private:

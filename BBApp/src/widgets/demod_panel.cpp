@@ -76,6 +76,8 @@ DemodPanel::DemodPanel(const QString &title,
             settings, SLOT(setAtten(int)));
     connect(decimationEntry, SIGNAL(comboIndexChanged(int)),
             settings, SLOT(setDecimation(int)));
+    connect(bandwidthEntry, SIGNAL(freqViewChanged(Frequency)),
+            settings, SLOT(setBandwidth(Frequency)));
     connect(vbwEntry, SIGNAL(freqViewChanged(Frequency)),
             settings, SLOT(setVBW(Frequency)));
     connect(sweepTimeEntry, SIGNAL(timeChanged(Time)),

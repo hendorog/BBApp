@@ -188,11 +188,11 @@ void DemodSettings::setDecimation(int d)
 void DemodSettings::setBandwidth(Frequency bw)
 {
     if(bw > iq_auto_bandwidth_lut[decimationFactor].bandwidth) {
-        bw = iq_auto_bandwidth_lut[decimationFactor].bandwidth;
+        //bw = iq_auto_bandwidth_lut[decimationFactor].bandwidth;
     }
 
     if(bw < 100.0e3) {
-        bw = 100.0e3;
+        //bw = 100.0e3;
     }
 
     bandwidth = bw;

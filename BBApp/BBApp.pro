@@ -43,7 +43,7 @@ SOURCES += src/main.cpp \
     src/views/demod_iq_time_plot.cpp \
     src/widgets/demod_panel.cpp \
     src/kiss_fft/kiss_fft.c \
-    src/views/demod_spectrum.cpp
+    src/views/demod_spectrum_plot.cpp
 
 HEADERS += src/mainwindow.h \
     src/lib/frequency.h \
@@ -87,7 +87,7 @@ HEADERS += src/mainwindow.h \
     src/views/gl_sub_view.h \
     src/kiss_fft/kiss_fft.h \
     src/kiss_fft/kissfft.hh \
-    src/views/demod_spectrum.h
+    src/views/demod_spectrum_plot.h
 
 OTHER_FILES += \
     style_sheet.css \

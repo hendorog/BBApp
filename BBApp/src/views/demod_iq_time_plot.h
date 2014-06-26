@@ -4,7 +4,6 @@
 #include "gl_sub_view.h"
 
 #include "lib/bb_lib.h"
-#include "model/session.h"
 
 class DemodIQTimePlot : public GLSubView {
     Q_OBJECT
@@ -20,8 +19,7 @@ protected:
 private:
     void DrawIQLines();
     void DrawTrace(const GLVector &v);
-
-    Session *session_ptr;
+    void DrawPlotText();
 
     QPoint grat_sz, grat_ul, grat_ll;
     GLVector grat, gratBorder;
@@ -30,6 +28,8 @@ private:
     // I/Q traces
     GLVector traces[2];
     GLuint traceVBO;
+
+    GLFont textFont;
 
 public slots:
 

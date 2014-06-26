@@ -7,8 +7,7 @@
 #include <QFontMetrics>
 
 #include "lib/bb_lib.h"
-
-class Session;
+#include "model/session.h"
 
 // Cache Metrics with Font
 class GLFont {
