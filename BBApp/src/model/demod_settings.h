@@ -42,7 +42,9 @@ public:
     int Atten() const { return atten; }
     int DecimationFactor() const { return decimationFactor; }
     Frequency Bandwidth() const { return bandwidth; }
+    bool AutoBandwidth() const { return autoBandwidth; }
     Frequency VBW() const { return vbw; }
+    bool AutoVBW() const { return autoVBW; }
     Time SweepTime() const { return sweepTime; }
 
     TriggerType TrigType() const { return trigType; }
@@ -52,6 +54,7 @@ public:
 private:
     // Call before updating, configures an appropriate sweep time value
     void ClampSweepTime();
+    void UpdateAutoBandwidths();
 
     Amplitude inputPower;
     Frequency centerFreq;
@@ -59,7 +62,9 @@ private:
     int atten; // Index, 0 == auto
     int decimationFactor;
     Frequency bandwidth;
+    bool autoBandwidth;
     Frequency vbw;
+    bool autoVBW;
     Time sweepTime;
 
     TriggerType trigType;
@@ -73,7 +78,9 @@ public slots:
     void setAtten(int);
     void setDecimation(int);
     void setBandwidth(Frequency);
+    void setAutoBandwidth(bool);
     void setVBW(Frequency);
+    void setAutoVBW(bool);
     void setSweepTime(Time);
 
     void setTrigType(int);

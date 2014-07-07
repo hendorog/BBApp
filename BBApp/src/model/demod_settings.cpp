@@ -30,6 +30,34 @@ void get_next_iq_bandwidth(Frequency current,
 
 }
 
+// Index is the decimation index
+static double bin_size_table[] = {
+    1.0 / 40.0e6,
+    1.0 / 20.0e6,
+    1.0 / 10.0e6,
+    1.0 / 5.0e6,
+    1.0 / 2.5e6,
+    1.0 / 1.25e6,
+    1.0 / 0.625e6,
+    1.0 / 0.3125e6,
+    1.0 / 0.15625e6
+};
+static int bin_size_table_sz =
+        sizeof(bin_size_table) / sizeof(double);
+
+static double max_bw_table[] = {
+    27.0e6,
+    17.8e6,
+    8.0e6,
+    3.75e6,
+    2.0e6,
+    1.0e6,
+    0.5e6,
+    0.25e6
+};
+static int max_bandwidth_sz =
+        sizeof(max_bw_table) / sizeof(double);
+
 DemodSettings::DemodSettings()
 {
     LoadDefaults();
@@ -48,7 +76,9 @@ DemodSettings& DemodSettings::operator=(const DemodSettings &other)
     atten = other.Atten();
     decimationFactor = other.DecimationFactor();
     bandwidth = other.Bandwidth();
+    autoBandwidth = other.AutoBandwidth();
     vbw = other.VBW();
+    autoVBW = other.AutoVBW();
     sweepTime = other.SweepTime();
 
     trigType = other.TrigType();
@@ -66,7 +96,9 @@ bool DemodSettings::operator==(const DemodSettings &other) const
     if(atten != other.Atten()) return false;
     if(decimationFactor != other.DecimationFactor()) return false;
     if(bandwidth != other.Bandwidth()) return false;
+    if(autoBandwidth != other.AutoBandwidth()) return false;
     if(vbw != other.VBW()) return false;
+    if(autoVBW != other.AutoVBW()) return false;
     if(sweepTime != other.SweepTime()) return false;
 
     if(trigType != other.TrigType()) return false;
@@ -88,8 +120,11 @@ void DemodSettings::LoadDefaults()
     gain = 0; // Index, 0 == auto
     atten = 0; // Index, 0 == auto
     decimationFactor = 6;
-    bandwidth = iq_auto_bandwidth_lut[decimationFactor].bandwidth;
+    //bandwidth = iq_auto_bandwidth_lut[decimationFactor].bandwidth;
+    bandwidth = max_bw_table[decimationFactor];
+    autoBandwidth = true;
     vbw = bandwidth;
+    autoVBW = true;
     sweepTime = 1.0e-3;
 
     trigType = TriggerTypeNone;
@@ -105,7 +140,9 @@ bool DemodSettings::Load(QSettings &s)
     atten = s.value("Demod/Atten", Atten()).toInt();
     decimationFactor = s.value("Demod/Decimation", DecimationFactor()).toInt();
     bandwidth = s.value("Demod/Bandwidth", Bandwidth().Val()).toDouble();
+    autoBandwidth = s.value("Demod/AutoBandwidth", AutoBandwidth()).toBool();
     vbw = s.value("Demod/VBW", VBW().Val()).toDouble();
+    autoVBW = s.value("Demod/AutoVBW", AutoVBW()).toBool();
     sweepTime = s.value("Demod/SweepTime", SweepTime().Val()).toDouble();
 
     trigType = (TriggerType)s.value("Demod/TriggerType", TrigType()).toInt();
@@ -124,7 +161,9 @@ bool DemodSettings::Save(QSettings &s) const
     s.setValue("Demod/Atten", Atten());
     s.setValue("Demod/Decimation", DecimationFactor());
     s.setValue("Demod/Bandwidth",Bandwidth().Val());
+    s.setValue("Demod/AutoBandwidth", AutoBandwidth());
     s.setValue("Demod/VBW", VBW().Val());
+    s.setValue("Demod/AutoVBW", AutoVBW());
     s.setValue("Demod/SweepTime", SweepTime().Val());
 
     s.setValue("Demod/TriggerType", TrigType());
@@ -182,33 +221,56 @@ void DemodSettings::setDecimation(int d)
     if(d > 7) d = 7;
 
     decimationFactor = d;
+
+    UpdateAutoBandwidths();
+    ClampSweepTime();
+
     emit updated(this);
 }
 
 void DemodSettings::setBandwidth(Frequency bw)
 {
-    if(bw > iq_auto_bandwidth_lut[decimationFactor].bandwidth) {
-        //bw = iq_auto_bandwidth_lut[decimationFactor].bandwidth;
-    }
+    autoBandwidth = false;
+    double maxBandwidth = max_bw_table[decimationFactor];
 
     if(bw < 100.0e3) {
-        //bw = 100.0e3;
+        bandwidth = 100.0e3;
+    } else if(bw > maxBandwidth) {
+        bandwidth = maxBandwidth;
+    } else {
+        bandwidth = bw;
     }
 
-    bandwidth = bw;
+    UpdateAutoBandwidths();
+    emit updated(this);
+}
+
+void DemodSettings::setAutoBandwidth(bool setAuto)
+{
+    autoBandwidth = setAuto;
+    UpdateAutoBandwidths();
     emit updated(this);
 }
 
 void DemodSettings::setVBW(Frequency v)
 {
+    autoVBW = false;
     vbw = v;
     emit updated(this);
 }
 
-// Must clamp sweep time to reasonable values
+void DemodSettings::setAutoVBW(bool setAuto)
+{
+    autoVBW = setAuto;
+    UpdateAutoBandwidths();
+    emit updated(this);
+}
+
+// Clamp sweep time to at most represent 32k points?
 void DemodSettings::setSweepTime(Time t)
 {
     sweepTime = t;
+    ClampSweepTime();
     emit updated(this);
 }
 
@@ -232,10 +294,24 @@ void DemodSettings::setTrigAmplitude(Amplitude ta)
 
 void DemodSettings::ClampSweepTime()
 {
-    double sampleDelta = 0.000000025 * (1 << decimationFactor);
-    double maxSeconds = MAX_IQ_SWEEP_LEN * sampleDelta;
+    // Clamp sweep time to a min/max sweepCount
+    double binSize = bin_size_table[decimationFactor];
+    int sweepLen = sweepTime.Val() / binSize;
 
-    if(sweepTime > maxSeconds) {
-        sweepTime = maxSeconds;
+    if(sweepLen < MIN_IQ_SWEEP_LEN) {
+        sweepTime = binSize * MIN_IQ_SWEEP_LEN;
+    } else if(sweepLen > MAX_IQ_SWEEP_LEN) {
+        sweepTime = binSize * MAX_IQ_SWEEP_LEN;
+    }
+}
+
+void DemodSettings::UpdateAutoBandwidths()
+{
+    if(autoBandwidth) {
+        bandwidth = max_bw_table[decimationFactor];
+    }
+
+    if(autoVBW) {
+        vbw = bandwidth;
     }
 }

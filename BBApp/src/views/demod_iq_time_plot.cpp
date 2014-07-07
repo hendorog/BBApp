@@ -145,7 +145,7 @@ void DemodIQTimePlot::DrawIQLines()
 
     glColor3f(1.0, 0.0, 0.0);
 
-    for(int i = 0; i < 1024/* iq.size()*/; i++) {
+    for(int i = 0; i < iq.size(); i++) {
         traces[0].push_back(i);
         traces[0].push_back(iq[i].re);
         traces[1].push_back(i);

@@ -456,6 +456,7 @@ public:
     }
     ~FFT() {}
 
+    int Length() const { return fft_length; }
     void Transform(const complex_f *input, complex_f *output)
     {
         simdMul_32fc(input, &window[0], &work[0], fft_length); // Window data

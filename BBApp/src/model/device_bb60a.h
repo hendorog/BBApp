@@ -24,6 +24,9 @@ public:
     bool IsPowered() const;
 
 private:
+
+
+private:
     DISALLOW_COPY_AND_ASSIGN(DeviceBB60A)
 };
 

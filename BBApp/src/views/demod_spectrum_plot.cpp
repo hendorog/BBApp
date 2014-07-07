@@ -139,7 +139,14 @@ void DemodSpectrumPlot::DrawSpectrum()
 {
     spectrum.clear();
 
+    const IQSweep &sweep = GetSession()->iq_capture;
+
+    // May need to resize the fft if it goes below 1024
+    int fftSize = fft->Length() // Here
+
+
     postTransform.resize(1024);
+
 
     FFT fff(1024, false);
     fff.Transform(&GetSession()->iq_capture.sweep[0], &postTransform[0]);

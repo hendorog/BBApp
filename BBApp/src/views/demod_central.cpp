@@ -91,12 +91,11 @@ void DemodCentral::Reconfigure(DemodSettings *ds, IQCapture *iqc)
     iqc->capture.resize(iqc->desc.returnLen);
 
     int sweepLen = ds->SweepTime().Val() / iqc->desc.timeDelta;
-    sweepLen = iqc->desc.returnLen;
+    qDebug() << sweepLen << "\n";
+    qDebug() << iqc->desc.decimation << "\n";
 
     sessionPtr->iq_capture.len = sweepLen;
-    sessionPtr->iq_capture.sweep.resize(sweepLen*4);
-
-    qDebug() << sweepLen << "\n";
+    sessionPtr->iq_capture.sweep.resize(sweepLen);
 
     reconfigure = false;
 }
@@ -104,6 +103,8 @@ void DemodCentral::Reconfigure(DemodSettings *ds, IQCapture *iqc)
 void DemodCentral::StreamThread()
 {
     IQCapture iqc;
+    IQSweep &iqs = sessionPtr->iq_capture;
+
     Reconfigure(sessionPtr->demod_settings, &iqc);
 
     while(streaming) {
@@ -112,15 +113,15 @@ void DemodCentral::StreamThread()
             if(reconfigure) Reconfigure(sessionPtr->demod_settings, &iqc);
             qint64 start = bb_lib::get_ms_since_epoch();
 
-//            for(int i = 0; i < 4; i++) {
-//                sessionPtr->device->GetIQ(&iqc);
-//                for(int j = 0, k = i * iqc.desc.returnLen; j < iqc.desc.returnLen; j++, k++) {
-//                    sessionPtr->iq_capture.sweep[k] = iqc.capture[j];
-//                }
-//            }
+            int retrieved = 0, toRetrieve = iqs.len;
 
-            sessionPtr->device->GetIQ(&iqc);
-            sessionPtr->iq_capture.sweep = iqc.capture;
+            while(toRetrieve > 0) {
+                sessionPtr->device->GetIQ(&iqc);
+                int toCopy = bb_lib::min2(toRetrieve, iqc.desc.returnLen);
+                simdCopy_32fc(&iqc.capture[0], &iqs.sweep[retrieved], toCopy);
+                toRetrieve -= toCopy;
+                retrieved += toCopy;
+            }
 
             UpdateView();
 

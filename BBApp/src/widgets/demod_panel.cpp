@@ -30,7 +30,9 @@ DemodPanel::DemodPanel(const QString &title,
     decimationEntry->setComboText(decimation_sl);
 
     bandwidthEntry = new FrequencyEntry(tr("IF BW"), 0.0);
+    autoBandwidthEntry = new CheckBoxEntry(tr("Auto IFBW"));
     vbwEntry = new FrequencyEntry(tr("VBW"), 0.0);
+    autoVideoEntry = new CheckBoxEntry(tr("Auto VBW"));
     sweepTimeEntry = new TimeEntry(tr("Swp Time"), Time(0.0), MILLISECOND);
 
     triggerTypeEntry = new ComboEntry(tr("Trigger Type"));
@@ -51,7 +53,9 @@ DemodPanel::DemodPanel(const QString &title,
     demodPage->AddWidget(attenEntry);
     demodPage->AddWidget(decimationEntry);
     demodPage->AddWidget(bandwidthEntry);
+    demodPage->AddWidget(autoBandwidthEntry);
     demodPage->AddWidget(vbwEntry);
+    demodPage->AddWidget(autoVideoEntry);
     demodPage->AddWidget(sweepTimeEntry);
 
     triggerPage->AddWidget(triggerTypeEntry);
@@ -78,8 +82,12 @@ DemodPanel::DemodPanel(const QString &title,
             settings, SLOT(setDecimation(int)));
     connect(bandwidthEntry, SIGNAL(freqViewChanged(Frequency)),
             settings, SLOT(setBandwidth(Frequency)));
+    connect(autoBandwidthEntry, SIGNAL(clicked(bool)),
+            settings, SLOT(setAutoBandwidth(bool)));
     connect(vbwEntry, SIGNAL(freqViewChanged(Frequency)),
             settings, SLOT(setVBW(Frequency)));
+    connect(autoVideoEntry, SIGNAL(clicked(bool)),
+            settings, SLOT(setAutoVBW(bool)));
     connect(sweepTimeEntry, SIGNAL(timeChanged(Time)),
             settings, SLOT(setSweepTime(Time)));
     connect(triggerTypeEntry, SIGNAL(comboIndexChanged(int)),
@@ -103,7 +111,9 @@ void DemodPanel::updatePanel(const DemodSettings *ds)
     attenEntry->setComboIndex(ds->Atten());
     decimationEntry->setComboIndex(ds->DecimationFactor());
     bandwidthEntry->SetFrequency(ds->Bandwidth());
+    autoBandwidthEntry->SetChecked(ds->AutoBandwidth());
     vbwEntry->SetFrequency(ds->VBW());
+    autoVideoEntry->SetChecked(ds->AutoVBW());
     sweepTimeEntry->SetTime(ds->SweepTime());
 
     triggerTypeEntry->setComboIndex(ds->TrigType());

@@ -25,11 +25,14 @@
 
 #define PHASE_TO_FREQ (80.0e6 / BB_TWO_PI)
 
+// Minimum IQ sweep length
+// Ensures we can still do a 16 point FFT
+const int MIN_IQ_SWEEP_LEN = 20;
 // Absolute maximum sweep length regardless of decimation rate
 // This creates a shorter maximum sweep time when the decimation
 //  is lower. This number should be reasonable as the entirety of
 //  the sweep will be plotted.
-const int MAX_IQ_SWEEP_LEN = 16384;
+const int MAX_IQ_SWEEP_LEN = 32768;
 
 #define DISALLOW_COPY_AND_ASSIGN(class_name) \
     class_name(class_name&); \

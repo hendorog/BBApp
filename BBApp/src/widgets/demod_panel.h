@@ -22,7 +22,9 @@ private:
     ComboEntry *attenEntry;
     ComboEntry *decimationEntry;
     FrequencyEntry *bandwidthEntry;
+    CheckBoxEntry *autoBandwidthEntry;
     FrequencyEntry *vbwEntry;
+    CheckBoxEntry *autoVideoEntry;
     TimeEntry *sweepTimeEntry;
 
     ComboEntry *triggerTypeEntry;

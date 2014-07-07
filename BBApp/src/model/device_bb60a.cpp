@@ -156,7 +156,7 @@ bool DeviceBB60A::Reconfigure(const DemodSettings *ds, IQDescriptor *desc)
     int gain = ds->Gain() - 1, atten = (ds->Atten() - 1) * 10.0;
     if(gain < 0) gain = BB_AUTO_GAIN;
     if(atten < 0) atten = BB_AUTO_ATTEN;
-    int decimation = 0x1 << (ds->DecimationFactor() - 1);
+    int decimation = 0x1 << (ds->DecimationFactor());
 
     bbConfigureCenterSpan(id, ds->CenterFreq(), 20.0e6);
     bbConfigureIQ(id, decimation, ds->Bandwidth());

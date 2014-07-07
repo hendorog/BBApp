@@ -471,8 +471,7 @@ void TraceView::RenderGratText()
         DrawString(str, GLFont("Arial", 20), width() / 2, height() - 22, CENTER_ALIGNED);
     }
 
-    str.sprintf("Elapsed %d, SweepSize %d", elapsed.toInt(),
-                tm->GetTrace(0)->Length());
+    str.sprintf("%d pts in %d ms", tm->GetTrace(0)->Length(), elapsed.toInt());
     DrawString(str, textFont, grat_ll.x()+grat_sz.x()-5,
                grat_ll.y()-40, RIGHT_ALIGNED);
     DrawString("Center " + (s->Center() + freq_off).GetFreqString(), textFont,
@@ -517,7 +516,7 @@ void TraceView::RenderGratText()
     // Amplitude high warning
     if(GetSession()->trace_manager->LastTraceAboveReference()) {
         glColor3f(1.0, 0.0, 0.0);
-        DrawString("*Warning* : Signal Level Higher Than Reference Level", textFont,
+        DrawString("*Warning* : Signal Level Higher Than Ref Level", textFont,
                    (grat_ul.x() + grat_sz.x()) / 2.0, grat_ul.y() - 22, CENTER_ALIGNED);
     }
 
