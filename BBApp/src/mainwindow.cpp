@@ -377,7 +377,7 @@ void MainWindow::PresetDeviceInThread()
 
     progressDialog.makeDisappear();
 
-    session->sweep_settings->LoadDefaults();
+    session->LoadDefaults();
     OpenDeviceInThread();
     return;
 }
@@ -402,12 +402,10 @@ void MainWindow::connectDevice()
 void MainWindow::disconnectDevice()
 {
     // Stop any sweeping
-    //central_widget->changeMode(BB_IDLE);
-    //central_widget->ResetView();
     centralStack->CurrentWidget()->changeMode(BB_IDLE);
     centralStack->CurrentWidget()->ResetView();
 
-    //session->sweep_settings->LoadDefaults();
+    session->LoadDefaults();
     session->trace_manager->Reset();
 
     session->device->CloseDevice();

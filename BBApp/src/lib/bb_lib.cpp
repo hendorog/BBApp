@@ -136,8 +136,11 @@ GLShader::~GLShader()
     }
 }
 
+#include "C:\Program Files (x86)\Intel\Composer XE 2013\ipp\include\ipp.h"
+
+
 bool GLShader::Compile(QOpenGLFunctions *gl)
-{
+{    
     if(compiled == GL_TRUE) {
         return true;
     }
@@ -607,7 +610,42 @@ void build_blackman_window(complex_f *dst, int len)
     build_blackman_window(&temp[0], len);
 
     for(int i = 0; i < len; i++) {
-        dst[i].re = dst[i].im = temp[i];
+        dst[i].re = temp[i];
+        dst[i].im = 0.0;
+    }
+}
+
+void build_flattop_window(float *window, int len)
+{
+    for(int i = 0; i < len; i++) {
+        window[i] = 1 - 1.93*cos(2*BB_PI*i/(len-1))
+            + 1.29*cos(4*BB_PI*i/(len-1))
+            - 0.388*cos(6*BB_PI*i/(len-1))
+            + 0.028*cos(8*BB_PI*i/(len-1));
+    }
+
+    double windowAvg = 0.0, invAvg = 0.0;
+
+    for(int i = 0; i < len; i++) {
+        windowAvg += window[i];
+    }
+
+    invAvg = len / windowAvg;
+
+    for(int i = 0; i < len; i++) {
+        window[i] *= invAvg;
+    }
+}
+
+void build_flattop_window(complex_f *dst, int len)
+{
+    std::vector<float> temp;
+    temp.resize(len);
+    build_flattop_window(&temp[0], len);
+
+    for(int i = 0; i < len; i++) {
+        dst[i].re = temp[i];
+        dst[i].im = 0.0;
     }
 }
 

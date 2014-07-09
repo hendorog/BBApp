@@ -28,7 +28,7 @@ private:
 
     GLVector spectrum;
     GLuint traceVBO;
-    GLFont textFont;
+    GLFont textFont, divFont;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DemodSpectrumPlot)

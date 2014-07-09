@@ -28,7 +28,7 @@ class Trace;
 #define INDEX_OFFSET(x) ((GLvoid*)x)
 
 typedef unsigned long ulong;
-typedef struct complex_f { float re, im; } complex_f;
+struct complex_f { float re, im; };
 
 typedef QVector<QPointF> LineList;
 typedef std::vector<float> GLVector;
@@ -390,6 +390,31 @@ inline int fft_size_from_non_native_rbw(const double rbw) {
     return pow2(order);
 }
 
+// Rounds value up to the closest power of 2
+inline unsigned int round_up_power_two(unsigned int val)
+{
+    int retval = 1;
+    val -= 1; // so e.g. 256 becomes 255
+
+    while(val >= 1) {
+        val = val >> 1;
+        retval = retval << 1;
+    }
+
+    return retval;
+}
+
+inline unsigned int round_down_power_two(unsigned int val)
+{
+    int next = round_up_power_two(val);
+
+    if(next == val) {
+        return val;
+    }
+
+    return next >> 1;
+}
+
 // For non-native bandwidths only
 inline int get_flattop_bandwidth(double rbw) {
     return (rbw * (double)fft_size_from_non_native_rbw(rbw)) / 80.0e6;
@@ -436,6 +461,8 @@ void normalize_trace(const Trace *t, GLVector &vector, QPoint grat_size);
 
 void build_blackman_window(float *dst, int len);
 void build_blackman_window(complex_f *dst, int len);
+void build_flattop_window(float *dst, int len);
+void build_flattop_window(complex_f *dst, int len);
 
 void demod_am(const complex_f *src, float *dst, int len);
 void demod_fm(const complex_f *src, float *dst, int len, double *phase);
@@ -452,7 +479,7 @@ public:
         fft_state = std::unique_ptr<fft_32f>(new fft_32f(fft_length, inverse));
         window.resize(fft_length);
         work.resize(fft_length);
-        build_blackman_window(&window[0], fft_length);
+        build_flattop_window(&window[0], fft_length);
     }
     ~FFT() {}
 

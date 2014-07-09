@@ -2,6 +2,7 @@
 
 #include "demod_iq_time_plot.h"
 #include "demod_spectrum_plot.h"
+#include "demod_sweep_plot.h"
 
 DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     CentralWidget(parent, f),
@@ -14,20 +15,23 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     toolBar->layout()->setSpacing(0);
     toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_HEIGHT)));
 
-    demodArea = new QMdiArea(this);
+    demodArea = new MdiArea(this);
     demodArea->move(0, TOOLBAR_HEIGHT);
 
-    DemodSpectrumPlot *freqPlt = new DemodSpectrumPlot(sPtr);
-    freqPlt->setWindowTitle(tr("Spectrum Plot"));
-    demodArea->addSubWindow(freqPlt);
-    demodArea->tileSubWindows();
-    connect(this, SIGNAL(updateView()), freqPlt, SLOT(update()));
+    DemodSweepPlot *sweepPlot = new DemodSweepPlot(sPtr);
+    sweepPlot->setWindowTitle("Demod Plot");
+    demodArea->addSubWindow(sweepPlot);
+    connect(this, SIGNAL(updateView()), sweepPlot, SLOT(update()));
 
-    plot = new DemodIQTimePlot(sPtr);
-    plot->setWindowTitle(tr("IQ Plot"));
-    demodArea->addSubWindow(plot);
-    demodArea->tileSubWindows();
-    connect(this, SIGNAL(updateView()), plot, SLOT(update()));
+    DemodSpectrumPlot *freqPlot = new DemodSpectrumPlot(sPtr);
+    freqPlot->setWindowTitle(tr("Spectrum Plot"));
+    demodArea->addSubWindow(freqPlot);
+    connect(this, SIGNAL(updateView()), freqPlot, SLOT(update()));
+
+    DemodIQTimePlot *iqPlot = new DemodIQTimePlot(sPtr);
+    iqPlot->setWindowTitle(tr("IQ Plot"));
+    demodArea->addSubWindow(iqPlot);
+    connect(this, SIGNAL(updateView()), iqPlot, SLOT(update()));
 
     connect(sessionPtr->demod_settings, SIGNAL(updated(const DemodSettings*)),
             this, SLOT(updateSettings(const DemodSettings*)));
@@ -66,13 +70,16 @@ void DemodCentral::resizeEvent(QResizeEvent *)
 {
     toolBar->resize(width(), TOOLBAR_HEIGHT);
     demodArea->resize(width(), height() - TOOLBAR_HEIGHT);
-    demodArea->tileSubWindows();
+    //demodArea->tileSubWindows();
+    demodArea->retile();
 }
 
 void DemodCentral::changeMode(int newState)
 {
     StopStreaming();
     captureCount = -1;
+
+    sessionPtr->sweep_settings->setMode((OperationalMode)newState);
 
     if(newState == MODE_ZERO_SPAN) {
         StartStreaming();
@@ -91,8 +98,6 @@ void DemodCentral::Reconfigure(DemodSettings *ds, IQCapture *iqc)
     iqc->capture.resize(iqc->desc.returnLen);
 
     int sweepLen = ds->SweepTime().Val() / iqc->desc.timeDelta;
-    qDebug() << sweepLen << "\n";
-    qDebug() << iqc->desc.decimation << "\n";
 
     sessionPtr->iq_capture.len = sweepLen;
     sessionPtr->iq_capture.sweep.resize(sweepLen);

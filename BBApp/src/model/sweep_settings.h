@@ -51,6 +51,9 @@ public:
     int Detector() const { return detector; }
     bool Rejection() const { return rejection; }
 
+    // Call when you want to update the control panel
+    void EmitUpdated() { emit updated(this); }
+
     // Return string for displaying current attenuation value
     void GetAttenString(QString &str) const {
         if(attenuation == 0) {

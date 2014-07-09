@@ -1,7 +1,7 @@
-#include "demod_spectrum_plot.h"
+#include "demod_sweep_plot.h"
 
-DemodSpectrumPlot::DemodSpectrumPlot(Session *sPtr, QWidget *parent) :
-    GLSubView(sPtr, parent),
+DemodSweepPlot::DemodSweepPlot(Session *session, QWidget *parent) :
+    GLSubView(session, parent),
     textFont("Arial", 14),
     divFont("Arial", 12)
 {
@@ -51,11 +51,9 @@ DemodSpectrumPlot::DemodSpectrumPlot(Session *sPtr, QWidget *parent) :
                  &gratBorder[0], GL_STATIC_DRAW);
 
     doneCurrent();
-
-    fft = std::unique_ptr<FFT>(new FFT(1024, false));
 }
 
-DemodSpectrumPlot::~DemodSpectrumPlot()
+DemodSweepPlot::~DemodSweepPlot()
 {
     makeCurrent();
 
@@ -66,7 +64,7 @@ DemodSpectrumPlot::~DemodSpectrumPlot()
     doneCurrent();
 }
 
-void DemodSpectrumPlot::resizeEvent(QResizeEvent *)
+void DemodSweepPlot::resizeEvent(QResizeEvent *)
 {
     grat_ll = QPoint(60, 50);
     grat_ul = QPoint(60, size().height() - 50);
@@ -75,7 +73,7 @@ void DemodSpectrumPlot::resizeEvent(QResizeEvent *)
                      size().height() - 100);
 }
 
-void DemodSpectrumPlot::paintEvent(QPaintEvent *)
+void DemodSweepPlot::paintEvent(QPaintEvent *)
 {
     makeCurrent();
 
@@ -130,56 +128,38 @@ void DemodSpectrumPlot::paintEvent(QPaintEvent *)
 
     glLineWidth(1.0);
 
-    DrawSpectrum();
+    DemodAndDraw();
+    DrawPlotText();
 
     swapBuffers();
     doneCurrent();
 }
 
-void DemodSpectrumPlot::DrawSpectrum()
+void DemodSweepPlot::DemodAndDraw()
 {
-    spectrum.clear();
+    const IQSweep &iq = GetSession()->iq_capture;
+    if(iq.sweep.size() <= 1) return;
 
-    const IQSweep &sweep = GetSession()->iq_capture;
-    const DemodSettings *ds = GetSession()->demod_settings;
-    double ref = ds->InputPower().ConvertToUnits(AmpUnits::DBM);
+    trace.clear();
 
-    // May need to resize the fft if it goes below 1024
-    int fftSize = bb_lib::min2(1024, sweep.len);
-    fftSize = bb_lib::round_down_power_two(fftSize);
-
-    if(fftSize != fft->Length()) {
-        fft = std::unique_ptr<FFT>(new FFT(fftSize, false));
+    for(int i = 0; i < iq.sweep.size(); i++) {
+        trace.push_back(i);
+        trace.push_back(10 * log10(iq.sweep[i].re * iq.sweep[i].re +
+                              iq.sweep[i].im * iq.sweep[i].im));
     }
 
-    postTransform.resize(1024);
-
-    fft->Transform(&sweep.sweep[0], &postTransform[0]);
-    for(int i = 0; i < fftSize; i++) {
-        postTransform[i].re /= fftSize;
-        postTransform[i].im /= fftSize;
-    }
-
-    for(int i = 0; i < fftSize; i++) {
-        spectrum.push_back((double)i);
-        double mag = postTransform[i].re * postTransform[i].re +
-                postTransform[i].im * postTransform[i].im;
-        mag = 10.0 * log10(mag);
-        spectrum.push_back(mag);
-    }
+    double ref = GetSession()->demod_settings->InputPower();
 
     glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    //glScalef(1, 1, 1);
 
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, fftSize - 1, ref - 100.0, ref, -1, 1);
+    glOrtho(0, trace.size()/2 - 1, ref - 100, ref, -1, 1);
 
-    // Nice lines, doesn't smooth quads
     glEnable(GL_BLEND);
     glEnable(GL_LINE_SMOOTH);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -187,8 +167,7 @@ void DemodSpectrumPlot::DrawSpectrum()
     glLineWidth(GetSession()->prefs.trace_width);
 
     qglColor(QColor(255, 0, 0));
-    DrawTrace(spectrum);
-    DrawPlotText();
+    DrawTrace(trace);
 
     // Disable nice lines
     glLineWidth(1.0);
@@ -201,25 +180,7 @@ void DemodSpectrumPlot::DrawSpectrum()
     glPopMatrix();
 }
 
-void DemodSpectrumPlot::DrawTrace(const GLVector &v)
-{
-    if(v.size() < 2) {
-        return;
-    }
-
-    glBindBuffer(GL_ARRAY_BUFFER, traceVBO);
-    glBufferData(GL_ARRAY_BUFFER, v.size() * sizeof(float),
-                 &v[0], GL_DYNAMIC_DRAW);
-    glVertexPointer(2, GL_FLOAT, 0, INDEX_OFFSET(0));
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glDrawArrays(GL_LINE_STRIP, 0, v.size() / 2);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void DemodSpectrumPlot::DrawPlotText()
+void DemodSweepPlot::DrawPlotText()
 {
     glPushAttrib(GL_VIEWPORT_BIT);
     glViewport(0, 0, width(), height());
@@ -237,10 +198,6 @@ void DemodSpectrumPlot::DrawPlotText()
 
     glQColor(GetSession()->colors.text);
 
-    str = "Center Freq " + ds->CenterFreq().GetFreqString();
-    DrawString(str, textFont, QPoint(grat_ll.x(), grat_ll.y() - 30), LEFT_ALIGNED);
-    str = "Span " + ds->Bandwidth().GetFreqString();
-    DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x(), grat_ll.y() - 30), RIGHT_ALIGNED);
     DrawString("Ref " + ds->InputPower().GetString(), textFont,
                QPoint(grat_ul.x() + 5, grat_ul.y() + 22), LEFT_ALIGNED);
     DrawString("Div 10 dB", textFont, QPoint(grat_ul.x() + 5, grat_ul.y() + 2), LEFT_ALIGNED);
@@ -257,4 +214,25 @@ void DemodSpectrumPlot::DrawPlotText()
     glPopMatrix();
 
     glPopAttrib();
+
+}
+
+void DemodSweepPlot::DrawTrace(const GLVector &v)
+{
+    if(v.size() < 2) {
+        return;
+    }
+
+    // Put the trace in the vbo
+    glBindBuffer(GL_ARRAY_BUFFER, traceVBO);
+    glBufferData(GL_ARRAY_BUFFER, v.size()*sizeof(float),
+                 &v[0], GL_DYNAMIC_DRAW);
+    glVertexPointer(2, GL_FLOAT, 0, INDEX_OFFSET(0));
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glDrawArrays(GL_LINE_STRIP, 0, v.size() / 2);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    // Unbind array
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }

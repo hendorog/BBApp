@@ -2,7 +2,8 @@
 
 DemodIQTimePlot::DemodIQTimePlot(Session *session, QWidget *parent) :
     GLSubView(session, parent),
-    textFont("Arial", 14)
+    textFont("Arial", 14),
+    divFont("Arial", 12)
 {
     for(int i = 0; i < 11; i++) {
         grat.push_back(0.0);
@@ -152,18 +153,26 @@ void DemodIQTimePlot::DrawIQLines()
         traces[1].push_back(iq[i].im);
     }
 
+    float max = 0.0;
+    for(int i = 0; i < iq.size(); i++) {
+        max = bb_lib::max2(max, iq[i].re);
+        max = bb_lib::max2(max, iq[i].im);
+    }
+    yScale = bb_lib::next_multiple_of(0.05, max);
+    if(yScale - max < 0.01) yScale += 0.1;
+    if(yScale > 1.5) yScale = 0.75;
+
     glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    glScalef(1, 1, 1);
 
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, iq.size(), -0.5, 0.5, -1, 1);
+    glOrtho(0, iq.size() - 1, -yScale, yScale, -1, 1);
 
-    // Nice lines, doesn't smooth quads
+    // Nice lines
     glEnable(GL_BLEND);
     glEnable(GL_LINE_SMOOTH);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -247,6 +256,13 @@ void DemodIQTimePlot::DrawPlotText()
     DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x(), grat_ll.y() - 30), RIGHT_ALIGNED);
     str = "Sample Rate " + QVariant(40.0 / (1 << ds->DecimationFactor())).toString() + " MS/s";
     DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x(), grat_ul.y() + 10), RIGHT_ALIGNED);
+
+    for(int i = 0; i <= 10; i++) {
+        int x_loc = grat_ul.x() - 2,
+                y_loc = grat_ul.y() - (i * grat_sz.y()/10.0) - 5;
+        str.sprintf("%.2f", yScale - (i * yScale/5.0));
+        DrawString(str, divFont, x_loc, y_loc, RIGHT_ALIGNED);
+    }
 
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();

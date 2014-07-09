@@ -11,7 +11,29 @@
 
 #include "central_stack.h"
 
-class DemodIQTimePlot;
+class MdiArea : public QMdiArea {
+    Q_OBJECT
+
+public:
+    MdiArea(QWidget *parent = 0) : QMdiArea(parent) {}
+    ~MdiArea() {}
+
+    void retile() {
+        auto list = subWindowList();
+
+        int viewHeight = height() / list.size();
+        int viewCount = 0;
+
+        for(auto view : list) {
+            view->move(0, viewCount * viewHeight);
+            view->resize(width(), viewHeight);
+            viewCount++;
+        }
+    }
+
+private:
+    DISALLOW_COPY_AND_ASSIGN(MdiArea)
+};
 
 class DemodCentral : public CentralWidget {
     Q_OBJECT
@@ -41,8 +63,7 @@ private:
     Session *sessionPtr; // Copy, does not own
 
     QToolBar *toolBar;
-    QMdiArea *demodArea;
-    DemodIQTimePlot *plot;
+    MdiArea *demodArea;
 
     DemodSettings lastConfig;
     std::atomic<int> captureCount;

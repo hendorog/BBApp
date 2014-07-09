@@ -29,7 +29,9 @@ private:
     GLVector traces[2];
     GLuint traceVBO;
 
-    GLFont textFont;
+    GLFont textFont, divFont;
+    // Scales I/Q data
+    double yScale;
 
 public slots:
 

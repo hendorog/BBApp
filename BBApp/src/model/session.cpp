@@ -30,6 +30,8 @@ void Session::LoadDefaults()
 {
     sweep_settings->LoadDefaults();
     audio_settings->LoadDefaults();
+
+    sweep_settings->EmitUpdated();
 }
 
 void Session::LoadPreset(int p)

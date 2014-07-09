@@ -175,10 +175,7 @@ bool DemodSettings::Save(QSettings &s) const
 
 void DemodSettings::setInputPower(Amplitude a)
 {
-    if(a > Amplitude(20.0, DBM)) {
-        a = Amplitude(20, DBM);
-    }
-
+    a.Clamp(Amplitude(-100, DBM), Amplitude(20.0, DBM));
     inputPower = a;
     emit updated(this);
 }
