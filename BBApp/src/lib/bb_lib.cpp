@@ -683,3 +683,70 @@ void demod_fm(const complex_f *src, float *dst, int len, double *phase)
 
     if(phase) *phase = lastPhase;
 }
+
+void demod_fm(const std::vector<complex_f> &src,
+              std::vector<float> &dst, double sampleRate)
+{
+    double phaseToFreq = sampleRate / BB_TWO_PI;
+    double lastPhase = 0.0;
+
+    for(int i = 0; i < src.size(); i++) {
+        double newPhase = atan2(src[i].im, src[i].re);
+        double delPhase = newPhase - lastPhase;
+        lastPhase = newPhase;
+
+        if(delPhase > BB_PI) delPhase -= BB_TWO_PI;
+        else if(delPhase < (-BB_PI)) delPhase += BB_TWO_PI;
+
+        dst.push_back(i);
+        dst.push_back(delPhase * phaseToFreq);
+    }
+}
+
+int find_rising_trigger(const complex_f *array, double t, int len)
+{
+    int ix = 0;
+
+    // Must go below trigger level
+    while(ix < len) {
+        double val = array[ix].re * array[ix].re +
+                array[ix].im * array[ix].im;
+        if(val < t) break;
+        ix++;
+    }
+
+    if(ix >= len) return -1;
+
+    while(ix < len) {
+        double val = array[ix].re * array[ix].re +
+                array[ix].im * array[ix].im;
+        if(val > t) return ix;
+        ix++;
+    }
+
+    return -1;
+}
+
+int find_falling_trigger(const complex_f *array, double t, int len)
+{
+    int ix = 0;
+
+    // Find first sample above trigger
+    while(ix < len) {
+        double val = array[ix].re * array[ix].re +
+                array[ix].im * array[ix].im;
+        if(val > t) break;
+        ix++;
+    }
+
+    if(ix >= len) return 0;
+
+    while(ix < len) {
+        double val = array[ix].re * array[ix].re +
+                array[ix].im * array[ix].im;
+        if(val < t) return ix;
+        ix++;
+    }
+
+    return -1;
+}

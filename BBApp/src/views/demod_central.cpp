@@ -15,11 +15,34 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     toolBar->layout()->setSpacing(0);
     toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_HEIGHT)));
 
+    QWidget *spacer = new QWidget();
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    toolBar->addWidget(spacer);
+
+    QPushButton *singleSweep, *autoSweep, *presetBtn;
+
+    singleSweep = new QPushButton("Single", toolBar);
+    singleSweep->setObjectName("BBPushButton");
+    singleSweep->setFixedSize(120, TOOLBAR_HEIGHT - 4);
+    toolBar->addWidget(singleSweep);
+    connect(singleSweep, SIGNAL(clicked()), this, SLOT(singlePressed()));
+
+    autoSweep = new QPushButton("Auto", toolBar);
+    autoSweep->setObjectName("BBPushButton");
+    autoSweep->setFixedSize(120, TOOLBAR_HEIGHT - 4);
+    toolBar->addWidget(autoSweep);
+    connect(autoSweep, SIGNAL(clicked()), this, SLOT(autoPressed()));
+
+    presetBtn = new QPushButton("Preset", toolBar);
+    presetBtn->setObjectName("BBPresetButton");
+    presetBtn->setFixedSize(120, TOOLBAR_HEIGHT - 4);
+    toolBar->addWidget(presetBtn);
+    connect(presetBtn, SIGNAL(clicked()), this, SIGNAL(presetDevice()));
+
     demodArea = new MdiArea(this);
     demodArea->move(0, TOOLBAR_HEIGHT);
 
-    DemodSweepPlot *sweepPlot = new DemodSweepPlot(sPtr);
-    sweepPlot->setWindowTitle("Demod Plot");
+    DemodSweepArea *sweepPlot = new DemodSweepArea(sPtr);
     demodArea->addSubWindow(sweepPlot);
     connect(this, SIGNAL(updateView()), sweepPlot, SLOT(update()));
 
@@ -105,6 +128,49 @@ void DemodCentral::Reconfigure(DemodSettings *ds, IQCapture *iqc)
     reconfigure = false;
 }
 
+void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &iqs, Device *device)
+{
+    int retrieved = 0, toRetrieve = iqs.len;
+    int firstIx = 0;
+    iqs.triggered = false;
+
+    if(ds->TrigType() == TriggerTypeVideo) {
+        double trigVal = ds->TrigAmplitude().ConvertToUnits(DBM);
+        trigVal = pow(10.0, (trigVal/10.0));
+        int maxTimeForTrig = 0;
+        while(maxTimeForTrig < 7) {
+            device->GetIQ(&iqc);
+            if(ds->TrigEdge() == TriggerEdgeRising) {
+                firstIx = find_rising_trigger(&iqc.capture[0], trigVal, iqc.capture.size());
+            } else {
+                firstIx = find_falling_trigger(&iqc.capture[0], trigVal, iqc.capture.size());
+            }
+            if(firstIx > 0) {
+                iqs.triggered = true;
+                break;
+            }
+            firstIx = 0;
+            maxTimeForTrig++;
+        }
+    } else if(ds->TrigType() == TriggerTypeExternal) {
+
+    } else {
+        device->GetIQ(&iqc);
+        iqs.triggered = true;
+    }
+
+    while(toRetrieve > 0) {
+        int toCopy = bb_lib::min2(toRetrieve, iqc.desc.returnLen - firstIx);
+        simdCopy_32fc(&iqc.capture[firstIx], &iqs.sweep[retrieved], toCopy);
+        firstIx = 0;
+        toRetrieve -= toCopy;
+        retrieved += toCopy;
+        if(toRetrieve > 0) {
+            device->GetIQ(&iqc);
+        }
+    }
+}
+
 void DemodCentral::StreamThread()
 {
     IQCapture iqc;
@@ -115,18 +181,12 @@ void DemodCentral::StreamThread()
     while(streaming) {
 
         if(captureCount) {
-            if(reconfigure) Reconfigure(sessionPtr->demod_settings, &iqc);
+            if(reconfigure) {
+                Reconfigure(sessionPtr->demod_settings, &iqc);
+            }
             qint64 start = bb_lib::get_ms_since_epoch();
 
-            int retrieved = 0, toRetrieve = iqs.len;
-
-            while(toRetrieve > 0) {
-                sessionPtr->device->GetIQ(&iqc);
-                int toCopy = bb_lib::min2(toRetrieve, iqc.desc.returnLen);
-                simdCopy_32fc(&iqc.capture[0], &iqs.sweep[retrieved], toCopy);
-                toRetrieve -= toCopy;
-                retrieved += toCopy;
-            }
+            GetCapture(sessionPtr->demod_settings, iqc, iqs, sessionPtr->device);
 
             UpdateView();
 
@@ -145,6 +205,20 @@ void DemodCentral::StreamThread()
 void DemodCentral::updateSettings(const DemodSettings *ds)
 {
     reconfigure = true;
+}
+
+void DemodCentral::singlePressed()
+{
+    if(captureCount < 0) {
+        captureCount = 1;
+    } else {
+        captureCount++;
+    }
+}
+
+void DemodCentral::autoPressed()
+{
+    captureCount = -1;
 }
 
 void DemodCentral::UpdateView()

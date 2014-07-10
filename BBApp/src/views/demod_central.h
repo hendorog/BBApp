@@ -57,6 +57,8 @@ protected:
 
 private:
     void Reconfigure(DemodSettings *ds, IQCapture *iqc);
+    void GetCapture(const DemodSettings *ds, IQCapture &iqc,
+                    IQSweep &iq, Device *device);
     void StreamThread();
     void UpdateView();
 
@@ -76,9 +78,12 @@ public slots:
     void updateSettings(const DemodSettings *ds);
 
 private slots:
+    void singlePressed();
+    void autoPressed();
 
 signals:
     void updateView();
+    void presetDevice();
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DemodCentral)

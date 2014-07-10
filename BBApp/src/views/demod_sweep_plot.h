@@ -3,7 +3,17 @@
 
 #include "gl_sub_view.h"
 #include "lib/bb_lib.h"
+#include "widgets/entry_widgets.h"
 
+#include <QToolBar>
+
+enum DemodType {
+    DemodTypeAM = 0,
+    DemodTypeFM = 1,
+    DemodTypePM = 2
+};
+
+// AM/FM/PM Demod Plot Window
 class DemodSweepPlot : public GLSubView {
     Q_OBJECT
 
@@ -29,7 +39,26 @@ private:
     GLVector trace;
     GLuint traceVBO;
 
+    DemodType demodType;
+    bool markerOn, deltaOn;
+    QPointF markerPos, deltaPos;
+
 public slots:
+    void changeDemod(int newDemod) {
+        demodType = (DemodType)newDemod;
+        update();
+    }
+
+    void disableMarker() {
+        markerOn = false;
+        update();
+    }
+
+    void toggleDelta() {
+        deltaOn = !deltaOn;
+        deltaPos = markerPos;
+        update();
+    }
 
 private slots:
 
@@ -37,6 +66,31 @@ signals:
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DemodSweepPlot)
+};
+
+// Container for the plot and Demod ToolBar
+class DemodSweepArea : public QWidget {
+    Q_OBJECT
+
+public:
+    DemodSweepArea(Session *session, QWidget *parent = 0);
+    ~DemodSweepArea() {}
+
+protected:
+    void resizeEvent(QResizeEvent *)
+    {
+        toolBar->resize(width(), 30);
+        plot->resize(width(), height() - 30);
+    }
+
+    void paintEvent(QPaintEvent *)
+    {
+        plot->update();
+    }
+
+private:
+    QToolBar *toolBar;
+    DemodSweepPlot *plot;
 };
 
 #endif // DEMOD_SWEEP_PLOT_H

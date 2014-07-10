@@ -79,7 +79,7 @@ void DemodSpectrumPlot::paintEvent(QPaintEvent *)
 {
     makeCurrent();
 
-    glClearColor(1.0, 1.0, 1.0, 1.0);
+    glQClearColor(GetSession()->colors.background);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glEnable(GL_DEPTH_TEST);
@@ -172,7 +172,6 @@ void DemodSpectrumPlot::DrawSpectrum()
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    //glScalef(1, 1, 1);
 
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -241,6 +240,8 @@ void DemodSpectrumPlot::DrawPlotText()
     DrawString(str, textFont, QPoint(grat_ll.x(), grat_ll.y() - 30), LEFT_ALIGNED);
     str = "Span " + ds->Bandwidth().GetFreqString();
     DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x(), grat_ll.y() - 30), RIGHT_ALIGNED);
+    str = "FFT Size " + QVariant(fft->Length()).toString() + " pts";
+    DrawString(str, textFont, grat_ul.x() + grat_sz.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
     DrawString("Ref " + ds->InputPower().GetString(), textFont,
                QPoint(grat_ul.x() + 5, grat_ul.y() + 22), LEFT_ALIGNED);
     DrawString("Div 10 dB", textFont, QPoint(grat_ul.x() + 5, grat_ul.y() + 2), LEFT_ALIGNED);

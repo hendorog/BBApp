@@ -37,7 +37,7 @@ DemodPanel::DemodPanel(const QString &title,
 
     triggerTypeEntry = new ComboEntry(tr("Trigger Type"));
     QStringList triggerType_sl;
-    triggerType_sl << tr("No Trigger") << tr("External Trigger");
+    triggerType_sl << tr("No Trigger") << tr("Video Trigger") << tr("External Trigger");
     triggerTypeEntry->setComboText(triggerType_sl);
 
     triggerEdgeEntry = new ComboEntry(tr("Trigger Edge"));

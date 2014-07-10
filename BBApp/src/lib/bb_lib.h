@@ -466,6 +466,14 @@ void build_flattop_window(complex_f *dst, int len);
 
 void demod_am(const complex_f *src, float *dst, int len);
 void demod_fm(const complex_f *src, float *dst, int len, double *phase);
+void demod_fm(const std::vector<complex_f> &src,
+              std::vector<float> &dst, double sampleRate);
+
+// Get index of a trigger
+// Returns -1 if not found
+// Returns the index after the offending amplitude
+int find_rising_trigger(const complex_f *array, double t, int len);
+int find_falling_trigger(const complex_f *array, double t, int len);
 
 // FFT complex-to-complex
 // Blackman window

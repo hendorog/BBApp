@@ -125,6 +125,7 @@ struct IQCapture {
 typedef struct IQSweep {
     std::vector<complex_f> sweep;
     int len;
+    bool triggered;
 } IQSweep;
 
 #endif // DEMOD_SETTINGS_H

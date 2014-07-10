@@ -77,7 +77,7 @@ SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
 
     single_sweep = new QPushButton(tr("Single Trig"), tool_bar);
     single_sweep->setObjectName("BBPushButton");
-    single_sweep->setFixedSize(120, TOOLBAR_H  -4);
+    single_sweep->setFixedSize(120, TOOLBAR_H - 4);
     tool_bar->addWidget(single_sweep);
 
     continuous_sweep = new QPushButton(tr("Continuous"), tool_bar);
