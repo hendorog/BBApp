@@ -138,7 +138,7 @@ void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &
         double trigVal = ds->TrigAmplitude().ConvertToUnits(DBM);
         trigVal = pow(10.0, (trigVal/10.0));
         int maxTimeForTrig = 0;
-        while(maxTimeForTrig < 7) {
+        while(maxTimeForTrig++ < 7) {
             device->GetIQ(&iqc);
             if(ds->TrigEdge() == TriggerEdgeRising) {
                 firstIx = find_rising_trigger(&iqc.capture[0], trigVal, iqc.capture.size());
@@ -150,10 +150,22 @@ void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &
                 break;
             }
             firstIx = 0;
-            maxTimeForTrig++;
         }
     } else if(ds->TrigType() == TriggerTypeExternal) {
-
+        int maxTimeForTrig = 0;
+        while(maxTimeForTrig++ < 7) {
+            device->GetIQ(&iqc);
+            firstIx = iqc.triggers[0];
+            if(firstIx != 0) {
+                qDebug() << firstIx;
+                iqs.triggered = true;
+                qDebug() << "Return len = " << iqc.desc.returnLen;
+                firstIx /= ((0x1 << ds->DecimationFactor()) * 2);
+                qDebug() << "Trig loc = " << firstIx;
+                //firstIx = 0;
+                break;
+            }
+        }
     } else {
         device->GetIQ(&iqc);
         iqs.triggered = true;
@@ -194,7 +206,9 @@ void DemodCentral::StreamThread()
             qint64 elapsed = bb_lib::get_ms_since_epoch() - start;
             if(elapsed < 64) Sleep(64 - elapsed);
             if(captureCount > 0) {
-                captureCount--;
+                if(iqs.triggered) {
+                    captureCount--;
+                }
             }
         } else {
             Sleep(64);

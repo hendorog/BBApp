@@ -237,9 +237,9 @@ void DemodSpectrumPlot::DrawPlotText()
     glQColor(GetSession()->colors.text);
 
     str = "Center Freq " + ds->CenterFreq().GetFreqString();
-    DrawString(str, textFont, QPoint(grat_ll.x(), grat_ll.y() - 30), LEFT_ALIGNED);
+    DrawString(str, textFont, QPoint(grat_ll.x() + 5, grat_ll.y() - 22), LEFT_ALIGNED);
     str = "Span " + ds->Bandwidth().GetFreqString();
-    DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x(), grat_ll.y() - 30), RIGHT_ALIGNED);
+    DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - 22), RIGHT_ALIGNED);
     str = "FFT Size " + QVariant(fft->Length()).toString() + " pts";
     DrawString(str, textFont, grat_ul.x() + grat_sz.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
     DrawString("Ref " + ds->InputPower().GetString(), textFont,

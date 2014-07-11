@@ -687,7 +687,7 @@ void demod_fm(const complex_f *src, float *dst, int len, double *phase)
 void demod_fm(const std::vector<complex_f> &src,
               std::vector<float> &dst, double sampleRate)
 {
-    double phaseToFreq = sampleRate / BB_TWO_PI;
+    double phaseToFreq = sampleRate / BB_PI;
     double lastPhase = 0.0;
 
     for(int i = 0; i < src.size(); i++) {

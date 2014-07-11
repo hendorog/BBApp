@@ -24,11 +24,15 @@ public:
 protected:
     void resizeEvent(QResizeEvent *);
     void paintEvent(QPaintEvent *);
+    void mousePressEvent(QMouseEvent *);
 
 private:
     void DemodAndDraw();
     void DrawPlotText();
+    void DrawMarkers();
     void DrawTrace(const GLVector &v);
+    void DrawMarker(int x, int y, int num);
+    void DrawDeltaMarker(int x, int y, int num);
 
     QPoint grat_sz, grat_ul, grat_ll;
     GLVector grat, gratBorder;
@@ -40,7 +44,9 @@ private:
     GLuint traceVBO;
 
     DemodType demodType;
+
     bool markerOn, deltaOn;
+    float markerVal, deltaVal;
     QPointF markerPos, deltaPos;
 
 public slots:
@@ -56,7 +62,10 @@ public slots:
 
     void toggleDelta() {
         deltaOn = !deltaOn;
-        deltaPos = markerPos;
+        if(deltaOn) {
+            deltaPos = markerPos;
+            deltaVal = markerVal;
+        }
         update();
     }
 

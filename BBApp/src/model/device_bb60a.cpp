@@ -158,6 +158,33 @@ bool DeviceBB60A::Reconfigure(const DemodSettings *ds, IQDescriptor *desc)
     if(atten < 0) atten = BB_AUTO_ATTEN;
     int decimation = 0x1 << (ds->DecimationFactor());
 
+    int port_one_mask;
+    switch(timebase_reference) {
+    case TIMEBASE_INTERNAL:
+        port_one_mask = 0x0;
+        break;
+    case TIMEBASE_EXT_AC:
+        port_one_mask = BB_PORT1_EXT_REF_IN | BB_PORT1_AC_COUPLED;
+        break;
+    case TIMEBASE_EXT_DC:
+        port_one_mask = BB_PORT1_EXT_REF_IN | BB_PORT1_DC_COUPLED;
+        break;
+    }
+
+    int port_two_mask;
+    switch(ds->TrigType()) {
+    case TriggerTypeExternal:
+        if(ds->TrigEdge() == TriggerEdgeRising) {
+            port_two_mask = BB_PORT2_IN_TRIGGER_RISING_EDGE;
+        } else {
+            port_two_mask = BB_PORT2_IN_TRIGGER_FALLING_EDGE;
+        }
+        break;
+    default:
+        port_two_mask = 0x0;
+    }
+
+    bbConfigureIO(id, port_one_mask, port_two_mask);
     bbConfigureCenterSpan(id, ds->CenterFreq(), 20.0e6);
     bbConfigureIQ(id, decimation, ds->Bandwidth());
     bbConfigureLevel(id, ds->InputPower().Val(), atten);

@@ -30,6 +30,7 @@ void Session::LoadDefaults()
 {
     sweep_settings->LoadDefaults();
     audio_settings->LoadDefaults();
+    demod_settings->LoadDefaults();
 
     sweep_settings->EmitUpdated();
 }
@@ -45,6 +46,7 @@ void Session::LoadPreset(int p)
 
     sweep_settings->Load(settings);
     audio_settings->Load(settings);
+    demod_settings->Load(settings);
 }
 
 void Session::SavePreset(int p)
@@ -58,6 +60,7 @@ void Session::SavePreset(int p)
 
     sweep_settings->Save(settings);
     audio_settings->Save(settings);
+    demod_settings->Save(settings);
 }
 
 void Session::SetTitle(const QString &new_title)

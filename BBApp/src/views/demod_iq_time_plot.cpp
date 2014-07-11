@@ -233,29 +233,29 @@ void DemodIQTimePlot::DrawPlotText()
 
     glColor3f(1.0, 0.0, 0.0);
     glBegin(GL_QUADS);
-    glVertex2i(grat_ul.x(), grat_ul.y() + 10); glVertex2i(grat_ul.x() + 15, grat_ul.y() + 10);
-    glVertex2i(grat_ul.x() + 15, grat_ul.y() + 25); glVertex2i(grat_ul.x(), grat_ul.y() + 25);
-    glVertex2i(grat_ul.x(), grat_ul.y() + 10);
+    glVertex2i(grat_ul.x() + 5, grat_ul.y() + 10); glVertex2i(grat_ul.x() + 20, grat_ul.y() + 10);
+    glVertex2i(grat_ul.x() + 20, grat_ul.y() + 25); glVertex2i(grat_ul.x() + 5, grat_ul.y() + 25);
+    glVertex2i(grat_ul.x() + 5, grat_ul.y() + 10);
     glEnd();
 
     glColor3f(0.0, 1.0, 0.0);
     glBegin(GL_QUADS);
-    glVertex2i(grat_ul.x() + 40, grat_ul.y() + 10); glVertex2i(grat_ul.x() + 55, grat_ul.y() + 10);
-    glVertex2i(grat_ul.x() + 55, grat_ul.y() + 25); glVertex2i(grat_ul.x() + 40, grat_ul.y() + 25);
-    glVertex2i(grat_ul.x() + 40, grat_ul.y() + 10);
+    glVertex2i(grat_ul.x() + 45, grat_ul.y() + 10); glVertex2i(grat_ul.x() + 60, grat_ul.y() + 10);
+    glVertex2i(grat_ul.x() + 60, grat_ul.y() + 25); glVertex2i(grat_ul.x() + 45, grat_ul.y() + 25);
+    glVertex2i(grat_ul.x() + 45, grat_ul.y() + 10);
     glEnd();
 
     glQColor(GetSession()->colors.text);
 
-    DrawString("I", textFont, QPoint(grat_ul.x() + 20, grat_ul.y() + 10), LEFT_ALIGNED);
-    DrawString("Q", textFont, QPoint(grat_ul.x() + 60, grat_ul.y() + 10), LEFT_ALIGNED);
+    DrawString("I", textFont, QPoint(grat_ul.x() + 25, grat_ul.y() + 10), LEFT_ALIGNED);
+    DrawString("Q", textFont, QPoint(grat_ul.x() + 65, grat_ul.y() + 10), LEFT_ALIGNED);
 
     str = "IF Bandwidth " + ds->Bandwidth().GetFreqString();
-    DrawString(str, textFont, QPoint(grat_ll.x(), grat_ll.y() - 30), LEFT_ALIGNED);
+    DrawString(str, textFont, QPoint(grat_ll.x() + 5, grat_ll.y() - 22), LEFT_ALIGNED);
     str = "Capture Len " + ds->SweepTime().GetString();
-    DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x(), grat_ll.y() - 30), RIGHT_ALIGNED);
+    DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - 22), RIGHT_ALIGNED);
     str = "Sample Rate " + QVariant(40.0 / (1 << ds->DecimationFactor())).toString() + " MS/s";
-    DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x(), grat_ul.y() + 10), RIGHT_ALIGNED);
+    DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ul.y() + 2), RIGHT_ALIGNED);
 
     for(int i = 0; i <= 10; i++) {
         int x_loc = grat_ul.x() - 2,

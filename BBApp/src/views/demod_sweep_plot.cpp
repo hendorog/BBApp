@@ -1,10 +1,13 @@
 #include "demod_sweep_plot.h"
 
 #include <QLayout>
+#include <QMouseEvent>
 
 DemodSweepArea::DemodSweepArea(Session *session, QWidget *parent)
     : QWidget(parent)
 {
+    setWindowTitle("Zero-Span Plot");
+
     toolBar = new QToolBar(this);
     toolBar->move(0, 0);
     toolBar->layout()->setContentsMargins(0, 0, 0, 0);
@@ -30,7 +33,11 @@ DemodSweepArea::DemodSweepArea(Session *session, QWidget *parent)
     markerDelta->setObjectName("BBPushButton");
     markerDelta->setFixedSize(120, 30-4);
 
+    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
     toolBar->addWidget(demodSelect);
+    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+    toolBar->addSeparator();
+    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
     toolBar->addWidget(markerOff);
     toolBar->addWidget(markerDelta);
 
@@ -115,6 +122,17 @@ void DemodSweepPlot::resizeEvent(QResizeEvent *)
                      size().height() - 100);
 }
 
+void DemodSweepPlot::mousePressEvent(QMouseEvent *e)
+{
+    QRect area(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
+    if(area.contains(e->pos())) {
+        markerOn = true;
+        markerPos.setX((double)(e->pos().x() - grat_ul.x()) / grat_sz.x());
+    }
+
+    QGLWidget::mousePressEvent(e);
+}
+
 void DemodSweepPlot::paintEvent(QPaintEvent *)
 {
     makeCurrent();
@@ -172,6 +190,7 @@ void DemodSweepPlot::paintEvent(QPaintEvent *)
 
     DemodAndDraw();
     DrawPlotText();
+    DrawMarkers();
 
     swapBuffers();
     doneCurrent();
@@ -272,13 +291,13 @@ void DemodSweepPlot::DrawPlotText()
             DrawString(str, divFont, x_pos, y_pos, RIGHT_ALIGNED);
         }
     } else if(demodType == DemodTypeFM) {
-        Frequency ref = (40.0e6 / (0x1 << ds->DecimationFactor())) / 2.0;
+        Frequency ref = 40.0e6 / ((0x1 << ds->DecimationFactor()) * 2.0);
         double div = ref / 5.0;
         DrawString("Ref " + ref.GetFreqString(), textFont,
                    QPoint(grat_ul.x() + 5, grat_ul.y() + 22), LEFT_ALIGNED);
         for(int i = 1; i <= 9; i += 2) {
             int x_pos = grat_ul.x() - 2, y_pos = (grat_sz.y() / 10) * i + grat_ll.y() - 5;
-            str.sprintf("%.2f", - ref + i * div);
+            str.sprintf("%.2fM", (-ref + i * div) * 1.0e-6);
             DrawString(str, divFont, x_pos, y_pos, RIGHT_ALIGNED);
         }
     } else if(demodType == DemodTypePM) {
@@ -310,6 +329,78 @@ void DemodSweepPlot::DrawPlotText()
 
 }
 
+void DemodSweepPlot::DrawMarkers()
+{
+    if(!markerOn) return;
+
+    const DemodSettings *ds = GetSession()->demod_settings;
+    QString str;
+    double binSize = 1.0 / (40.0e6 / (0x1 << ds->DecimationFactor()));
+
+    int index = (trace.size()/2) * markerPos.x();
+    str = QVariant(index * binSize * 1000.0).toString() + " ms : ";
+    index = index * 2 + 1;
+
+    // Clamp to size, no out of bound indexing please
+    if(index < 0) index = 1;
+    if(index > trace.size()) index = trace.size();
+
+    float markerVal = trace[index];
+
+    if(demodType == DemodTypeAM) {
+        float botRef = ds->InputPower() - 100.0;
+        markerPos.setY((markerVal - botRef) / 100.0);
+
+    } else if(demodType == DemodTypeFM) {
+        float botRef = -40.0e6 / (0x1 << ds->DecimationFactor());
+        markerPos.setY((markerVal - botRef) / fabs(2.0 * botRef));
+    } else if(demodType == DemodTypePM) {
+        float botRef = -BB_PI;
+        markerPos.setY((markerVal - botRef) / BB_TWO_PI);
+    }
+
+    // Viewport on grat, full pixel scale
+    glPushAttrib(GL_VIEWPORT_BIT);
+    glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0, grat_sz.x(), 0, grat_sz.y(), -1, 1);
+
+    // Nice lines
+    glEnable(GL_LINE_SMOOTH);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendEquation(GL_FUNC_ADD);
+    glLineWidth(1.0);
+
+    glDisable(GL_DEPTH_TEST);
+    DrawMarker(markerPos.x() * grat_sz.x(), markerPos.y() * grat_sz.y(), 1);
+    if(deltaOn) {
+        DrawDeltaMarker(deltaPos.x() * grat_sz.x(), deltaPos.y() * grat_sz.y(), 1);
+    }
+
+    //glLoadIdentity();
+    //glOrtho(0, width(), 0, height(), -1, 1);
+    DrawString(str, textFont, grat_sz.x() - 5, grat_sz.y() - 22, RIGHT_ALIGNED);
+
+    // Disable nice lines
+    glDisable(GL_LINE_SMOOTH);
+    glDisable(GL_BLEND);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glPopAttrib();
+
+
+}
+
 void DemodSweepPlot::DrawTrace(const GLVector &v)
 {
     if(v.size() < 2) {
@@ -328,4 +419,60 @@ void DemodSweepPlot::DrawTrace(const GLVector &v)
 
     // Unbind array
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void DemodSweepPlot::DrawMarker(int x, int y, int num)
+{
+    glColor3f(1.0, 1.0, 1.0);
+    glBegin(GL_POLYGON);
+    glVertex2f(x, y);
+    glVertex2f(x + 10, y + 15);
+    glVertex2f(x, y + 30);
+    glVertex2f(x - 10, y + 15);
+    glEnd();
+
+    //glQColor(session_ptr->colors.markers);
+    glColor3f(0.0, 0.0, 0.0);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(x, y);
+    glVertex2f(x + 10, y + 15);
+    glVertex2f(x, y + 30);
+    glVertex2f(x - 10, y + 15);
+    glVertex2f(x, y);
+    glEnd();
+
+    glColor3f(0.0, 0.0, 0.0);
+    QString str;
+    str.sprintf("%d", num);
+    DrawString(str, divFont,
+               QPoint(x, y + 10), CENTER_ALIGNED);
+}
+
+void DemodSweepPlot::DrawDeltaMarker(int x, int y, int num)
+{
+    glColor3f(1.0, 1.0, 1.0);
+    glBegin(GL_POLYGON);
+    glVertex2f(x, y);
+    glVertex2f(x + 11, y + 11);
+    glVertex2f(x + 11, y + 27);
+    glVertex2f(x - 11, y + 27);
+    glVertex2f(x - 11, y + 11);
+    glEnd();
+
+    //glQColor(session_ptr->colors.markers);
+    glColor3f(0.0, 0.0, 0.0);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(x, y);
+    glVertex2f(x + 11, y + 11);
+    glVertex2f(x + 11, y + 27);
+    glVertex2f(x - 11, y + 27);
+    glVertex2f(x - 11, y + 11);
+    glVertex2f(x, y);
+    glEnd();
+
+    glColor3f(0.0, 0.0, 0.0);
+    QString str;
+    str.sprintf("R%d", num);
+    DrawString(str, divFont,
+               QPoint(x, y+11), CENTER_ALIGNED);
 }

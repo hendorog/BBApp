@@ -679,7 +679,7 @@ QChar copyright_char(short(169));
 const QString about_string =
         QWidget::tr("Signal Hound") + trademark_char + QWidget::tr("\n") +
         QWidget::tr("Copyright ") + copyright_char + QWidget::tr(" 2014\n");
-const QString gui_version = QWidget::tr("Software Version 2.0.2\n");
+const QString gui_version = QWidget::tr("Software Version 2.0.3\n");
 
 void MainWindow::showAboutBox()
 {
