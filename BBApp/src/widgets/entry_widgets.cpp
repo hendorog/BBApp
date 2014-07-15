@@ -151,6 +151,72 @@ void FrequencyEntry::editUpdated()
 }
 
 /*
+ * Amplitude Panel Entry widget, no shifts
+ */
+AmpEntry::AmpEntry(const QString &label_text,
+                   Amplitude a, QWidget *parent)
+    : QWidget(parent)
+{
+    move(0, 0);
+    resize(ENTRY_WIDTH, ENTRY_H);
+
+    amplitude = a;
+
+    label = new Label(label_text, this);
+    label->move(ENTRY_OFFSET, 0);
+    label->resize(LABEL_W, ENTRY_H);
+
+    entry = new LineEntry(VALUE_ENTRY, this);
+    entry->move(ENTRY_OFFSET + LABEL_W, 0);
+    entry->resize(ENTRY_WIDTH - LABEL_W - ENTRY_OFFSET - 60, ENTRY_H);
+
+    units = new ComboBox(this);
+    units->move(ENTRY_OFFSET + label->width() + entry->width(), 0);
+    units->resize(60, ENTRY_H);
+
+    QStringList unit_list;
+    unit_list << "dBm" << "dBmV" << "dBuV" << "mV";
+    units->insertItems(0, unit_list);
+    last_unit_index = 0;
+
+    SetAmplitude(amplitude);
+
+    connect(entry, SIGNAL(entryUpdated()), this, SLOT(editUpdated()));
+    connect(units, SIGNAL(activated(int)), this, SLOT(unitsUpdated(int)));
+}
+
+AmpEntry::~AmpEntry()
+{
+
+}
+
+void AmpEntry::SetAmplitude(Amplitude a)
+{
+    amplitude = a;
+    entry->SetValue(amplitude.Val());
+    units->setCurrentIndex(amplitude.Units());
+}
+
+void AmpEntry::editUpdated()
+{
+    emit amplitudeChanged(Amplitude(entry->GetValue(), (AmpUnits)units->currentIndex()));
+}
+
+/*
+ * When the units change, update the associated value to
+ *   the new unit type
+ */
+void AmpEntry::unitsUpdated(int)
+{
+    if(units->currentIndex() != last_unit_index) {
+        entry->SetValue(unit_convert(entry->GetValue(), (AmpUnits)last_unit_index,
+                                     (AmpUnits)units->currentIndex()));
+        last_unit_index = units->currentIndex();
+    }
+    emit amplitudeChanged(Amplitude(entry->GetValue(), (AmpUnits)units->currentIndex()));
+}
+
+/*
  * Amplitude Panel Entry widget
  */
 AmplitudeEntry::AmplitudeEntry(const QString &label_text,

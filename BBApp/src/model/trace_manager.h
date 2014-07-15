@@ -16,6 +16,17 @@
 class Settings;
 class DemodSettings;
 
+struct OccupiedBandwidthInfo {
+    OccupiedBandwidthInfo()
+    {
+        enabled = false;
+        percentPower = 99.0;
+    }
+
+    bool enabled;
+    double percentPower;
+};
+
 /*
  * One copy found in the Session class.
  * Represents 6 traces and 6 markers
@@ -82,6 +93,8 @@ public:
     double RefOffset() const { return ref_offset; }
 
     void SetChannelPower(bool enable, Frequency width, Frequency spacing);
+    void SetOccupiedBandwidth(bool enabled, double percentPower);
+
     const ChannelPower* GetChannelPowerInfo() const { return &channel_power; }
     // Real-Time and Waterfall trace buffer
     ThreadSafeQueue<GLVector, 32> trace_buffer;
@@ -107,6 +120,7 @@ private:
     double ref_offset; // dB
 
     ChannelPower channel_power;
+    OccupiedBandwidthInfo ocbw;
 
     bool lastTraceAboveReference;
 

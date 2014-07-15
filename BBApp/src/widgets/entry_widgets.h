@@ -189,9 +189,41 @@ private:
     DISALLOW_COPY_AND_ASSIGN(ComboEntry)
 };
 
+// Entry widget for non-shift amplitude entry
+// [ label - value_entry - units_combo ]
+class AmpEntry : public QWidget {
+    Q_OBJECT
+
+public:
+    AmpEntry(const QString &label_text,
+                   Amplitude a,
+                   QWidget *parent = 0);
+    ~AmpEntry();
+
+    Amplitude GetAmplitude() const { return amplitude; }
+    void SetAmplitude(Amplitude a);
+
+private:
+    Amplitude amplitude;
+    Label *label;
+    LineEntry *entry;
+    ComboBox *units;
+    int last_unit_index;
+
+public slots:
+    void editUpdated();
+    void unitsUpdated(int);
+
+signals:
+    void amplitudeChanged(Amplitude);
+
+private:
+    DISALLOW_COPY_AND_ASSIGN(AmpEntry)
+};
+
 /*
  * Panel Widget for amplitude entry
- * [ label - value_entry - units_combo_box ]
+ * [ label - shift up/down - value_entry - units_combo_box ]
  */
 class AmplitudeEntry : public QWidget {
     Q_OBJECT

@@ -8,7 +8,7 @@ DemodPanel::DemodPanel(const QString &title,
     DockPage *demodPage = new DockPage(tr("Demod Settings"));
     DockPage *triggerPage = new DockPage(tr("Trigger Settings"));
 
-    inputPowerEntry = new AmplitudeEntry(tr("Input Pwr"), 0.0);
+    inputPowerEntry = new AmpEntry(tr("Input Pwr"), 0.0);
     centerEntry = new FrequencyEntry(tr("Center"), 0.0);
 
     gainEntry = new ComboEntry(tr("Gain"));
@@ -31,8 +31,6 @@ DemodPanel::DemodPanel(const QString &title,
 
     bandwidthEntry = new FrequencyEntry(tr("IF BW"), 0.0);
     autoBandwidthEntry = new CheckBoxEntry(tr("Auto IFBW"));
-    vbwEntry = new FrequencyEntry(tr("VBW"), 0.0);
-    autoVideoEntry = new CheckBoxEntry(tr("Auto VBW"));
     sweepTimeEntry = new TimeEntry(tr("Swp Time"), Time(0.0), MILLISECOND);
 
     triggerTypeEntry = new ComboEntry(tr("Trigger Type"));
@@ -45,7 +43,7 @@ DemodPanel::DemodPanel(const QString &title,
     triggerEdge_sl << tr("Rising Edge") << tr("Falling Edge");
     triggerEdgeEntry->setComboText(triggerEdge_sl);
 
-    triggerAmplitudeEntry = new AmplitudeEntry(tr("Video Trigger Level"), 0.0);
+    triggerAmplitudeEntry = new AmpEntry(tr("Video Trigger Level"), 0.0);
 
     demodPage->AddWidget(inputPowerEntry);
     demodPage->AddWidget(centerEntry);
@@ -54,8 +52,6 @@ DemodPanel::DemodPanel(const QString &title,
     demodPage->AddWidget(decimationEntry);
     demodPage->AddWidget(bandwidthEntry);
     demodPage->AddWidget(autoBandwidthEntry);
-    demodPage->AddWidget(vbwEntry);
-    demodPage->AddWidget(autoVideoEntry);
     demodPage->AddWidget(sweepTimeEntry);
 
     triggerPage->AddWidget(triggerTypeEntry);
@@ -84,10 +80,6 @@ DemodPanel::DemodPanel(const QString &title,
             settings, SLOT(setBandwidth(Frequency)));
     connect(autoBandwidthEntry, SIGNAL(clicked(bool)),
             settings, SLOT(setAutoBandwidth(bool)));
-    connect(vbwEntry, SIGNAL(freqViewChanged(Frequency)),
-            settings, SLOT(setVBW(Frequency)));
-    connect(autoVideoEntry, SIGNAL(clicked(bool)),
-            settings, SLOT(setAutoVBW(bool)));
     connect(sweepTimeEntry, SIGNAL(timeChanged(Time)),
             settings, SLOT(setSweepTime(Time)));
     connect(triggerTypeEntry, SIGNAL(comboIndexChanged(int)),
@@ -112,8 +104,6 @@ void DemodPanel::updatePanel(const DemodSettings *ds)
     decimationEntry->setComboIndex(ds->DecimationFactor());
     bandwidthEntry->SetFrequency(ds->Bandwidth());
     autoBandwidthEntry->SetChecked(ds->AutoBandwidth());
-    vbwEntry->SetFrequency(ds->VBW());
-    autoVideoEntry->SetChecked(ds->AutoVBW());
     sweepTimeEntry->SetTime(ds->SweepTime());
 
     triggerTypeEntry->setComboIndex(ds->TrigType());

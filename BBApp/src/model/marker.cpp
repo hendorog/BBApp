@@ -110,20 +110,22 @@ void Marker::UpdateMarker(const Trace* trace,
     } else {
         inView = true;
 
-        QString unit_string = log_scale ? "dBm" : "mV";
-        amp = Amplitude(trace->Max()[index], s->RefLevel().Units());
+        double level = trace->Max()[index];
+        AmpUnits units = s->RefLevel().Units();
 
         xr = (double)index / trace->Length();
         if(log_scale) {
-            yr = amp.Val() - (s->RefLevel().ConvertToUnits(AmpUnits::DBM) - (10.0 * s->Div()));
+            yr = level - (s->RefLevel().ConvertToUnits(DBM) - (10.0 * s->Div()));
             yr /= (10.0 * s->Div());
+            amp = Amplitude(Amplitude(level, DBM).ConvertToUnits(units), units);
         } else {
-            yr = amp.Val() / s->RefLevel().Val();
+            yr = level / s->RefLevel().Val();
+            amp = Amplitude(level, MV);
         }
         bb_lib::clamp(yr, 0.0, 1.0);
 
         text = (freq + dc_offset).GetFreqString(6, true) +
-                ", " + amp.GetString(); // amp.GetValueString() + unit_string;
+                ", " + amp.GetString();
     }
 
     // Delta marker

@@ -40,6 +40,10 @@ private:
     FrequencyEntry *channel_spacing;
     CheckBoxEntry *channel_power_enabled;
 
+    // Occupied Bandwidth
+    CheckBoxEntry *ocbw_enabled;
+    NumericEntry *percentPower;
+
     // Copy of the pointer, does not own
     TraceManager *trace_manager_ptr;
 
@@ -51,6 +55,7 @@ public slots:
 
 private slots:
     void channelPowerUpdated();
+    //void occupiedBandwidthUpdated();
 
 signals:
 

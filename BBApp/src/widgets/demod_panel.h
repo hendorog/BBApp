@@ -16,20 +16,18 @@ public:
     ~DemodPanel();
 
 private:
-    AmplitudeEntry *inputPowerEntry;
+    AmpEntry *inputPowerEntry;
     FrequencyEntry *centerEntry;
     ComboEntry *gainEntry;
     ComboEntry *attenEntry;
     ComboEntry *decimationEntry;
     FrequencyEntry *bandwidthEntry;
     CheckBoxEntry *autoBandwidthEntry;
-    FrequencyEntry *vbwEntry;
-    CheckBoxEntry *autoVideoEntry;
     TimeEntry *sweepTimeEntry;
 
     ComboEntry *triggerTypeEntry;
     ComboEntry *triggerEdgeEntry;
-    AmplitudeEntry *triggerAmplitudeEntry; // Only for video triggers
+    AmpEntry *triggerAmplitudeEntry; // Only for video triggers
 
 public slots:
     void updatePanel(const DemodSettings *ds);

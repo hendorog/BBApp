@@ -18,7 +18,7 @@ public:
     MdiArea(QWidget *parent = 0) : QMdiArea(parent) {}
     ~MdiArea() {}
 
-    void retile() {
+    void stacked_retile() {
         auto list = subWindowList();
 
         int viewHeight = height() / list.size();
@@ -29,6 +29,18 @@ public:
             view->resize(width(), viewHeight);
             viewCount++;
         }
+    }
+
+    // Stacked w/ side-by-side
+    void retile() {
+        QList<QMdiSubWindow*> list = subWindowList();
+        if(list.length() != 3) return;
+        list.at(0)->move(0, 0);
+        list.at(0)->resize(width(), height() / 2);
+        list.at(1)->move(0, height() / 2);
+        list.at(1)->resize(width() / 2, height() / 2);
+        list.at(2)->move(width() / 2, height() / 2);
+        list.at(2)->resize(width() / 2, height() / 2);
     }
 
 private:

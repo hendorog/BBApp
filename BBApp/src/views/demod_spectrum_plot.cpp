@@ -142,7 +142,15 @@ void DemodSpectrumPlot::DrawSpectrum()
 
     const IQSweep &sweep = GetSession()->iq_capture;
     const DemodSettings *ds = GetSession()->demod_settings;
-    double ref = ds->InputPower().ConvertToUnits(AmpUnits::DBM);
+    double ref, botRef;
+
+    if(ds->InputPower().IsLogScale()) {
+        ref = ds->InputPower().ConvertToUnits(AmpUnits::DBM);
+        botRef = ref - 100.0;
+    } else {
+        ref = ds->InputPower();
+        botRef = 0;
+    }
 
     // May need to resize the fft if it goes below 1024
     int fftSize = bb_lib::min2(1024, sweep.len);
@@ -160,12 +168,23 @@ void DemodSpectrumPlot::DrawSpectrum()
         postTransform[i].im /= fftSize;
     }
 
+    // Create mW scale first
     for(int i = 0; i < fftSize; i++) {
         spectrum.push_back((double)i);
         double mag = postTransform[i].re * postTransform[i].re +
                 postTransform[i].im * postTransform[i].im;
-        mag = 10.0 * log10(mag);
         spectrum.push_back(mag);
+    }
+
+    // Convert to dBm or mV
+    if(ds->InputPower().IsLogScale()) {
+        for(int i = 1; i < spectrum.size(); i += 2) {
+            spectrum[i] = 10.0 * log10(spectrum[i]);
+        }
+    } else {
+        for(int i = 1; i < spectrum.size(); i += 2) {
+            spectrum[i] = sqrt(spectrum[i] * 50000.0);
+        }
     }
 
     glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
@@ -176,7 +195,7 @@ void DemodSpectrumPlot::DrawSpectrum()
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, fftSize - 1, ref - 100.0, ref, -1, 1);
+    glOrtho(0, fftSize - 1, botRef, ref, -1, 1);
 
     // Nice lines, doesn't smooth quads
     glEnable(GL_BLEND);
@@ -246,9 +265,19 @@ void DemodSpectrumPlot::DrawPlotText()
                QPoint(grat_ul.x() + 5, grat_ul.y() + 22), LEFT_ALIGNED);
     DrawString("Div 10 dB", textFont, QPoint(grat_ul.x() + 5, grat_ul.y() + 2), LEFT_ALIGNED);
 
+    double botVal, step;
+
+    if(ds->InputPower().IsLogScale()) {
+        botVal = ds->InputPower() - 100.0;
+        step = 10.0;
+    } else {
+        botVal = 0;
+        step = ds->InputPower() / 10.0;
+    }
+
     for(int i = 0; i <= 8; i += 2) {
         int x_pos = grat_ul.x() - 2, y_pos = (grat_sz.y() / 10) * i + grat_ll.y() - 5;
-        str.sprintf("%.2f", ds->InputPower().Val() - (10.0*(10-i)));
+        str.sprintf("%.2f", botVal + step * i);
         DrawString(str, divFont, x_pos, y_pos, RIGHT_ALIGNED);
     }
 

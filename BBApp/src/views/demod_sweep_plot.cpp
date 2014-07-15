@@ -3,48 +3,48 @@
 #include <QLayout>
 #include <QMouseEvent>
 
-DemodSweepArea::DemodSweepArea(Session *session, QWidget *parent)
-    : QWidget(parent)
-{
-    setWindowTitle("Zero-Span Plot");
+//DemodSweepArea::DemodSweepArea(Session *session, QWidget *parent)
+//    : QWidget(parent)
+//{
+//    setWindowTitle("Zero-Span Plot");
 
-    toolBar = new QToolBar(this);
-    toolBar->move(0, 0);
-    toolBar->layout()->setContentsMargins(0, 0, 0, 0);
-    toolBar->layout()->setSpacing(0);
-    toolBar->move(0, 0);
+//    toolBar = new QToolBar(this);
+//    toolBar->move(0, 0);
+//    toolBar->layout()->setContentsMargins(0, 0, 0, 0);
+//    toolBar->layout()->setSpacing(0);
+//    toolBar->move(0, 0);
 
-    plot = new DemodSweepPlot(session, this);
-    plot->move(0, 30);
-    plot->setWindowTitle("Demod Plot");
+//    plot = new DemodSweepPlot(session, this);
+//    plot->move(0, 30);
+//    plot->setWindowTitle("Demod Plot");
 
-    ComboBox *demodSelect = new ComboBox();
-    QStringList comboString;
-    comboString << "AM Demod" << "FM Demod" << "PM Demod";
-    demodSelect->insertItems(0, comboString);
-    demodSelect->setFixedSize(200, 30-4);
+//    ComboBox *demodSelect = new ComboBox();
+//    QStringList comboString;
+//    comboString << "AM Demod" << "FM Demod" << "PM Demod";
+//    demodSelect->insertItems(0, comboString);
+//    demodSelect->setFixedSize(200, 30-4);
 
-    QPushButton *markerOff, *markerDelta;
-    markerOff = new QPushButton("Marker Off");
-    markerOff->setObjectName("BBPushButton");
-    markerOff->setFixedSize(120, 30-4);
+//    QPushButton *markerOff, *markerDelta;
+//    markerOff = new QPushButton("Marker Off");
+//    markerOff->setObjectName("BBPushButton");
+//    markerOff->setFixedSize(120, 30-4);
 
-    markerDelta = new QPushButton("Marker Delta");
-    markerDelta->setObjectName("BBPushButton");
-    markerDelta->setFixedSize(120, 30-4);
+//    markerDelta = new QPushButton("Marker Delta");
+//    markerDelta->setObjectName("BBPushButton");
+//    markerDelta->setFixedSize(120, 30-4);
 
-    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
-    toolBar->addWidget(demodSelect);
-    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
-    toolBar->addSeparator();
-    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
-    toolBar->addWidget(markerOff);
-    toolBar->addWidget(markerDelta);
+//    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+//    toolBar->addWidget(demodSelect);
+//    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+//    toolBar->addSeparator();
+//    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+//    toolBar->addWidget(markerOff);
+//    toolBar->addWidget(markerDelta);
 
-    connect(demodSelect, SIGNAL(activated(int)), plot, SLOT(changeDemod(int)));
-    connect(markerOff, SIGNAL(clicked()), plot, SLOT(disableMarker()));
-    connect(markerDelta, SIGNAL(clicked()), plot, SLOT(toggleDelta()));
-}
+//    connect(demodSelect, SIGNAL(activated(int)), plot, SLOT(changeDemod(int)));
+//    connect(markerOff, SIGNAL(clicked()), plot, SLOT(disableMarker()));
+//    connect(markerDelta, SIGNAL(clicked()), plot, SLOT(toggleDelta()));
+//}
 
 DemodSweepPlot::DemodSweepPlot(Session *session, QWidget *parent) :
     GLSubView(session, parent),
@@ -129,6 +129,7 @@ void DemodSweepPlot::mousePressEvent(QMouseEvent *e)
         markerOn = true;
         markerPos.setX((double)(e->pos().x() - grat_ul.x()) / grat_sz.x());
     }
+    update();
 
     QGLWidget::mousePressEvent(e);
 }
@@ -198,6 +199,7 @@ void DemodSweepPlot::paintEvent(QPaintEvent *)
 
 void DemodSweepPlot::DemodAndDraw()
 {
+    const DemodSettings *ds = GetSession()->demod_settings;
     const IQSweep &iq = GetSession()->iq_capture;
     if(iq.sweep.size() <= 1) return;
 
@@ -208,15 +210,26 @@ void DemodSweepPlot::DemodAndDraw()
     if(demodType == DemodTypeAM) {
         for(int i = 0; i < iq.sweep.size(); i++) {
             trace.push_back(i);
-            trace.push_back(10 * log10(iq.sweep[i].re * iq.sweep[i].re +
-                                       iq.sweep[i].im * iq.sweep[i].im));
+            trace.push_back(iq.sweep[i].re * iq.sweep[i].re +
+                            iq.sweep[i].im * iq.sweep[i].im);
         }
-        ref = GetSession()->demod_settings->InputPower().ConvertToUnits(DBM);
-        botRef = ref - 100.0;
+        if(ds->InputPower().IsLogScale()) {
+            ref = ds->InputPower().ConvertToUnits(DBM);
+            botRef = ref - 100.0;
+            for(int i = 1; i < trace.size(); i += 2) {
+                trace[i] = 10.0 * log10(trace[i]);
+            }
+        } else {
+            ref = ds->InputPower();
+            botRef = 0.0;
+            for(int i = 1; i < trace.size(); i += 2) {
+                trace[i] = sqrt(trace[i] * 50000.0);
+            }
+        }
     } else if(demodType == DemodTypeFM) {
-        double sr = 40.0e6 / (0x1 << GetSession()->demod_settings->DecimationFactor());
-        demod_fm(iq.sweep, trace, sr);
-        ref = 40.0e6 / (0x1 << GetSession()->demod_settings->DecimationFactor());
+        double sr = 40.0e6 / (0x1 << ds->DecimationFactor());
+        demod_fm(iq.sweep, trace, sr / 2.0);
+        ref = 40.0e6 / (0x1 << ds->DecimationFactor()) / 2.0;
         botRef = -ref;
     } else if(demodType == DemodTypePM) {
         for(int i = 0; i < iq.sweep.size(); i++) {
@@ -285,9 +298,17 @@ void DemodSweepPlot::DrawPlotText()
     if(demodType == DemodTypeAM) {
         DrawString("Ref " + ds->InputPower().GetString(), textFont,
                    QPoint(grat_ul.x() + 5, grat_ul.y() + 22), LEFT_ALIGNED);
+        double botVal, step;
+        if(ds->InputPower().IsLogScale()) {
+            botVal = ds->InputPower() - 100.0;
+            step = 10.0;
+        } else {
+            botVal = 0;
+            step = ds->InputPower() / 10.0;
+        }
         for(int i = 0; i <= 8; i += 2) {
             int x_pos = grat_ul.x() - 2, y_pos = (grat_sz.y() / 10) * i + grat_ll.y() - 5;
-            str.sprintf("%.2f", ds->InputPower().Val() - (10.0*(10-i)));
+            str.sprintf("%.2f", botVal + step * i);
             DrawString(str, divFont, x_pos, y_pos, RIGHT_ALIGNED);
         }
     } else if(demodType == DemodTypeFM) {
@@ -338,6 +359,7 @@ void DemodSweepPlot::DrawMarkers()
     double binSize = 1.0 / (40.0e6 / (0x1 << ds->DecimationFactor()));
 
     int index = (trace.size()/2) * markerPos.x();
+    markerPos.setX((double)index / (trace.size() / 2));
     str = QVariant(index * binSize * 1000.0).toString() + " ms : ";
     index = index * 2 + 1;
 
@@ -350,13 +372,15 @@ void DemodSweepPlot::DrawMarkers()
     if(demodType == DemodTypeAM) {
         float botRef = ds->InputPower() - 100.0;
         markerPos.setY((markerVal - botRef) / 100.0);
-
+        str += Amplitude(markerVal, DBM).GetString();
     } else if(demodType == DemodTypeFM) {
-        float botRef = -40.0e6 / (0x1 << ds->DecimationFactor());
+        float botRef = -40.0e6 / (0x1 << ds->DecimationFactor()) / 2.0;
         markerPos.setY((markerVal - botRef) / fabs(2.0 * botRef));
+        str += Frequency(markerVal).GetFreqString();
     } else if(demodType == DemodTypePM) {
         float botRef = -BB_PI;
         markerPos.setY((markerVal - botRef) / BB_TWO_PI);
+        str += QVariant(markerVal).toString();
     }
 
     // Viewport on grat, full pixel scale

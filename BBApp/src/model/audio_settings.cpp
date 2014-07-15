@@ -102,7 +102,7 @@ void AudioSettings::setCenterFrequency(Frequency new_center_freq)
 void AudioSettings::setIFBandwidth(Frequency new_if_bandwidth)
 {
     bb_lib::clamp(new_if_bandwidth,
-                  Frequency(60.0e3),
+                  Frequency(3.0e3),
                   Frequency(200.0e3));
 
     if_bandwidth = new_if_bandwidth;

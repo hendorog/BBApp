@@ -13,7 +13,29 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     toolBar->move(0, 0);
     toolBar->layout()->setContentsMargins(0, 0, 0, 0);
     toolBar->layout()->setSpacing(0);
-    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_HEIGHT)));
+
+    ComboBox *demodSelect = new ComboBox();
+    QStringList comboString;
+    comboString << "AM Demod" << "FM Demod" << "PM Demod";
+    demodSelect->insertItems(0, comboString);
+    demodSelect->setFixedSize(200, 30-4);
+
+    QPushButton *markerOff, *markerDelta;
+    markerOff = new QPushButton("Marker Off");
+    markerOff->setObjectName("BBPushButton");
+    markerOff->setFixedSize(120, 30-4);
+
+    markerDelta = new QPushButton("Marker Delta");
+    markerDelta->setObjectName("BBPushButton");
+    markerDelta->setFixedSize(120, 30-4);
+
+    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+    toolBar->addWidget(demodSelect);
+    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+    toolBar->addSeparator();
+    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+    toolBar->addWidget(markerOff);
+    toolBar->addWidget(markerDelta);
 
     QWidget *spacer = new QWidget();
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -24,27 +46,35 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     singleSweep = new QPushButton("Single", toolBar);
     singleSweep->setObjectName("BBPushButton");
     singleSweep->setFixedSize(120, TOOLBAR_HEIGHT - 4);
-    toolBar->addWidget(singleSweep);
     connect(singleSweep, SIGNAL(clicked()), this, SLOT(singlePressed()));
 
     autoSweep = new QPushButton("Auto", toolBar);
     autoSweep->setObjectName("BBPushButton");
     autoSweep->setFixedSize(120, TOOLBAR_HEIGHT - 4);
-    toolBar->addWidget(autoSweep);
     connect(autoSweep, SIGNAL(clicked()), this, SLOT(autoPressed()));
 
     presetBtn = new QPushButton("Preset", toolBar);
     presetBtn->setObjectName("BBPresetButton");
     presetBtn->setFixedSize(120, TOOLBAR_HEIGHT - 4);
-    toolBar->addWidget(presetBtn);
     connect(presetBtn, SIGNAL(clicked()), this, SIGNAL(presetDevice()));
+
+    toolBar->addWidget(singleSweep);
+    toolBar->addWidget(autoSweep);
+    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+    toolBar->addSeparator();
+    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+    toolBar->addWidget(presetBtn);
 
     demodArea = new MdiArea(this);
     demodArea->move(0, TOOLBAR_HEIGHT);
 
-    DemodSweepArea *sweepPlot = new DemodSweepArea(sPtr);
+    //DemodSweepArea *sweepPlot = new DemodSweepArea(sPtr);
+    DemodSweepPlot *sweepPlot = new DemodSweepPlot(sPtr);
     demodArea->addSubWindow(sweepPlot);
     connect(this, SIGNAL(updateView()), sweepPlot, SLOT(update()));
+    connect(demodSelect, SIGNAL(activated(int)), sweepPlot, SLOT(changeDemod(int)));
+    connect(markerOff, SIGNAL(clicked()), sweepPlot, SLOT(disableMarker()));
+    connect(markerDelta, SIGNAL(clicked()), sweepPlot, SLOT(toggleDelta()));
 
     DemodSpectrumPlot *freqPlot = new DemodSpectrumPlot(sPtr);
     freqPlot->setWindowTitle(tr("Spectrum Plot"));
@@ -55,6 +85,10 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     iqPlot->setWindowTitle(tr("IQ Plot"));
     demodArea->addSubWindow(iqPlot);
     connect(this, SIGNAL(updateView()), iqPlot, SLOT(update()));
+
+    for(QMdiSubWindow *window : demodArea->subWindowList()) {
+        window->setWindowFlags(Qt::FramelessWindowHint);
+    }
 
     connect(sessionPtr->demod_settings, SIGNAL(updated(const DemodSettings*)),
             this, SLOT(updateSettings(const DemodSettings*)));
@@ -84,16 +118,29 @@ void DemodCentral::ResetView()
 
 }
 
+// Paint into image via QPainter
 void DemodCentral::GetViewImage(QImage &image)
 {
+    QImage temp(demodArea->size(), QImage::Format_RGB32);
+    QList<QMdiSubWindow*> list = demodArea->subWindowList();
 
+    QPainter painter;
+    painter.begin(&temp);
+    for(int i = 0; i < list.length(); i++) {
+        QMdiSubWindow *window = list.at(i);
+        QGLWidget *view = dynamic_cast<QGLWidget*>(window->widget());
+        painter.drawImage(window->x(), window->y(), view->grabFrameBuffer());
+    }
+    painter.end();
+
+    image = temp;
 }
 
 void DemodCentral::resizeEvent(QResizeEvent *)
 {
     toolBar->resize(width(), TOOLBAR_HEIGHT);
     demodArea->resize(width(), height() - TOOLBAR_HEIGHT);
-    //demodArea->tileSubWindows();
+
     demodArea->retile();
 }
 

@@ -43,8 +43,6 @@ public:
     int DecimationFactor() const { return decimationFactor; }
     Frequency Bandwidth() const { return bandwidth; }
     bool AutoBandwidth() const { return autoBandwidth; }
-    Frequency VBW() const { return vbw; }
-    bool AutoVBW() const { return autoVBW; }
     Time SweepTime() const { return sweepTime; }
 
     TriggerType TrigType() const { return trigType; }
@@ -63,8 +61,6 @@ private:
     int decimationFactor;
     Frequency bandwidth;
     bool autoBandwidth;
-    Frequency vbw;
-    bool autoVBW;
     Time sweepTime;
 
     TriggerType trigType;
@@ -79,8 +75,6 @@ public slots:
     void setDecimation(int);
     void setBandwidth(Frequency);
     void setAutoBandwidth(bool);
-    void setVBW(Frequency);
-    void setAutoVBW(bool);
     void setSweepTime(Time);
 
     void setTrigType(int);

@@ -187,7 +187,7 @@ bool DeviceBB60A::Reconfigure(const DemodSettings *ds, IQDescriptor *desc)
     bbConfigureIO(id, port_one_mask, port_two_mask);
     bbConfigureCenterSpan(id, ds->CenterFreq(), 20.0e6);
     bbConfigureIQ(id, decimation, ds->Bandwidth());
-    bbConfigureLevel(id, ds->InputPower().Val(), atten);
+    bbConfigureLevel(id, ds->InputPower().ConvertToUnits(DBM), atten);
     bbConfigureGain(id, gain);
 
     bbInitiate(id, BB_STREAMING, BB_STREAM_IQ);

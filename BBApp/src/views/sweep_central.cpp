@@ -25,6 +25,7 @@ SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
     tool_bar = new QToolBar(this);
     tool_bar->layout()->setContentsMargins(0, 0, 0, 0);
     tool_bar->layout()->setSpacing(0);
+    //tool_bar->layout()->
     tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
 
     Label *waterfall_label = new Label(tr("Spectrogram"), tool_bar);
@@ -65,15 +66,15 @@ SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
         persistence_clear->setToolTip(tr("Persistence requires OpenGL version 3.0 or greater"));
     }
 
-    tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
-    tool_bar->addSeparator();
+//    tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
+//    tool_bar->addSeparator();
 
     QWidget *spacer = new QWidget();
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     tool_bar->addWidget(spacer);
 
-    tool_bar->addSeparator();
-    tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
+//    tool_bar->addSeparator();
+//    tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
 
     single_sweep = new QPushButton(tr("Single Trig"), tool_bar);
     single_sweep->setObjectName("BBPushButton");
@@ -302,9 +303,12 @@ void SweepCentral::PlaybackThread()
 
 void SweepCentral::settingsChanged(const SweepSettings *ss)
 {
-    if(session_ptr->sweep_settings->Mode() == BB_IDLE) return;
+    // Do nothing if
+    //if(session_ptr->sweep_settings->Mode() != BB_SWEEPING &&
+    //        session_ptr->sweep_settings->mode != BB_REAL_TIME) return;
+
     // If reconfigure already queued, wait for it
-    while(reconfigure && session_ptr->device->IsOpen()) { Sleep(1); }
+    //while(reconfigure && session_ptr->device->IsOpen()) { Sleep(1); }
     // Queue another
     reconfigure = true;
 }

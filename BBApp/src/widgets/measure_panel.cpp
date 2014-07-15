@@ -10,6 +10,7 @@ MeasurePanel::MeasurePanel(const QString &title,
     DockPage *marker_page = new DockPage("Markers");
     DockPage *offset_page = new DockPage("Offsets");
     DockPage *channel_power_page = new DockPage("Channel Power");
+    DockPage *occupied_bandwidth_page = new DockPage("Occupied Bandwidth");
 
     QStringList string_list;
 
@@ -128,6 +129,16 @@ MeasurePanel::MeasurePanel(const QString &title,
             this, SLOT(channelPowerUpdated()));
     connect(channel_power_enabled, SIGNAL(clicked(bool)),
             this, SLOT(channelPowerUpdated()));
+
+    ocbw_enabled = new CheckBoxEntry("Enabled");
+    percentPower = new NumericEntry("% Power", 0.0, "");
+
+    occupied_bandwidth_page->AddWidget(ocbw_enabled);
+    occupied_bandwidth_page->AddWidget(percentPower);
+
+    AddPage(occupied_bandwidth_page);
+
+
 
     // Done connected DockPages to TraceManager
     updateTraceView(0);
