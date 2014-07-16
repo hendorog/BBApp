@@ -16,17 +16,6 @@
 class Settings;
 class DemodSettings;
 
-struct OccupiedBandwidthInfo {
-    OccupiedBandwidthInfo()
-    {
-        enabled = false;
-        percentPower = 99.0;
-    }
-
-    bool enabled;
-    double percentPower;
-};
-
 /*
  * One copy found in the Session class.
  * Represents 6 traces and 6 markers
@@ -89,13 +78,14 @@ public:
 
     const LimitLineTable* GetLimitLine() const { return &limitLine; }
 
-    Frequency FreqOffset() const { return freq_offset; }
     double RefOffset() const { return ref_offset; }
 
     void SetChannelPower(bool enable, Frequency width, Frequency spacing);
-    void SetOccupiedBandwidth(bool enabled, double percentPower);
-
     const ChannelPower* GetChannelPowerInfo() const { return &channel_power; }
+
+    void SetOccupiedBandwidth(bool enabled, double percentPower);
+    const OccupiedBandwidthInfo& GetOccupiedBandwidthInfo() const { return ocbw; }
+
     // Real-Time and Waterfall trace buffer
     ThreadSafeQueue<GLVector, 32> trace_buffer;
 
@@ -116,7 +106,6 @@ private:
     PathLossTable pathLoss;
     LimitLineTable limitLine;
 
-    Frequency freq_offset;
     double ref_offset; // dB
 
     ChannelPower channel_power;
@@ -149,7 +138,6 @@ public slots:
     void markerUpdate(bool);
     void markerActive(bool);
 
-    void setFreqOffset(Frequency);
     void setRefOffset(double);
 
     void importPathLoss();

@@ -55,7 +55,7 @@ public slots:
 
 private slots:
     void channelPowerUpdated();
-    //void occupiedBandwidthUpdated();
+    void occupiedBandwidthUpdated();
 
 signals:
 

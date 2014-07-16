@@ -1,5 +1,5 @@
 #include "trace.h"
-#include "../lib/bb_lib.h"
+#include "lib/bb_lib.h"
 
 #include <QSettings>
 #include <QFile>
@@ -328,6 +328,57 @@ void Trace::ApplyOffset(double dB) {
             _maxBuf[i] *= scalar;
         }
     }
+}
+
+void Trace::GetOccupiedBandwidth(OccupiedBandwidthInfo &info) const
+{
+    Q_ASSERT(info.percentPower >= MIN_OCBW_PERCENT_POWER &&
+             info.percentPower <= MAX_OCBW_PERCENT_POWER);
+
+    // Sum up total channel power
+    double power = 0.0;
+    pfn_convert to_lin, to_log;
+    if(GetSettings()->RefLevel().IsLogScale()) {
+        to_lin = DBMtoMW;
+        to_log = MWtoDBM;
+    } else {
+        to_lin = MVtoMV2;
+        to_log = MV2toMV;
+    }
+
+    info.traceLen = Length();
+
+    for(int i = 0; i < Length(); i++) {
+        power += to_lin(Max()[i]);
+    }
+
+    double halfMissing = ((100.0 - info.percentPower) / 2.0) / 100.0;
+    halfMissing *= power;
+
+    // Move in on each end until 1/2 the missing power is subtracted
+    info.lix = 0;
+    info.rix = Length() - 1;
+
+    double leftSum = 0.0, rightSum = 0.0;
+    while(leftSum < halfMissing && info.lix < info.rix) {
+        leftSum += to_lin(Max()[info.lix++]);
+    }
+
+    while(rightSum < halfMissing && info.rix > info.lix) {
+        rightSum += to_lin(Max()[info.rix--]);
+    }
+
+    Frequency leftFreq = StartFreq() + BinSize() * info.lix;
+
+    info.leftMarker.Place(StartFreq() + BinSize() * info.lix);
+    info.leftMarker.UpdateMarker(this, this->GetSettings());
+
+    info.rightMarker.Place(StartFreq() + BinSize() * info.rix);
+    info.rightMarker.UpdateMarker(this, this->GetSettings());
+
+    info.bandwidth = info.rightMarker.Freq() - info.leftMarker.Freq();
+    info.totalPower = power - (leftSum + rightSum);
+    info.totalPower = to_log(info.totalPower / GetSettings()->GetWindowBandwidth());
 }
 
 ChannelPower::ChannelPower() :

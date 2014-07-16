@@ -28,7 +28,6 @@ TraceManager::TraceManager()
     traces[0].SetType(NORMAL);
     traces[0].SetUpdate(true);
 
-    freq_offset = 0.0;
     ref_offset = 0.0;
 
     lastTraceAboveReference = false;
@@ -137,13 +136,16 @@ void TraceManager::UpdateTraces(Trace *trace)
     trace_buffer.IncrementFront();
 
     channel_power.Update(trace);
+
+    if(ocbw.enabled) {
+        trace->GetOccupiedBandwidth(ocbw);
+    }
 }
 
 int TraceManager::SolveMarkers(const SweepSettings *s)
 {
     for(int i = 0; i < MARKER_COUNT; i++) {
-        GetMarker(i)->UpdateMarker(GetTrace(GetMarker(i)->OnTrace()),
-                                   s, freq_offset);
+        GetMarker(i)->UpdateMarker(GetTrace(GetMarker(i)->OnTrace()), s);
     }
 
     return GetVisibleMarkerCount();
@@ -453,12 +455,6 @@ void TraceManager::markerActive(bool active)
     emit updated();
 }
 
-void TraceManager::setFreqOffset(Frequency f)
-{
-    freq_offset = f;
-    emit updated();
-}
-
 void TraceManager::setRefOffset(double offset)
 {
     ref_offset = offset;
@@ -468,6 +464,12 @@ void TraceManager::setRefOffset(double offset)
 void TraceManager::SetChannelPower(bool enable, Frequency width, Frequency spacing)
 {
     channel_power.Configure(enable, width, spacing);
+}
+
+void TraceManager::SetOccupiedBandwidth(bool enabled, double percentPower)
+{
+    ocbw.percentPower = percentPower;
+    ocbw.enabled = enabled;
 }
 
 void TraceManager::importPathLoss()

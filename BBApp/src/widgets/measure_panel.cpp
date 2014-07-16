@@ -132,13 +132,15 @@ MeasurePanel::MeasurePanel(const QString &title,
 
     ocbw_enabled = new CheckBoxEntry("Enabled");
     percentPower = new NumericEntry("% Power", 0.0, "");
+    percentPower->SetValue(99.0);
 
     occupied_bandwidth_page->AddWidget(ocbw_enabled);
     occupied_bandwidth_page->AddWidget(percentPower);
 
     AddPage(occupied_bandwidth_page);
 
-
+    connect(ocbw_enabled, SIGNAL(clicked(bool)), SLOT(occupiedBandwidthUpdated()));
+    connect(percentPower, SIGNAL(valueChanged(double)), SLOT(occupiedBandwidthUpdated()));
 
     // Done connected DockPages to TraceManager
     updateTraceView(0);
@@ -214,4 +216,14 @@ void MeasurePanel::channelPowerUpdated()
     trace_manager_ptr->SetChannelPower(channel_power_enabled->IsChecked(),
                                        channel_width->GetFrequency(),
                                        channel_spacing->GetFrequency());
+}
+
+void MeasurePanel::occupiedBandwidthUpdated()
+{
+    double powerVal = percentPower->GetValue();
+    if(powerVal < MIN_OCBW_PERCENT_POWER) percentPower->SetValue(MIN_OCBW_PERCENT_POWER);
+    if(powerVal > MAX_OCBW_PERCENT_POWER) percentPower->SetValue(MAX_OCBW_PERCENT_POWER);
+
+    trace_manager_ptr->SetOccupiedBandwidth(ocbw_enabled->IsChecked(),
+                                            percentPower->GetValue());
 }

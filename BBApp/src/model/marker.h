@@ -49,8 +49,7 @@ public:
     // Use the frequency to determine the index, amplitude
     //  and delta values, do nothing if not active
     void UpdateMarker(const Trace* trace,
-                      const SweepSettings *s,
-                      Frequency dc_offset);
+                      const SweepSettings *s);
     //void UpdateMarker(const Trace* trace, const DemodSettings *ds);
 
 private:

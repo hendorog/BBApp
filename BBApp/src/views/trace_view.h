@@ -28,14 +28,9 @@ class TraceView : public GLSubView {
     static const int MARGIN = 20;
 
 public:
-//    enum TextAlignment {
-//        LEFT_ALIGNED, RIGHT_ALIGNED, CENTER_ALIGNED
-//    };
-
     TraceView(Session *session, QWidget *parent = 0);
     ~TraceView();
 
-    // Could also use QOpenGLFunctions::hasOpenGLFeature(FrameBuffer) ?
     bool HasOpenGL3() const { return hasOpenGL3; }
 
 protected:
@@ -58,6 +53,8 @@ protected:
     void DrawMarker(int x, int y, int num);
     void DrawDeltaMarker(int x, int y, int num);
     void RenderChannelPower();
+    void DrawOccupiedBandwidth();
+    void DrawOCBWMarker(int x, int y, bool left);
     void DrawPersistence();
     void DrawLimitLines(const Trace *limitTrace, const GLVector &v);
 
@@ -72,24 +69,11 @@ private:
                      grat_sz.x(), grat_sz.y()).contains(p);
     }
 
-    // Strings are subject to matrix transformations ?
-//    void DrawString(const QString &s, const QFont &f,
-//                    QPoint p, TextAlignment align);
-//    void DrawString(const QString &s, const QFont &f,
-//                    int x, int y, TextAlignment align) {
-//        DrawString(s, f, QPoint(x, y), align);
-//    }
-//    // Get width of string in pixels
-//    int GetTextWidth(const QString &s, const QFont &f) const {
-//        QFontMetrics metrics(f);
-//        return metrics.width(s);
-//    }
     // Flips point so (0,0) is lower left corner
     QPoint WindowToGLSpace(const QPoint &p) const {
         return QPoint(p.x() - grat_ll.x(), p.y() - grat_ll.y());
     }
 
-//    Session *session_ptr; // Pointer copy, does not own
     QTime time; // Used for sweep time display
     GLVector graticule, grat_border; // Point lists for graticule
     GLuint gratVBO, borderVBO; // GL VBOs for graticule
@@ -98,7 +82,6 @@ private:
 
     // Members for switch context is separate thread
     SwapThread *swap_thread;
-    //QMutex drawMutex;
     std::mutex drawMutex;
     semaphore paintCondition;
 
@@ -106,7 +89,6 @@ private:
     GLuint traceVBO, textureVBO;
 
     QString plotTitle;
-    //QFont textFont, divFont;
     GLFont textFont, divFont;
 
     bool persist_on;

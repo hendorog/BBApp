@@ -86,27 +86,27 @@ public:
     QString GetUnitString() const;
 
     // Simple string, new copy
-    QString GetFreqString(void) {
+    QString GetFreqString(void) const {
         QString s;
         CreateSimpleString(s);
         return s;
     }
 
     // Simple string, no copy constructors
-    QString& GetFreqString(QString &s) {
+    QString& GetFreqString(QString &s) const {
         CreateSimpleString(s);
         return s;
     }
 
     // Complex string, new copy
-    QString GetFreqString(int precision, bool units) {
+    QString GetFreqString(int precision, bool units) const {
         QString s;
         CreateComplexString(s, precision, units);
         return s;
     }
 
     // Complex string, no copy constructors
-    QString& GetFreqString(QString& s, int precision, bool units) {
+    QString& GetFreqString(QString& s, int precision, bool units) const {
         CreateComplexString(s, precision, units);
         return s;
     }
@@ -116,7 +116,7 @@ private:
     double frequency;
 
     // Seven digits after the decimal, no unit string, weak negatives
-    void CreateSimpleString(QString &s) {
+    void CreateSimpleString(QString &s) const {
         if(frequency < 1.0e3) s.sprintf("%.7f Hz", frequency);
         else if(frequency < 1.0e6) s.sprintf("%.7f kHz", frequency * 0.001);
         else if(frequency < 1.0e9) s.sprintf("%.7f MHz", frequency * 1.0e-6);
@@ -124,7 +124,7 @@ private:
     }
 
     // Variable digits after decimal and optional unit string, and negatives
-    void CreateComplexString(QString &s, int precision, bool units) {
+    void CreateComplexString(QString &s, int precision, bool units) const {
 
         bool neg = false;
         double freq = frequency;

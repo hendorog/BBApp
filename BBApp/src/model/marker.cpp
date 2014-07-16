@@ -88,8 +88,7 @@ bool Marker::Place(Time t)
  * 2) Use index to find absolute freq and amplitude
  */
 void Marker::UpdateMarker(const Trace* trace,
-                          const SweepSettings *s,
-                          Frequency dc_offset)
+                          const SweepSettings *s)
 {
     if(!active || !update) {
         return;
@@ -101,7 +100,7 @@ void Marker::UpdateMarker(const Trace* trace,
     }
 
     // Regular marker determined by frequency
-    Frequency num = freq - trace->StartFreq() + dc_offset + 0.5;
+    Frequency num = freq - trace->StartFreq() + 0.5;
     index = (int)(num / trace->BinSize());
     bool log_scale = s->RefLevel().IsLogScale();
 
@@ -124,14 +123,14 @@ void Marker::UpdateMarker(const Trace* trace,
         }
         bb_lib::clamp(yr, 0.0, 1.0);
 
-        text = (freq + dc_offset).GetFreqString(6, true) +
+        text = (freq).GetFreqString(6, true) +
                 ", " + amp.GetString();
     }
 
     // Delta marker
     if(deltaOn) {
         QString unit_string = log_scale ? "dB" : "mV";
-        Frequency num = deltaFreq - trace->StartFreq() + dc_offset + 0.5;
+        Frequency num = deltaFreq - trace->StartFreq() + 0.5;
         deltaIndex = (int)(num / trace->BinSize());
 
         if(deltaIndex < 0 || deltaIndex >= trace->Length()) {

@@ -392,7 +392,7 @@ void TraceView::Paint()
         RenderGratText();
         RenderMarkers();
         RenderChannelPower();
-
+        DrawOccupiedBandwidth();
     }
 
     doneCurrent();
@@ -461,7 +461,6 @@ void TraceView::RenderGratText()
     const SweepSettings *s = GetSession()->sweep_settings;
     TraceManager *tm = GetSession()->trace_manager;
     QVariant elapsed = time.restart();
-    Frequency freq_off = tm->FreqOffset();
     QString str;
 
     double div = s->RefLevel().IsLogScale() ? s->Div() : (s->RefLevel().Val() / 10.0);
@@ -474,13 +473,13 @@ void TraceView::RenderGratText()
     str.sprintf("%d pts in %d ms", tm->GetTrace(0)->Length(), elapsed.toInt());
     DrawString(str, textFont, grat_ll.x()+grat_sz.x()-5,
                grat_ll.y()-40, RIGHT_ALIGNED);
-    DrawString("Center " + (s->Center() + freq_off).GetFreqString(), textFont,
+    DrawString("Center " + s->Center().GetFreqString(), textFont,
                size().width()/2, grat_ll.y()-20, CENTER_ALIGNED);
     DrawString("Span " + s->Span().GetFreqString(), textFont,
                size().width()/2, grat_ll.y()-40, CENTER_ALIGNED);
-    DrawString("Start " + (s->Start() + freq_off).GetFreqString(), textFont,
+    DrawString("Start " + (s->Start()).GetFreqString(), textFont,
                grat_ll.x()+5, grat_ll.y()-20, LEFT_ALIGNED);
-    DrawString("Stop " + (s->Stop() + freq_off).GetFreqString(), textFont,
+    DrawString("Stop " + (s->Stop()).GetFreqString(), textFont,
                grat_ll.x()+grat_sz.x()-5, grat_ll.y()-20, RIGHT_ALIGNED);
     DrawString("Ref " + s->RefLevel().GetString(), textFont,
                grat_ll.x()+5, grat_ul.y()+22, LEFT_ALIGNED);
@@ -730,9 +729,6 @@ void TraceView::RenderMarkers()
     glPopAttrib();
 }
 
-/*
- * DrawMarker()
- */
 void TraceView::DrawMarker(int x, int y, int num)
 {
     glColor3f(1.0, 1.0, 1.0);
@@ -758,6 +754,49 @@ void TraceView::DrawMarker(int x, int y, int num)
     str.sprintf("%d", num);
     DrawString(str, divFont,
                QPoint(x, y + 10), CENTER_ALIGNED);
+}
+
+void TraceView::DrawOCBWMarker(int x, int y, bool left)
+{
+    glLineWidth(2.0);
+
+    glColor3f(1.0, 1.0, 1.0);
+    glBegin(GL_POLYGON);
+    glVertex2f(x, y - 5);
+    glVertex2f(x + 5, y);
+    glVertex2f(x, y + 5);
+    glVertex2f(x - 5, y );
+    glEnd();
+
+    //glQColor(session_ptr->colors.markers);
+    glColor3f(0.0, 0.0, 0.0);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(x, y - 5);
+    glVertex2f(x + 5, y);
+    glVertex2f(x, y + 5);
+    glVertex2f(x - 5, y );
+    glVertex2f(x, y - 5);
+    glEnd();
+
+    glBegin(GL_LINES);
+    if(left) {
+        glVertex2f(x - 20, y);
+        glVertex2f(x - 30, y);
+        glVertex2f(x - 20, y);
+        glVertex2f(x - 25, y + 5);
+        glVertex2f(x - 20, y);
+        glVertex2f(x - 25, y - 5);
+    } else {
+        glVertex2f(x + 20, y);
+        glVertex2f(x + 30, y);
+        glVertex2f(x + 20, y);
+        glVertex2f(x + 25, y + 5);
+        glVertex2f(x + 20, y);
+        glVertex2f(x + 25, y - 5);
+    }
+    glEnd();
+
+    glLineWidth(1.0);
 }
 
 void TraceView::DrawDeltaMarker(int x, int y, int num)
@@ -789,19 +828,6 @@ void TraceView::DrawDeltaMarker(int x, int y, int num)
                QPoint(x, y+11), CENTER_ALIGNED);
 }
 
-//void TraceView::DrawString(const QString &s,
-//                           const QFont &f,
-//                           QPoint p,
-//                           TextAlignment align)
-//{
-//    if(align == RIGHT_ALIGNED) {
-//        p -= QPoint(GetTextWidth(s, f), 0);
-//    } else if(align == CENTER_ALIGNED) {
-//        p -= QPoint(GetTextWidth(s, f)/2, 0);
-//    }
-
-//    renderText(p.x(), p.y(), 0, s, f);
-//}
 
 void TraceView::RenderChannelPower()
 {
@@ -813,14 +839,13 @@ void TraceView::RenderChannelPower()
     double span = stop - start;
     if(span == 0.0) return;
 
+    AmpUnits printUnits = GetSession()->sweep_settings->RefLevel().Units();
+
     glPushAttrib(GL_VIEWPORT_BIT);
     glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    //glTranslatef(grat_ul.x(), grat_ul.y(), 0.0);
-    //glScalef(grat_sz.x(), grat_sz.y(), 1.0);
-    //glScalef(1.0, grat_sz.y(), 1.0);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -844,15 +869,17 @@ void TraceView::RenderChannelPower()
         glVertex2f(x1 * grat_sz.x(), grat_sz.y());//1.0);
         glEnd();
 
-        // Draw Channel power text
+        // Draw channel power text
         glQColor(GetSession()->colors.text);
         QString cp_string;
-        cp_string.sprintf("%f", cp->GetChannelPower(i));
-        DrawString(cp_string, textFont, xCen * grat_sz.x(), 40, CENTER_ALIGNED);
+        Amplitude power(cp->GetChannelPower(i), (printUnits == MV) ? MV : DBM);
+        DrawString(power.ConvertToUnits(printUnits).GetString(),
+                   textFont, xCen * grat_sz.x(), 40, CENTER_ALIGNED);
 
-        // Draw dBc power text
+        // Draw adjacent channel power text
         if(i == 0 || i == 2) {
-            cp_string.sprintf("%f dBc", cp->GetChannelPower(i) - cp->GetChannelPower(1));
+            cp_string.sprintf("%.2f %s", cp->GetChannelPower(i) - cp->GetChannelPower(1),
+                              (printUnits == MV) ? "mV" : "dBc");
             DrawString(cp_string, textFont, xCen * grat_sz.x(), 20, CENTER_ALIGNED);
         }
     }
@@ -864,6 +891,43 @@ void TraceView::RenderChannelPower()
     glPopMatrix();
     glPopAttrib();
 }
+
+void TraceView::DrawOccupiedBandwidth()
+{
+    const TraceManager *tm = GetSession()->trace_manager;
+    const OccupiedBandwidthInfo &info = tm->GetOccupiedBandwidthInfo();
+
+    if(!info.enabled) return;
+
+    glPushAttrib(GL_VIEWPORT_BIT);
+    glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0, grat_sz.x(), 0, grat_sz.y(), -1, 1);
+
+    DrawOCBWMarker(info.leftMarker.xRatio() * grat_sz.x(),
+                   info.leftMarker.yRatio() * grat_sz.y(), true);
+    DrawOCBWMarker(info.rightMarker.xRatio() * grat_sz.x(),
+                   info.rightMarker.yRatio() * grat_sz.y(), false);
+
+    DrawString("Occupied Bandwidth " + info.bandwidth.GetFreqString(), textFont, 5, 40, LEFT_ALIGNED);
+    DrawString("Total Power " + info.totalPower.GetString(), textFont, 5, 20, LEFT_ALIGNED);
+
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    glPopAttrib();
+}
+
+//void TraceView::DrawOCBWMarker(bool left)
+//{
+
+//}
 
 void TraceView::DrawPersistence()
 {

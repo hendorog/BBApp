@@ -2,7 +2,8 @@
 #define TRACE_H
 
 #include "sweep_settings.h"
-#include "../lib/macros.h"
+#include "marker.h"
+#include "lib/macros.h"
 
 #include <QColor>
 
@@ -23,6 +24,28 @@ struct PeakInfo {
 
     Frequency freq;
     Amplitude amp;
+};
+
+struct OccupiedBandwidthInfo {
+    OccupiedBandwidthInfo()
+    {
+        enabled = false;
+        percentPower = 99.0;
+        lix = 0;
+        rix = 0;
+        traceLen = 0;
+        leftMarker.SetActive(true);
+        rightMarker.SetActive(true);
+    }
+
+    bool enabled;
+    double percentPower;
+    // Left/Right Index
+    Marker leftMarker, rightMarker;
+    int lix, rix;
+    int traceLen;
+    Frequency bandwidth;
+    Amplitude totalPower;
 };
 
 class Trace {
@@ -80,6 +103,8 @@ public:
     bool GetChannelPower(double ch_start, double ch_stop, double *power) const;
     // Apply a flat offset, either in linear or logarithmic scale
     void ApplyOffset(double dB);
+
+    void GetOccupiedBandwidth(OccupiedBandwidthInfo &info) const;
 
 private:
     void Alloc(int newSize);  // Allocate both buffers length n

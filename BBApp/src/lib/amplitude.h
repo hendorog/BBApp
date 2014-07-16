@@ -116,8 +116,9 @@ public:
     }
 
     // Get the double portion of *this converted to new_units
-    double ConvertToUnits(AmpUnits new_units) const {
-        return cvt_table[Units()][new_units](Val());
+    Amplitude ConvertToUnits(AmpUnits new_units) const {
+        //return cvt_table[Units()][new_units](Val());
+        return Amplitude(cvt_table[Units()][new_units](Val()), new_units);
     }
 
     // Printing

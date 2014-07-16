@@ -16,8 +16,8 @@
 
 SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
     : CentralWidget(parent, f),
-      session_ptr(sPtr)
-
+      session_ptr(sPtr),
+      trace(true)
 {
     trace_view = new TraceView(session_ptr, this);
     connect(this, SIGNAL(updateView()), trace_view, SLOT(update()));
@@ -66,15 +66,9 @@ SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
         persistence_clear->setToolTip(tr("Persistence requires OpenGL version 3.0 or greater"));
     }
 
-//    tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
-//    tool_bar->addSeparator();
-
     QWidget *spacer = new QWidget();
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     tool_bar->addWidget(spacer);
-
-//    tool_bar->addSeparator();
-//    tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
 
     single_sweep = new QPushButton(tr("Single Trig"), tool_bar);
     single_sweep->setObjectName("BBPushButton");
