@@ -5,6 +5,7 @@
 #include "entry_widgets.h"
 
 class TraceManager;
+class SweepSettings;
 
 class MeasurePanel : public DockPanel {
     Q_OBJECT
@@ -12,7 +13,8 @@ class MeasurePanel : public DockPanel {
 public:
     MeasurePanel(const QString &title,
                  QWidget *parent,
-                 TraceManager *trace_manager);
+                 TraceManager *trace_manager,
+                 const SweepSettings *sweep_settings);
     ~MeasurePanel();
 
 private:
@@ -46,6 +48,7 @@ private:
 
     // Copy of the pointer, does not own
     TraceManager *trace_manager_ptr;
+    const SweepSettings *settings_ptr;
 
 public slots:
     void updateTraceView();
@@ -54,6 +57,9 @@ public slots:
     void updateMarkerView(int);
 
 private slots:
+//    void tryEnableChannelPower();
+//    void tryEnableOccupiedBandwidth();
+
     void channelPowerUpdated();
     void occupiedBandwidthUpdated();
 

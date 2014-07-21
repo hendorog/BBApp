@@ -392,7 +392,7 @@ void TraceView::Paint()
         RenderGratText();
         RenderMarkers();
         RenderChannelPower();
-        DrawOccupiedBandwidth();
+        RenderOccupiedBandwidth();
     }
 
     doneCurrent();
@@ -892,7 +892,7 @@ void TraceView::RenderChannelPower()
     glPopAttrib();
 }
 
-void TraceView::DrawOccupiedBandwidth()
+void TraceView::RenderOccupiedBandwidth()
 {
     const TraceManager *tm = GetSession()->trace_manager;
     const OccupiedBandwidthInfo &info = tm->GetOccupiedBandwidthInfo();
@@ -923,11 +923,6 @@ void TraceView::DrawOccupiedBandwidth()
     glPopMatrix();
     glPopAttrib();
 }
-
-//void TraceView::DrawOCBWMarker(bool left)
-//{
-
-//}
 
 void TraceView::DrawPersistence()
 {

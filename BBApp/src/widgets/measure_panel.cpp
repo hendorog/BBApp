@@ -1,10 +1,15 @@
 #include "measure_panel.h"
 #include "../model/trace_manager.h"
 
+#include <QMessageBox>
+
 MeasurePanel::MeasurePanel(const QString &title,
                            QWidget *parent,
-                           TraceManager *trace_manager)
-    : DockPanel(title, parent), trace_manager_ptr(trace_manager)
+                           TraceManager *trace_manager,
+                           const SweepSettings *sweep_settings) :
+    DockPanel(title, parent),
+    trace_manager_ptr(trace_manager),
+    settings_ptr(sweep_settings)
 {
     DockPage *trace_page = new DockPage("Traces");
     DockPage *marker_page = new DockPage("Markers");
@@ -213,6 +218,12 @@ void MeasurePanel::updateMarkerView(int new_ix)
 
 void MeasurePanel::channelPowerUpdated()
 {
+    if(!settings_ptr->IsAveragePower() && channel_power_enabled->IsChecked()) {
+        QMessageBox::warning(0, "Channel Power Warning",
+                             "For Accurate Measurements, please set\n"
+                             "Detector = Average\n"
+                             "Video Units = Power");
+    }
     trace_manager_ptr->SetChannelPower(channel_power_enabled->IsChecked(),
                                        channel_width->GetFrequency(),
                                        channel_spacing->GetFrequency());
@@ -224,6 +235,12 @@ void MeasurePanel::occupiedBandwidthUpdated()
     if(powerVal < MIN_OCBW_PERCENT_POWER) percentPower->SetValue(MIN_OCBW_PERCENT_POWER);
     if(powerVal > MAX_OCBW_PERCENT_POWER) percentPower->SetValue(MAX_OCBW_PERCENT_POWER);
 
+    if(!settings_ptr->IsAveragePower() && ocbw_enabled->IsChecked()) {
+        QMessageBox::warning(0, "Occupied Bandwidth Warning",
+                             "For Accurate Measurements, please set\n"
+                             "Detector = Average\n"
+                             "Video Units = Power");
+    }
     trace_manager_ptr->SetOccupiedBandwidth(ocbw_enabled->IsChecked(),
                                             percentPower->GetValue());
 }

@@ -1,6 +1,8 @@
 #include "device_bb60a.h"
 #include "mainwindow.h"
 
+#include <QElapsedTimer>
+
 #define STATUS_CHECK(status) \
     lastStatus = status; \
     if(lastStatus < bbNoError) { \
@@ -201,8 +203,30 @@ bool DeviceBB60A::Reconfigure(const DemodSettings *ds, IQDescriptor *desc)
 
 bool DeviceBB60A::GetIQ(IQCapture *iqc)
 {
-    STATUS_CHECK(bbFetchRaw(id, (float*)(&iqc->capture[0]), iqc->triggers));
+    lastStatus = bbFetchRaw(id, (float*)(&iqc->capture[0]), iqc->triggers);
+    // Handle connection issues
+    if(lastStatus == bbDeviceConnectionErr || lastStatus == bbUSBTimeoutErr) {
+        emit connectionIssues();
+        return false;
+    }
+    adc_overflow = (lastStatus == bbADCOverflow);
 
+    return true;
+}
+
+bool DeviceBB60A::GetIQFlush(IQCapture *iqc, bool flush)
+{
+    if(!flush) {
+        return GetIQ(iqc);
+    } else {
+        QElapsedTimer timer;
+        do {
+            timer.start();
+            if(!GetIQ(iqc)) {
+                return false;
+            }
+        } while(timer.restart() < 2);
+    }
     return true;
 }
 

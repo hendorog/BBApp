@@ -22,6 +22,9 @@ public:
 
     const AudioSettings* Configuration() const { return &config; }
 
+protected:
+    void keyPressEvent(QKeyEvent *e);
+
 private:
     void Reconfigure();
     void AudioThread();
@@ -63,6 +66,12 @@ private slots:
     void largeIncPressed();
     void largeDecPressed();
     void released() { resetFactor(); }
+
+    // Set audioDlg focus after reconfigure
+    void setAnonFocusSlot() { setFocus(); }
+
+signals:
+    void setAnonFocus();
 };
 
 #endif // AUDIO_DIALOG_H

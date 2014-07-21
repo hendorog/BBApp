@@ -20,6 +20,7 @@ public:
     // Stream
     bool Reconfigure(const DemodSettings *s, IQDescriptor *iqc);
     bool GetIQ(IQCapture *iqc);
+    bool GetIQFlush(IQCapture *iqc, bool sync);
 
     bool IsPowered() const;
 

@@ -3,49 +3,6 @@
 #include <QLayout>
 #include <QMouseEvent>
 
-//DemodSweepArea::DemodSweepArea(Session *session, QWidget *parent)
-//    : QWidget(parent)
-//{
-//    setWindowTitle("Zero-Span Plot");
-
-//    toolBar = new QToolBar(this);
-//    toolBar->move(0, 0);
-//    toolBar->layout()->setContentsMargins(0, 0, 0, 0);
-//    toolBar->layout()->setSpacing(0);
-//    toolBar->move(0, 0);
-
-//    plot = new DemodSweepPlot(session, this);
-//    plot->move(0, 30);
-//    plot->setWindowTitle("Demod Plot");
-
-//    ComboBox *demodSelect = new ComboBox();
-//    QStringList comboString;
-//    comboString << "AM Demod" << "FM Demod" << "PM Demod";
-//    demodSelect->insertItems(0, comboString);
-//    demodSelect->setFixedSize(200, 30-4);
-
-//    QPushButton *markerOff, *markerDelta;
-//    markerOff = new QPushButton("Marker Off");
-//    markerOff->setObjectName("BBPushButton");
-//    markerOff->setFixedSize(120, 30-4);
-
-//    markerDelta = new QPushButton("Marker Delta");
-//    markerDelta->setObjectName("BBPushButton");
-//    markerDelta->setFixedSize(120, 30-4);
-
-//    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
-//    toolBar->addWidget(demodSelect);
-//    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
-//    toolBar->addSeparator();
-//    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
-//    toolBar->addWidget(markerOff);
-//    toolBar->addWidget(markerDelta);
-
-//    connect(demodSelect, SIGNAL(activated(int)), plot, SLOT(changeDemod(int)));
-//    connect(markerOff, SIGNAL(clicked()), plot, SLOT(disableMarker()));
-//    connect(markerDelta, SIGNAL(clicked()), plot, SLOT(toggleDelta()));
-//}
-
 DemodSweepPlot::DemodSweepPlot(Session *session, QWidget *parent) :
     GLSubView(session, parent),
     textFont("Arial", 14),
@@ -341,6 +298,29 @@ void DemodSweepPlot::DrawPlotText()
                    grat_ul.y() + 22, CENTER_ALIGNED);
     }
 
+    // Uncal text strings
+    bool uncal = false;
+    int uncal_x = grat_ul.x() + 5, uncal_y = grat_ul.y() - 22;
+    glColor3f(1.0, 0.0, 0.0);
+    if(!GetSession()->device->IsPowered()) {
+        uncal = true;
+        DrawString("Low Voltage", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+        uncal_y -= 16;
+    }
+    if(GetSession()->device->ADCOverflow()) {
+        uncal = true;
+        DrawString("IF Overload", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+        uncal_y -= 16;
+    }
+    if(GetSession()->device->NeedsTempCal()) {
+        uncal = true;
+        DrawString("Device Temp", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+        uncal_y -= 16;
+    }
+    if(uncal) {
+        DrawString("Uncal", textFont, grat_ul.x() - 5, grat_ul.y() - 22, RIGHT_ALIGNED);
+    }
+
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
@@ -355,7 +335,7 @@ void DemodSweepPlot::DrawMarkers()
     if(!markerOn) return;
 
     const DemodSettings *ds = GetSession()->demod_settings;
-    QString str;
+    QString str, delStr;
     double binSize = 1.0 / (40.0e6 / (0x1 << ds->DecimationFactor()));
 
     int index = (trace.size()/2) * markerPos.x();
@@ -367,12 +347,20 @@ void DemodSweepPlot::DrawMarkers()
     if(index < 0) index = 1;
     if(index > trace.size()) index = trace.size();
 
-    float markerVal = trace[index];
+    markerVal = trace[index];
 
     if(demodType == DemodTypeAM) {
-        float botRef = ds->InputPower() - 100.0;
-        markerPos.setY((markerVal - botRef) / 100.0);
-        str += Amplitude(markerVal, DBM).GetString();
+        Amplitude markerAmp;
+        if(ds->InputPower().IsLogScale()) {
+            markerAmp = Amplitude(markerVal).ConvertToUnits(ds->InputPower().Units());
+            float botRef = ds->InputPower() - 100.0; // Always div == 10
+            markerPos.setY((markerAmp - botRef) / 100.0); // Always div == 10
+        } else {
+            markerAmp = Amplitude(markerVal, MV);
+            float botRef = 0.0;
+            markerPos.setY(markerAmp / ds->InputPower());
+        }
+        str += markerAmp.GetString();
     } else if(demodType == DemodTypeFM) {
         float botRef = -40.0e6 / (0x1 << ds->DecimationFactor()) / 2.0;
         markerPos.setY((markerVal - botRef) / fabs(2.0 * botRef));
@@ -406,11 +394,14 @@ void DemodSweepPlot::DrawMarkers()
     DrawMarker(markerPos.x() * grat_sz.x(), markerPos.y() * grat_sz.y(), 1);
     if(deltaOn) {
         DrawDeltaMarker(deltaPos.x() * grat_sz.x(), deltaPos.y() * grat_sz.y(), 1);
+        float diff = markerVal - deltaVal;
+        delStr = "Delta : ";
+        delStr += QVariant(diff).toString() + ((ds->InputPower().IsLogScale()) ?
+                                                   " dB" : " mV");
     }
 
-    //glLoadIdentity();
-    //glOrtho(0, width(), 0, height(), -1, 1);
     DrawString(str, textFont, grat_sz.x() - 5, grat_sz.y() - 22, RIGHT_ALIGNED);
+    DrawString(delStr, textFont, grat_sz.x() - 5, grat_sz.y() - 42, RIGHT_ALIGNED);
 
     // Disable nice lines
     glDisable(GL_LINE_SMOOTH);

@@ -72,6 +72,9 @@ public:
         }
     }
 
+    // Returns true if settings fine for CP/OCBW
+    bool IsAveragePower() const;
+
     // Do not save with presets
     static double maxRealTimeSpan;
 
@@ -124,7 +127,6 @@ public slots:
     void increaseSpan(bool);
     void setStep(Frequency);
     void setFullSpan();
-    void setZeroSpan();
 
     void setRBW(Frequency);
     void setVBW(Frequency);

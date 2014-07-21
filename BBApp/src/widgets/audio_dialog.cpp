@@ -128,6 +128,8 @@ AudioDialog::AudioDialog(const Device *device_ptr,
     reset_timer.setInterval(500);
     connect(&reset_timer, SIGNAL(timeout()), this, SLOT(released()));
 
+    connect(this, SIGNAL(setAnonFocus()), this, SLOT(setAnonFocusSlot()));
+
     thread_handle = std::thread(&AudioDialog::AudioThread, this);
 }
 
@@ -140,6 +142,13 @@ AudioDialog::~AudioDialog()
 
     delete [] from_device;
     delete [] buffer;
+}
+
+void AudioDialog::keyPressEvent(QKeyEvent *e)
+{
+    if(e->key() != Qt::Key_Enter) {
+        QWidget::keyPressEvent(e);
+    }
 }
 
 void AudioDialog::Reconfigure()
@@ -167,6 +176,8 @@ void AudioDialog::Reconfigure()
     low_pass_entry->SetFrequency(config.LowPassFreq());
     high_pass_entry->SetFrequency(config.HighPassFreq());
     deemphasis->SetValue(config.FMDeemphasis());
+
+    emit setAnonFocus();
 }
 
 void AudioDialog::AudioThread()

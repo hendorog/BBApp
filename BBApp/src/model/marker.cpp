@@ -116,7 +116,7 @@ void Marker::UpdateMarker(const Trace* trace,
         if(log_scale) {
             yr = level - (s->RefLevel().ConvertToUnits(DBM) - (10.0 * s->Div()));
             yr /= (10.0 * s->Div());
-            amp = Amplitude(Amplitude(level, DBM).ConvertToUnits(units), units);
+            amp = Amplitude(level, DBM).ConvertToUnits(units);
         } else {
             yr = level / s->RefLevel().Val();
             amp = Amplitude(level, MV);
@@ -140,7 +140,7 @@ void Marker::UpdateMarker(const Trace* trace,
 
             delta_xr = (double)deltaIndex / trace->Length();
             if(log_scale) {
-                delta_yr = deltaAmp.Val() - (s->RefLevel().ConvertToUnits(AmpUnits::DBM) - (10.0 * s->Div()));
+                delta_yr = deltaAmp.Val() - (s->RefLevel() - (10.0 * s->Div()));
                 delta_yr /= (10.0 * s->Div());
             } else {
                 delta_yr = deltaAmp.Val() / s->RefLevel().Val();

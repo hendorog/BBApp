@@ -101,7 +101,7 @@ SweepPanel::SweepPanel(const QString &title,
     connect(full_zero_span, SIGNAL(leftPressed()),
             settings, SLOT(setFullSpan()));
     connect(full_zero_span, SIGNAL(rightPressed()),
-            settings, SLOT(setZeroSpan()));
+            this, SIGNAL(zeroSpanPressed()));
 
     connect(ref, SIGNAL(amplitudeChanged(Amplitude)),
             settings, SLOT(setRefLevel(Amplitude)));

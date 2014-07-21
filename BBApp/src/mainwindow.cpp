@@ -38,8 +38,9 @@ MainWindow::MainWindow(QWidget *parent)
     sweep_panel = new SweepPanel(tr("Sweep Settings"), this,
                                  session->sweep_settings);
     sweep_panel->setObjectName("SweepSettingsPanel");
+    connect(sweep_panel, SIGNAL(zeroSpanPressed()), this, SLOT(zeroSpanPressed()));
     measure_panel = new MeasurePanel(tr("Traces and Markers"), this,
-                                     session->trace_manager);
+                                     session->trace_manager, session->sweep_settings);
     measure_panel->setObjectName("TraceMarkerPanel");
     demodPanel = new DemodPanel(tr("Demod Settings"), this, session->demod_settings);
     demodPanel->setObjectName("DemodSettingsPanel");
@@ -617,6 +618,27 @@ void MainWindow::loadPresetNames()
     }
 }
 
+void MainWindow::loadPreset(QAction *a)
+{
+    centralStack->CurrentWidget()->StopStreaming();
+    session->LoadPreset(a->data().toInt());
+    int newMode = session->sweep_settings->Mode();
+
+    if(newMode == MODE_ZERO_SPAN) {
+        centralStack->setCurrentWidget(demodCentral);
+        sweep_panel->hide();
+        measure_panel->hide();
+        demodPanel->show();
+    } else {
+        demodPanel->hide();
+        sweep_panel->show();
+        measure_panel->show();
+        centralStack->setCurrentWidget(sweepCentral);
+    }
+
+    centralStack->CurrentWidget()->changeMode(newMode);
+}
+
 void MainWindow::modeChanged(QAction *a)
 {
     centralStack->CurrentWidget()->StopStreaming();
@@ -636,6 +658,25 @@ void MainWindow::modeChanged(QAction *a)
     }
 
     centralStack->CurrentWidget()->changeMode(newMode);
+}
+
+// Function gets called when the zero-span button is pressed on the sweep panel
+// Know for a fact that the device is coming from a sweep mode
+void MainWindow::zeroSpanPressed()
+{
+    centralStack->CurrentWidget()->StopStreaming();
+
+    // Set the zero-span center to the current sweep center
+    Frequency currentCenter = session->sweep_settings->Center();
+    session->demod_settings->setCenterFreq(currentCenter);
+
+    // Hide sweep panels, show zero-span ones
+    centralStack->setCurrentWidget(demodCentral);
+    sweep_panel->hide();
+    measure_panel->hide();
+    demodPanel->show();
+
+    centralStack->CurrentWidget()->changeMode(MODE_ZERO_SPAN);
 }
 
 void MainWindow::startAudioPlayer()

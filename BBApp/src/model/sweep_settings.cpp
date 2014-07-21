@@ -172,6 +172,12 @@ bool SweepSettings::Save(QSettings &s) const
     return true;
 }
 
+bool SweepSettings::IsAveragePower() const
+{
+    return (Detector() == BB_AVERAGE &&
+            ProcessingUnits() == BB_POWER);
+}
+
 void SweepSettings::AutoBandwidthAdjust(bool force)
 {    
     if(Mode() == BB_REAL_TIME) {
@@ -359,11 +365,6 @@ void SweepSettings::setFullSpan()
 
     AutoBandwidthAdjust(false);
     emit updated(this);
-}
-
-void SweepSettings::setZeroSpan()
-{
-
 }
 
 void SweepSettings::setRBW(Frequency f)

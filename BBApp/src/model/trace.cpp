@@ -377,8 +377,14 @@ void Trace::GetOccupiedBandwidth(OccupiedBandwidthInfo &info) const
     info.rightMarker.UpdateMarker(this, this->GetSettings());
 
     info.bandwidth = info.rightMarker.Freq() - info.leftMarker.Freq();
-    info.totalPower = power - (leftSum + rightSum);
-    info.totalPower = to_log(info.totalPower / GetSettings()->GetWindowBandwidth());
+    power -= (leftSum + rightSum);
+    power = to_log(power / GetSettings()->GetWindowBandwidth());
+    AmpUnits powerUnits = GetSettings()->RefLevel().Units();
+    if(powerUnits == MV) {
+        info.totalPower = Amplitude(power, GetSettings()->RefLevel().Units());
+    } else {
+        info.totalPower = Amplitude(power).ConvertToUnits(powerUnits);
+    }
 }
 
 ChannelPower::ChannelPower() :

@@ -95,11 +95,12 @@ private slots:
     void loadStyleDark() { session->prefs.SetProgramStyle(DARK_STYLE_SHEET); }
 
     void loadDefaultSettings();
-    void loadPreset(QAction *a) { session->LoadPreset(a->data().toInt()); }
+    void loadPreset(QAction *a);
     void savePreset(QAction *a) { session->SavePreset(a->data().toInt()); }
     void renamePreset(QAction *a) { RenamePreset(a->data().toInt()); }
     void loadPresetNames();
     void modeChanged(QAction *a);
+    void zeroSpanPressed();
     void startAudioPlayer();
     void aboutToShowTimebaseMenu();
     void timebaseChanged(QAction *a) { session->device->setTimebase(a->data().toInt()); }

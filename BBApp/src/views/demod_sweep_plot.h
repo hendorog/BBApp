@@ -77,32 +77,4 @@ private:
     DISALLOW_COPY_AND_ASSIGN(DemodSweepPlot)
 };
 
-//// Container for the plot and Demod ToolBar
-//class DemodSweepArea : public QWidget {
-//    Q_OBJECT
-
-//public:
-//    DemodSweepArea(Session *session, QWidget *parent = 0);
-//    ~DemodSweepArea() {}
-
-//    operator QGLWidget*() {
-//        return plot; }
-
-//protected:
-//    void resizeEvent(QResizeEvent *)
-//    {
-//        toolBar->resize(width(), 30);
-//        plot->resize(width(), height() - 30);
-//    }
-
-//    void paintEvent(QPaintEvent *)
-//    {
-//        plot->update();
-//    }
-
-//private:
-//    QToolBar *toolBar;
-//    DemodSweepPlot *plot;
-//};
-
 #endif // DEMOD_SWEEP_PLOT_H

@@ -41,6 +41,7 @@ public slots:
     void updatePanel(const SweepSettings *settings);
 
 signals:
+    void zeroSpanPressed();
 
 private:
     DISALLOW_COPY_AND_ASSIGN(SweepPanel)

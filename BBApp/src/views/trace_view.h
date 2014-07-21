@@ -53,7 +53,7 @@ protected:
     void DrawMarker(int x, int y, int num);
     void DrawDeltaMarker(int x, int y, int num);
     void RenderChannelPower();
-    void DrawOccupiedBandwidth();
+    void RenderOccupiedBandwidth();
     void DrawOCBWMarker(int x, int y, bool left);
     void DrawPersistence();
     void DrawLimitLines(const Trace *limitTrace, const GLVector &v);

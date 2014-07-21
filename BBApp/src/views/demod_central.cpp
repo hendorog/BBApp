@@ -178,46 +178,47 @@ void DemodCentral::Reconfigure(DemodSettings *ds, IQCapture *iqc)
 void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &iqs, Device *device)
 {
     int retrieved = 0, toRetrieve = iqs.len;
-    int firstIx = 0;
+    int firstIx = 0; // Start index in first capture
+    bool flush = iqs.triggered; // Clear the API buffer?
     iqs.triggered = false;
 
-    if(ds->TrigType() == TriggerTypeVideo) {
-        double trigVal = ds->TrigAmplitude().ConvertToUnits(DBM);
-        trigVal = pow(10.0, (trigVal/10.0));
-        int maxTimeForTrig = 0;
-        while(maxTimeForTrig++ < 7) {
-            device->GetIQ(&iqc);
-            if(ds->TrigEdge() == TriggerEdgeRising) {
-                firstIx = find_rising_trigger(&iqc.capture[0], trigVal, iqc.capture.size());
-            } else {
-                firstIx = find_falling_trigger(&iqc.capture[0], trigVal, iqc.capture.size());
-            }
-            if(firstIx > 0) {
-                iqs.triggered = true;
-                break;
-            }
-            firstIx = 0;
-        }
-    } else if(ds->TrigType() == TriggerTypeExternal) {
-        int maxTimeForTrig = 0;
-        while(maxTimeForTrig++ < 7) {
-            device->GetIQ(&iqc);
-            firstIx = iqc.triggers[0];
-            if(firstIx != 0) {
-                qDebug() << firstIx;
-                iqs.triggered = true;
-                qDebug() << "Return len = " << iqc.desc.returnLen;
-                firstIx /= ((0x1 << ds->DecimationFactor()) * 2);
-                qDebug() << "Trig loc = " << firstIx;
-                //firstIx = 0;
-                break;
-            }
-        }
-    } else {
-        device->GetIQ(&iqc);
+    if(ds->TrigType() == TriggerTypeNone) {
+        device->GetIQFlush(&iqc, flush);
         iqs.triggered = true;
+    } else {
+        device->GetIQFlush(&iqc, flush); // Start with flush
+        if(ds->TrigType() == TriggerTypeVideo) {
+            double trigVal = ds->TrigAmplitude().ConvertToUnits(DBM);
+            trigVal = pow(10.0, (trigVal/10.0));
+            int maxTimeForTrig = 0;
+            while(maxTimeForTrig++ < 7) {
+                if(ds->TrigEdge() == TriggerEdgeRising) {
+                    firstIx = find_rising_trigger(&iqc.capture[0], trigVal, iqc.capture.size());
+                } else {
+                    firstIx = find_falling_trigger(&iqc.capture[0], trigVal, iqc.capture.size());
+                }
+                if(firstIx > 0) {
+                    iqs.triggered = true;
+                    break;
+                }
+                device->GetIQ(&iqc);
+                firstIx = 0;
+            }
+        } else if(ds->TrigType() == TriggerTypeExternal) {
+            int maxTimeForTrig = 0;
+            while(maxTimeForTrig++ < 7) {
+                firstIx = iqc.triggers[0];
+                if(firstIx != 0) {
+                    iqs.triggered = true;
+                    firstIx /= ((0x1 << ds->DecimationFactor()) * 2);
+                    break;
+                }
+                device->GetIQ(&iqc);
+            }
+        }
     }
-
+    // Retrieve the rest of the capture after the trigger, or retrieve the
+    //   entire capture if there is no trigger
     while(toRetrieve > 0) {
         int toCopy = bb_lib::min2(toRetrieve, iqc.desc.returnLen - firstIx);
         simdCopy_32fc(&iqc.capture[firstIx], &iqs.sweep[retrieved], toCopy);
