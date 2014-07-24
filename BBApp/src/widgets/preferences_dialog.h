@@ -66,7 +66,8 @@ private:
     CheckBoxEntry *graticuleStipple;
     // Color Page
     ColorEntry *background, *text, *graticule;
-    ColorEntry *markers, *markerText, *limitLines;
+    ColorEntry *markerBorder, *markerBackground, *markerText;
+    ColorEntry *limitLines;
     // Sweep Settings
     NumericEntry *sweepDelay;
     NumericEntry *realTimeSweepTime;

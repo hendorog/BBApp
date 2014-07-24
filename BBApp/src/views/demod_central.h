@@ -5,11 +5,13 @@
 #include <QBoxLayout>
 #include <QMdiArea>
 #include <QMdiSubWindow>
+#include <QPaintEvent>
 
 #include "lib/bb_lib.h"
 #include "model/session.h"
 
 #include "central_stack.h"
+#include "gl_sub_view.h"
 
 class MdiArea : public QMdiArea {
     Q_OBJECT
@@ -41,6 +43,14 @@ public:
         list.at(1)->resize(width() / 2, height() / 2);
         list.at(2)->move(width() / 2, height() / 2);
         list.at(2)->resize(width() / 2, height() / 2);
+    }
+
+public slots:
+    void updateViews() {
+        QList<QMdiSubWindow*> list = subWindowList();
+        for(QMdiSubWindow *view : list) {
+            view->widget()->update();
+        }
     }
 
 private:
@@ -94,7 +104,7 @@ private slots:
     void autoPressed();
 
 signals:
-    void updateView();
+    void updateViews();
     void presetDevice();
 
 private:

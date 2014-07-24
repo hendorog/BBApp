@@ -140,7 +140,7 @@ void DemodIQTimePlot::DrawIQLines()
     traces[0].clear();
     traces[1].clear();
 
-    const std::vector<complex_f> &iq = GetSession()->iq_capture.sweep;
+    const std::vector<complex_f> &iq = GetSession()->iq_capture.iq;
 
     if(iq.size() <= 0) return;
 

@@ -117,10 +117,22 @@ private:
 
     // Seven digits after the decimal, no unit string, weak negatives
     void CreateSimpleString(QString &s) const {
-        if(frequency < 1.0e3) s.sprintf("%.7f Hz", frequency);
-        else if(frequency < 1.0e6) s.sprintf("%.7f kHz", frequency * 0.001);
-        else if(frequency < 1.0e9) s.sprintf("%.7f MHz", frequency * 1.0e-6);
-        else s.sprintf("%.7f GHz", frequency * 1.0e-9);
+        bool neg = false;
+        double freq = frequency;
+
+        if(frequency < 0.0) {
+            neg = true;
+            freq *= -1.0;
+        }
+
+        if(freq < 1.0e3)
+            s.sprintf("%s%.7f Hz", neg?"-":"", freq);
+        else if(freq < 1.0e6)
+            s.sprintf("%s%.7f kHz", neg?"-":"", freq * 0.001);
+        else if(freq < 1.0e9)
+            s.sprintf("%s%.7f MHz", neg?"-":"", freq * 1.0e-6);
+        else
+            s.sprintf("%s%.7f GHz", neg?"-":"", freq * 1.0e-9);
     }
 
     // Variable digits after decimal and optional unit string, and negatives

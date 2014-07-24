@@ -475,6 +475,9 @@ void demod_fm(const std::vector<complex_f> &src,
 int find_rising_trigger(const complex_f *array, double t, int len);
 int find_falling_trigger(const complex_f *array, double t, int len);
 
+void firLowpass(double fc, int n, float *kernel);
+void flip_array_i(double *srcDst, int len);
+
 // FFT complex-to-complex
 // Blackman window
 class FFT {
@@ -506,6 +509,24 @@ private:
     std::vector<complex_f> window;
     std::vector<complex_f> work;
     int fft_length;
+};
+
+// Filter for single channel signal input
+class FirFilter {
+public:
+    FirFilter(double fc, int filter_len);
+    ~FirFilter();
+
+    int Order() const { return order; }
+    int Delay() const { return order / 2; }
+    void Filter(const float *in, float *out, int n);
+    void Reset();
+
+private:
+    float *kernel;
+    float *overlap; // 2 * len
+    int order; // Kernel Length
+    double cutoff; // Lowpass freq
 };
 
 #endif // BB_LIB_H

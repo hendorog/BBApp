@@ -261,12 +261,16 @@ QRadioButton#SHPrefRadioButton {
 }
 
 QRadioButton#SHPrefRadioButton::indicator {
-width: 12px;
-height: 12px;
-border: 1px inset rgb(37,37,37);
-background-color: rgb(204,206,219);
-border-radius: 1px;
-margin-right: 5px;
+  width: 12px;
+  height: 12px;
+  border: 1px inset rgb(37,37,37);
+  background-color: rgb(204,206,219);
+  border-radius: 1px;
+  margin-right: 5px;
+}
+
+QRadioButton#SHPrefRadioButton::indicator:checked {
+  image: url(:icons/check_select-light.png);
 }
 
 /********
@@ -284,6 +288,10 @@ QComboBox {
   text-align: right;
   font-weight: normal;
   padding-left: 5px;
+}
+
+QComboBox::disabled {
+  color: gray;
 }
 
 QComboBox::drop-down {
@@ -553,8 +561,11 @@ QLineEdit#SH_LineEntry {
   text-align: right;
   font-size: 12px;
   color: black;
-/*  background: rgb(72,72,72);*/
   margin: 1px;
+}
+
+QLineEdit#SH_LineEntry:disabled {
+  color: gray;
 }
 
 /********

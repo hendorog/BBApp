@@ -83,6 +83,8 @@ DemodSettings& DemodSettings::operator=(const DemodSettings &other)
     trigEdge = other.TrigEdge();
     trigAmplitude = other.TrigAmplitude();
 
+    mrEnabled = other.MREnabled();
+
     return *this;
 }
 
@@ -100,6 +102,8 @@ bool DemodSettings::operator==(const DemodSettings &other) const
     if(trigType != other.TrigType()) return false;
     if(trigEdge != other.TrigEdge()) return false;
     if(trigAmplitude != other.TrigAmplitude()) return false;
+
+    if(mrEnabled != other.MREnabled()) return false;
 
     return true;
 }
@@ -124,6 +128,8 @@ void DemodSettings::LoadDefaults()
     trigType = TriggerTypeNone;
     trigEdge = TriggerEdgeRising;
     trigAmplitude = 0.0;
+
+    mrEnabled = false;
 }
 
 bool DemodSettings::Load(QSettings &s)
@@ -240,11 +246,12 @@ void DemodSettings::setAutoBandwidth(bool setAuto)
     emit updated(this);
 }
 
-// Clamp sweep time to at most represent 32k points?
+// Clamp sweep time to represent a maximum sweep length
 void DemodSettings::setSweepTime(Time t)
 {
     sweepTime = t;
     ClampSweepTime();
+
     emit updated(this);
 }
 
@@ -264,6 +271,30 @@ void DemodSettings::setTrigAmplitude(Amplitude ta)
 {
     trigAmplitude = ta;
     emit updated(this);
+}
+
+void DemodSettings::setMREnabled(bool enabled)
+{
+    mrEnabled = enabled;
+
+    if(mrEnabled) {
+        SetMRConfiguration();
+    }
+
+    emit updated(this);
+}
+
+void DemodSettings::SetMRConfiguration()
+{
+    // Max decimation
+    decimationFactor = 7;
+    // Clamp down bandwidth
+    double maxBandwidth = max_bw_table[decimationFactor];
+    if(bandwidth > maxBandwidth) {
+        bandwidth = maxBandwidth;
+    }
+    // Max possible sweep time
+    sweepTime = bin_size_table[decimationFactor] * MAX_IQ_SWEEP_LEN;
 }
 
 void DemodSettings::ClampSweepTime()

@@ -49,10 +49,13 @@ public:
     TriggerEdge TrigEdge() const { return trigEdge; }
     Amplitude TrigAmplitude() const { return trigAmplitude; }
 
+    bool MREnabled() const { return mrEnabled; }
+
 private:
     // Call before updating, configures an appropriate sweep time value
     void ClampSweepTime();
     void UpdateAutoBandwidths();
+    void SetMRConfiguration();
 
     Amplitude inputPower;
     Frequency centerFreq;
@@ -67,6 +70,8 @@ private:
     TriggerEdge trigEdge;
     Amplitude trigAmplitude;
 
+    bool mrEnabled;
+
 public slots:
     void setInputPower(Amplitude);
     void setCenterFreq(Frequency);
@@ -80,6 +85,8 @@ public slots:
     void setTrigType(int);
     void setTrigEdge(int);
     void setTrigAmplitude(Amplitude);
+
+    void setMREnabled(bool);
 
 signals:
     void updated(const DemodSettings*);
@@ -117,8 +124,9 @@ struct IQCapture {
 
 // One full sweep
 typedef struct IQSweep {
-    std::vector<complex_f> sweep;
-    int len;
+    DemodSettings settings;
+    std::vector<complex_f> iq;
+    std::vector<float> waveform;
     bool triggered;
 } IQSweep;
 

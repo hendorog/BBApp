@@ -67,7 +67,6 @@ static const float RPP = 0.01;
 
 TraceView::TraceView(Session *session, QWidget *parent)
     : GLSubView(session, parent),
-      //session_ptr(session),
       persist_on(false),
       clear_persistence(false),
       waterfall_state(WaterfallOFF),
@@ -731,7 +730,7 @@ void TraceView::RenderMarkers()
 
 void TraceView::DrawMarker(int x, int y, int num)
 {
-    glColor3f(1.0, 1.0, 1.0);
+    glQColor(GetSession()->colors.background);
     glBegin(GL_POLYGON);
     glVertex2f(x, y);
     glVertex2f(x + 10, y + 15);
@@ -739,8 +738,7 @@ void TraceView::DrawMarker(int x, int y, int num)
     glVertex2f(x - 10, y + 15);
     glEnd();
 
-    //glQColor(session_ptr->colors.markers);
-    glColor3f(0.0, 0.0, 0.0);
+    glQColor(GetSession()->colors.markerBorder);
     glBegin(GL_LINE_STRIP);
     glVertex2f(x, y);
     glVertex2f(x + 10, y + 15);
@@ -749,7 +747,7 @@ void TraceView::DrawMarker(int x, int y, int num)
     glVertex2f(x, y);
     glEnd();
 
-    glColor3f(0.0, 0.0, 0.0);
+    glQColor(GetSession()->colors.markerText);
     QString str;
     str.sprintf("%d", num);
     DrawString(str, divFont,
@@ -768,7 +766,6 @@ void TraceView::DrawOCBWMarker(int x, int y, bool left)
     glVertex2f(x - 5, y );
     glEnd();
 
-    //glQColor(session_ptr->colors.markers);
     glColor3f(0.0, 0.0, 0.0);
     glBegin(GL_LINE_STRIP);
     glVertex2f(x, y - 5);
@@ -801,7 +798,7 @@ void TraceView::DrawOCBWMarker(int x, int y, bool left)
 
 void TraceView::DrawDeltaMarker(int x, int y, int num)
 {
-    glColor3f(1.0, 1.0, 1.0);
+    glQColor(GetSession()->colors.markerBackground);
     glBegin(GL_POLYGON);
     glVertex2f(x, y);
     glVertex2f(x + 11, y + 11);
@@ -810,8 +807,7 @@ void TraceView::DrawDeltaMarker(int x, int y, int num)
     glVertex2f(x - 11, y + 11);
     glEnd();
 
-    //glQColor(session_ptr->colors.markers);
-    glColor3f(0.0, 0.0, 0.0);
+    glQColor(GetSession()->colors.markerBorder);
     glBegin(GL_LINE_STRIP);
     glVertex2f(x, y);
     glVertex2f(x + 11, y + 11);
@@ -821,11 +817,10 @@ void TraceView::DrawDeltaMarker(int x, int y, int num)
     glVertex2f(x, y);
     glEnd();
 
-    glColor3f(0.0, 0.0, 0.0);
+    glQColor(GetSession()->colors.markerText);
     QString str;
     str.sprintf("R%d", num);
-    DrawString(str, divFont,
-               QPoint(x, y+11), CENTER_ALIGNED);
+    DrawString(str, divFont, QPoint(x, y+11), CENTER_ALIGNED);
 }
 
 
@@ -977,38 +972,7 @@ void TraceView::DrawLimitLines(const Trace *limitTrace, const GLVector &v)
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    glPopMatrix();
-
     glLineWidth(1.0);
-
-
-//    if(v.size() < 1) {
-//        return;
-//    }
-
-//    QColor c = t->Color();
-//    glColor3f(c.redF(), c.greenF(), c.blueF());
-
-//    // Put the trace in the vbo
-//    glBindBuffer(GL_ARRAY_BUFFER, traceVBO);
-//    glBufferData(GL_ARRAY_BUFFER, v.size()*sizeof(float),
-//                 &v[0], GL_DYNAMIC_DRAW);
-//    glVertexPointer(2, GL_FLOAT, 0, OFFSET(0));
-
-//    // Draw fill
-//    glDrawArrays(GL_TRIANGLE_STRIP, 0, v.size() / 2);
-//    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-//    // Draw lines
-//    glVertexPointer(2, GL_FLOAT, 16, OFFSET(0));
-//    glDrawArrays(GL_LINE_STRIP, 0, v.size() / 4);
-//    glVertexPointer(2, GL_FLOAT, 16, OFFSET(8));
-//    glDrawArrays(GL_LINE_STRIP, 0, v.size() / 4);
-//    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-//    // Unbind array
-//    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
 }
 
 void TraceView::AddToPersistence(const GLVector &v)

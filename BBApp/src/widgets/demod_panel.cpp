@@ -5,8 +5,9 @@ DemodPanel::DemodPanel(const QString &title,
                        const DemodSettings *settings) :
     DockPanel(title, parent)
 {
-    DockPage *demodPage = new DockPage(tr("Demod Settings"));
+    DockPage *demodPage = new DockPage(tr("Capture Settings"));
     DockPage *triggerPage = new DockPage(tr("Trigger Settings"));
+    DockPage *mrPage = new DockPage(tr("Measuring Receiver"));
 
     inputPowerEntry = new AmpEntry(tr("Input Pwr"), 0.0);
     centerEntry = new FrequencyEntry(tr("Center"), 0.0);
@@ -45,6 +46,8 @@ DemodPanel::DemodPanel(const QString &title,
 
     triggerAmplitudeEntry = new AmpEntry(tr("Video Trigger Level"), 0.0);
 
+    mrEnabledEntry = new CheckBoxEntry(tr("Enabled"));
+
     demodPage->AddWidget(inputPowerEntry);
     demodPage->AddWidget(centerEntry);
     demodPage->AddWidget(gainEntry);
@@ -58,8 +61,11 @@ DemodPanel::DemodPanel(const QString &title,
     triggerPage->AddWidget(triggerEdgeEntry);
     triggerPage->AddWidget(triggerAmplitudeEntry);
 
+    mrPage->AddWidget(mrEnabledEntry);
+
     AddPage(demodPage);
     AddPage(triggerPage);
+    AddPage(mrPage);
 
     updatePanel(settings);
 
@@ -88,6 +94,9 @@ DemodPanel::DemodPanel(const QString &title,
             settings, SLOT(setTrigEdge(int)));
     connect(triggerAmplitudeEntry, SIGNAL(amplitudeChanged(Amplitude)),
             settings, SLOT(setTrigAmplitude(Amplitude)));
+
+    connect(mrEnabledEntry, SIGNAL(clicked(bool)),
+            settings, SLOT(setMREnabled(bool)));
 }
 
 DemodPanel::~DemodPanel()
@@ -97,16 +106,22 @@ DemodPanel::~DemodPanel()
 
 void DemodPanel::updatePanel(const DemodSettings *ds)
 {
+    bool mrActive = ds->MREnabled();
+
     inputPowerEntry->SetAmplitude(ds->InputPower());
     centerEntry->SetFrequency(ds->CenterFreq());
     gainEntry->setComboIndex(ds->Gain());
     attenEntry->setComboIndex(ds->Atten());
+    decimationEntry->setDisabled(mrActive);
     decimationEntry->setComboIndex(ds->DecimationFactor());
     bandwidthEntry->SetFrequency(ds->Bandwidth());
     autoBandwidthEntry->SetChecked(ds->AutoBandwidth());
+    sweepTimeEntry->setDisabled(mrActive);
     sweepTimeEntry->SetTime(ds->SweepTime());
 
     triggerTypeEntry->setComboIndex(ds->TrigType());
     triggerEdgeEntry->setComboIndex(ds->TrigEdge());
     triggerAmplitudeEntry->SetAmplitude(ds->TrigAmplitude());
+
+    mrEnabledEntry->SetChecked(ds->MREnabled());
 }

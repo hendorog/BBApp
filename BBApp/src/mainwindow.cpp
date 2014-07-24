@@ -39,7 +39,7 @@ MainWindow::MainWindow(QWidget *parent)
                                  session->sweep_settings);
     sweep_panel->setObjectName("SweepSettingsPanel");
     connect(sweep_panel, SIGNAL(zeroSpanPressed()), this, SLOT(zeroSpanPressed()));
-    measure_panel = new MeasurePanel(tr("Traces and Markers"), this,
+    measure_panel = new MeasurePanel(tr("Measurements"), this,
                                      session->trace_manager, session->sweep_settings);
     measure_panel->setObjectName("TraceMarkerPanel");
     demodPanel = new DemodPanel(tr("Demod Settings"), this, session->demod_settings);

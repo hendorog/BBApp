@@ -6,6 +6,7 @@
 class DemodSpectrumPlot : public GLSubView {
     Q_OBJECT
 
+    static const int MAX_FFT_SIZE = 4096;
 public:
     DemodSpectrumPlot(Session *sPtr, QWidget *parent = 0);
     ~DemodSpectrumPlot();

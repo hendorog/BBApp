@@ -342,6 +342,10 @@ QComboBox {
   padding-left: 5px;
 }
 
+QComboBox:disabled {
+  color: gray;
+}
+
 QComboBox::drop-down {
   border-radius: 5px;
   margin: 2px;
@@ -610,6 +614,10 @@ QLineEdit#SH_LineEntry {
     stop: 0.9 rgb(97,97,97), stop: 1 rgb(197,197,197));*/
   background: rgb(72,72,72);
   margin: 1px;
+}
+
+QLineEdit#SH_LineEntry:disabled {
+  color: gray;
 }
 
 /********

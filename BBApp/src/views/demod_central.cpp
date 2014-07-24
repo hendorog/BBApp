@@ -71,7 +71,7 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     //DemodSweepArea *sweepPlot = new DemodSweepArea(sPtr);
     DemodSweepPlot *sweepPlot = new DemodSweepPlot(sPtr);
     demodArea->addSubWindow(sweepPlot);
-    connect(this, SIGNAL(updateView()), sweepPlot, SLOT(update()));
+
     connect(demodSelect, SIGNAL(activated(int)), sweepPlot, SLOT(changeDemod(int)));
     connect(markerOff, SIGNAL(clicked()), sweepPlot, SLOT(disableMarker()));
     connect(markerDelta, SIGNAL(clicked()), sweepPlot, SLOT(toggleDelta()));
@@ -79,12 +79,12 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     DemodSpectrumPlot *freqPlot = new DemodSpectrumPlot(sPtr);
     freqPlot->setWindowTitle(tr("Spectrum Plot"));
     demodArea->addSubWindow(freqPlot);
-    connect(this, SIGNAL(updateView()), freqPlot, SLOT(update()));
 
     DemodIQTimePlot *iqPlot = new DemodIQTimePlot(sPtr);
     iqPlot->setWindowTitle(tr("IQ Plot"));
     demodArea->addSubWindow(iqPlot);
-    connect(this, SIGNAL(updateView()), iqPlot, SLOT(update()));
+
+    connect(this, SIGNAL(updateViews()), demodArea, SLOT(updateViews()));
 
     for(QMdiSubWindow *window : demodArea->subWindowList()) {
         window->setWindowFlags(Qt::FramelessWindowHint);
@@ -169,15 +169,15 @@ void DemodCentral::Reconfigure(DemodSettings *ds, IQCapture *iqc)
 
     int sweepLen = ds->SweepTime().Val() / iqc->desc.timeDelta;
 
-    sessionPtr->iq_capture.len = sweepLen;
-    sessionPtr->iq_capture.sweep.resize(sweepLen);
+    sessionPtr->iq_capture.iq.resize(sweepLen);
+    sessionPtr->iq_capture.settings = *ds;
 
     reconfigure = false;
 }
 
 void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &iqs, Device *device)
 {
-    int retrieved = 0, toRetrieve = iqs.len;
+    int retrieved = 0, toRetrieve = iqs.iq.size();
     int firstIx = 0; // Start index in first capture
     bool flush = iqs.triggered; // Clear the API buffer?
     iqs.triggered = false;
@@ -197,13 +197,14 @@ void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &
                 } else {
                     firstIx = find_falling_trigger(&iqc.capture[0], trigVal, iqc.capture.size());
                 }
-                if(firstIx > 0) {
+                if(firstIx >= 0) {
                     iqs.triggered = true;
                     break;
                 }
                 device->GetIQ(&iqc);
                 firstIx = 0;
             }
+            int i = 2;
         } else if(ds->TrigType() == TriggerTypeExternal) {
             int maxTimeForTrig = 0;
             while(maxTimeForTrig++ < 7) {
@@ -221,7 +222,7 @@ void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &
     //   entire capture if there is no trigger
     while(toRetrieve > 0) {
         int toCopy = bb_lib::min2(toRetrieve, iqc.desc.returnLen - firstIx);
-        simdCopy_32fc(&iqc.capture[firstIx], &iqs.sweep[retrieved], toCopy);
+        simdCopy_32fc(&iqc.capture[firstIx], &iqs.iq[retrieved], toCopy);
         firstIx = 0;
         toRetrieve -= toCopy;
         retrieved += toCopy;
@@ -285,5 +286,5 @@ void DemodCentral::autoPressed()
 
 void DemodCentral::UpdateView()
 {
-    emit updateView();
+    emit updateViews();
 }

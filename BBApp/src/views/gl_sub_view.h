@@ -41,6 +41,8 @@ public:
         makeCurrent();
         initializeOpenGLFunctions();
         doneCurrent();
+
+        setAutoFillBackground(false);
     }
 
 protected:

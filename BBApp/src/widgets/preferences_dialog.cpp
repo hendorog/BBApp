@@ -91,14 +91,16 @@ PreferenceColorPanel::PreferenceColorPanel(const QString &panelTitle,
     background = new ColorEntry(tr("Background Color"));
     text = new ColorEntry(tr("Text Color"));
     graticule = new ColorEntry(tr("Graticule Color"));
-    markers = new ColorEntry(tr("Marker Color"));
+    markerBorder = new ColorEntry(tr("Marker Border Color"));
+    markerBackground = new ColorEntry(tr("Marker Background Color"));
     markerText = new ColorEntry(tr("Marker Text Color"));
     limitLines = new ColorEntry(tr("Limit Lines Color"));
 
     dockPage->AddWidget(background);
     dockPage->AddWidget(text);
     dockPage->AddWidget(graticule);
-    dockPage->AddWidget(markers);
+    dockPage->AddWidget(markerBorder);
+    dockPage->AddWidget(markerBackground);
     dockPage->AddWidget(markerText);
     dockPage->AddWidget(limitLines);
 
@@ -148,7 +150,8 @@ void PreferenceColorPanel::Populate(const Session *session)
     background->SetColor(colors.background);
     text->SetColor(colors.text);
     graticule->SetColor(colors.graticule);
-    markers->SetColor(colors.markers);
+    markerBorder->SetColor(colors.markerBorder);
+    markerBackground->SetColor(colors.markerBackground);
     markerText->SetColor(colors.markerText);
     limitLines->SetColor(colors.limitLines);
 
@@ -180,7 +183,8 @@ void PreferenceColorPanel::Apply(Session *session)
     colors.background = background->GetColor();
     colors.text = text->GetColor();
     colors.graticule = graticule->GetColor();
-    colors.markers = markers->GetColor();
+    colors.markerBorder = markerBorder->GetColor();
+    colors.markerBackground = markerBackground->GetColor();
     colors.markerText = markerText->GetColor();
     colors.limitLines = limitLines->GetColor();
 

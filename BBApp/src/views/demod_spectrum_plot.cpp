@@ -52,7 +52,7 @@ DemodSpectrumPlot::DemodSpectrumPlot(Session *sPtr, QWidget *parent) :
 
     doneCurrent();
 
-    fft = std::unique_ptr<FFT>(new FFT(1024, false));
+    fft = std::unique_ptr<FFT>(new FFT(MAX_FFT_SIZE, false));
 }
 
 DemodSpectrumPlot::~DemodSpectrumPlot()
@@ -152,17 +152,17 @@ void DemodSpectrumPlot::DrawSpectrum()
         botRef = 0;
     }
 
-    // May need to resize the fft if it goes below 1024
-    int fftSize = bb_lib::min2(1024, sweep.len);
+    // May need to resize the fft if it goes below MAX_FFT_SIZE
+    int fftSize = bb_lib::min2(MAX_FFT_SIZE, (int)sweep.iq.size());
     fftSize = bb_lib::round_down_power_two(fftSize);
 
     if(fftSize != fft->Length()) {
         fft = std::unique_ptr<FFT>(new FFT(fftSize, false));
     }
 
-    postTransform.resize(1024);
+    postTransform.resize(MAX_FFT_SIZE);
 
-    fft->Transform(&sweep.sweep[0], &postTransform[0]);
+    fft->Transform(&sweep.iq[0], &postTransform[0]);
     for(int i = 0; i < fftSize; i++) {
         postTransform[i].re /= fftSize;
         postTransform[i].im /= fftSize;

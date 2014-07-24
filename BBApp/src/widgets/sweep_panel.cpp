@@ -164,5 +164,4 @@ void SweepPanel::updatePanel(const SweepSettings *settings)
     video_units->setComboIndex(settings->ProcessingUnits());
     detector->setComboIndex(settings->Detector());
     sweep_time->SetTime(settings->SweepTime());
-
 }

@@ -3,6 +3,55 @@
 #include <QLayout>
 #include <QMouseEvent>
 
+#include <limits>
+
+ReceiverStats getReceiverStats(DemodType type, const GLVector &waveform, double sampleRate)
+{
+    ReceiverStats stats;
+
+    if(type == DemodTypeFM) {
+        stats.peakPlus = std::numeric_limits<float>::lowest();
+        stats.peakMinus = std::numeric_limits<float>::max();
+
+        float lastVal = 1.0;
+        double lastCrossing, firstCrossing = 0.0;
+        bool firstCross = true;
+        int crossCounter = 0;
+
+        for(int i = 0; i < waveform.size(); i++) {
+            float f = waveform[i];
+
+            if(f > stats.peakPlus) stats.peakPlus = f;
+            if(f < stats.peakMinus) stats.peakMinus = f;
+            stats.RMS += (f*f);
+
+            if(f > 0.0 && lastVal < 0.0) {
+                double crossLerp = double(i-1) + ((0.0 - lastVal) / (f - lastVal));
+                if(firstCross) {
+                    firstCrossing = crossLerp;
+                    firstCross = false;
+                } else {
+                    //crossSum += (crossLerp - lastCross);
+                    lastCrossing = crossLerp;
+                    crossCounter++;
+                }
+            }
+            lastVal = f;
+        }
+
+        stats.RMS = sqrt(stats.RMS / waveform.size());
+        if(crossCounter == 0) {
+            stats.audioFreq = 0.0;
+        } else {
+            //stats.audioFreq = sampleRate / (crossSum / crossCounter);
+            stats.audioFreq = (lastCrossing - firstCrossing) / crossCounter;
+            stats.audioFreq = sampleRate / stats.audioFreq;
+        }
+    }
+
+    return stats;
+}
+
 DemodSweepPlot::DemodSweepPlot(Session *session, QWidget *parent) :
     GLSubView(session, parent),
     textFont("Arial", 14),
@@ -95,6 +144,10 @@ void DemodSweepPlot::paintEvent(QPaintEvent *)
 {
     makeCurrent();
 
+    if(true) {
+        grat_sz = QPoint(size().width() - 380, size().height() - 100);
+    }
+
     glQClearColor(GetSession()->colors.background);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -158,43 +211,59 @@ void DemodSweepPlot::DemodAndDraw()
 {
     const DemodSettings *ds = GetSession()->demod_settings;
     const IQSweep &iq = GetSession()->iq_capture;
-    if(iq.sweep.size() <= 1) return;
+    if(iq.iq.size() <= 1) return;
 
+    waveform.clear();
     trace.clear();
 
     double ref, botRef;
 
     if(demodType == DemodTypeAM) {
-        for(int i = 0; i < iq.sweep.size(); i++) {
-            trace.push_back(i);
-            trace.push_back(iq.sweep[i].re * iq.sweep[i].re +
-                            iq.sweep[i].im * iq.sweep[i].im);
+        for(int i = 0; i < iq.iq.size(); i++) {
+            waveform.push_back(iq.iq[i].re * iq.iq[i].re +
+                            iq.iq[i].im * iq.iq[i].im);
         }
         if(ds->InputPower().IsLogScale()) {
             ref = ds->InputPower().ConvertToUnits(DBM);
             botRef = ref - 100.0;
-            for(int i = 1; i < trace.size(); i += 2) {
-                trace[i] = 10.0 * log10(trace[i]);
+            for(int i = 0; i < waveform.size(); i++) {
+                waveform[i] = 10.0 * log10(waveform[i]);
             }
         } else {
             ref = ds->InputPower();
             botRef = 0.0;
-            for(int i = 1; i < trace.size(); i += 2) {
-                trace[i] = sqrt(trace[i] * 50000.0);
+            for(int i = 0; i < waveform.size(); i++) {
+                waveform[i] = sqrt(waveform[i] * 50000.0);
             }
         }
+
     } else if(demodType == DemodTypeFM) {
         double sr = 40.0e6 / (0x1 << ds->DecimationFactor());
-        demod_fm(iq.sweep, trace, sr / 2.0);
+        demod_fm(iq.iq, waveform, sr / 2.0);
         ref = 40.0e6 / (0x1 << ds->DecimationFactor()) / 2.0;
         botRef = -ref;
+
+//        FirFilter fir(0.03, 1024);
+//        std::vector<float> temp;
+//        temp.resize(waveform.size());
+//        fir.Filter(&waveform[0], &temp[0], waveform.size());
+//        waveform.clear();
+//        for(int i = 512; i < temp.size(); i++) {
+//            waveform.push_back(temp[i]);
+//        }
+
+
     } else if(demodType == DemodTypePM) {
-        for(int i = 0; i < iq.sweep.size(); i++) {
-            trace.push_back(i);
-            trace.push_back(atan2(iq.sweep[i].im, iq.sweep[i].re));
+        for(int i = 0; i < iq.iq.size(); i++) {
+            waveform.push_back(atan2(iq.iq[i].im, iq.iq[i].re));
         }
         ref = BB_PI;
         botRef = -BB_PI;
+    }
+
+    for(int i = 0; i < waveform.size(); i++) {
+        trace.push_back(i);
+        trace.push_back(waveform[i]);
     }
 
     glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
@@ -249,7 +318,7 @@ void DemodSweepPlot::DrawPlotText()
                grat_ul.x() + grat_sz.x()/2, grat_ll.y() - 22, CENTER_ALIGNED);
     str.sprintf("%f ms per div", ds->SweepTime() * 100.0);
     DrawString(str, textFont, grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - 42, RIGHT_ALIGNED);
-    str.sprintf("%d pts", GetSession()->iq_capture.len);
+    str.sprintf("%d pts", GetSession()->iq_capture.iq.size());
     DrawString(str, textFont, grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - 22, RIGHT_ALIGNED);
 
     if(demodType == DemodTypeAM) {
@@ -319,6 +388,11 @@ void DemodSweepPlot::DrawPlotText()
     }
     if(uncal) {
         DrawString("Uncal", textFont, grat_ul.x() - 5, grat_ul.y() - 22, RIGHT_ALIGNED);
+    }
+
+    if(true) {
+        glQColor(GetSession()->colors.text);
+        DrawMeasuringReceiverStats();
     }
 
     glMatrixMode(GL_MODELVIEW);
@@ -490,4 +564,23 @@ void DemodSweepPlot::DrawDeltaMarker(int x, int y, int num)
     str.sprintf("R%d", num);
     DrawString(str, divFont,
                QPoint(x, y+11), CENTER_ALIGNED);
+}
+
+void DemodSweepPlot::DrawMeasuringReceiverStats()
+{
+    const DemodSettings *ds = GetSession()->demod_settings;
+    double sr = 40.0e6 / (0x1 << ds->DecimationFactor());
+    ReceiverStats stats = getReceiverStats(demodType, waveform, sr);
+
+    QPoint pos(grat_ul.x() + grat_sz.x() + 10, grat_ul.y());
+
+    DrawString("Measuring Reciever", textFont, pos, LEFT_ALIGNED);
+    pos += QPoint(0, -20);
+    DrawString("RMS " + Frequency(stats.RMS).GetFreqString(), textFont, pos, LEFT_ALIGNED);
+    pos += QPoint(0, -20);
+    DrawString("Peak+ " + Frequency(stats.peakPlus).GetFreqString(), textFont, pos, LEFT_ALIGNED);
+    pos += QPoint(0, -20);
+    DrawString("Peak- " + Frequency(stats.peakMinus).GetFreqString(), textFont, pos, LEFT_ALIGNED);
+    pos += QPoint(0, -20);
+    DrawString("Audio Freq " + Frequency(stats.audioFreq).GetFreqString(), textFont, pos, LEFT_ALIGNED);
 }

@@ -687,8 +687,10 @@ void demod_fm(const complex_f *src, float *dst, int len, double *phase)
 void demod_fm(const std::vector<complex_f> &src,
               std::vector<float> &dst, double sampleRate)
 {
+    if(src.size() <= 0) return;
+
     double phaseToFreq = sampleRate / BB_PI;
-    double lastPhase = 0.0;
+    double lastPhase = atan2(src[0].im, src[0].re);
 
     for(int i = 0; i < src.size(); i++) {
         double newPhase = atan2(src[i].im, src[i].re);
@@ -698,7 +700,6 @@ void demod_fm(const std::vector<complex_f> &src,
         if(delPhase > BB_PI) delPhase -= BB_TWO_PI;
         else if(delPhase < (-BB_PI)) delPhase += BB_TWO_PI;
 
-        dst.push_back(i);
         dst.push_back(delPhase * phaseToFreq);
     }
 }
@@ -749,4 +750,122 @@ int find_falling_trigger(const complex_f *array, double t, int len)
     }
 
     return -1;
+}
+
+// Build complex fir kernel
+// dWindow is normalized windowed sinc
+// fc is cutoff freq (0 to 0.5), n is kernel size + 1,
+// Blackman window a = 0.16
+void firLowpass(double fc, int n, float *kernel)
+{
+    int k;
+    int m = (n - 1) / 2; // M is half kernel size
+    double avgval = 0.0;
+
+    for(k = 0; k < n; k++) {
+        if(k == m) {
+            kernel[k] = 2 * BB_PI * fc;
+        } else {
+            // sinc function
+            kernel[k] = sin(BB_TWO_PI * fc * (k - m)) / (k - m);
+        }
+        kernel[k] *= (0.42 - 0.5 * cos(BB_TWO_PI * k / (n - 1)) +
+                       0.08 * cos(BB_FOUR_PI * k / (n - 1)));
+        avgval += kernel[k];
+    }
+
+    double invavg = 1.0 / avgval;
+    for(k = 0; k < n; k++) { // Normalize window
+        kernel[k] *= invavg;
+    }
+}
+
+void flip_array_i(float *srcDst, int len)
+{
+    if(len <= 1) {
+        return;
+    }
+
+    int front = 0;
+    int back = len - 1;
+
+    while(front > len) {
+        double t = srcDst[front];
+        srcDst[front] = srcDst[back];
+        srcDst[back] = t;
+
+        front++;
+        back--;
+    }
+}
+
+inline void zero_array(float *in, int len) {
+    for(int i = 0; i < len; i++) in[i] = 0.0;
+}
+
+inline void copy_array(const float *in, float *out, int len) {
+    for(int i = 0; i < len; i++) out[i] = in[i];
+}
+
+inline double mul_accum(const float *src1, const float *src2, int len) {
+    double sum = 0.0;
+    for(int i = 0; i < len; i++) {
+        sum += (src1[i] * src2[i]);
+    }
+    return sum;
+}
+
+FirFilter::FirFilter(double fc, int filter_len)
+    : order(filter_len), cutoff(fc)
+{
+    kernel = new float[order];
+    firLowpass(cutoff, order, kernel);
+    flip_array_i(kernel, order);
+
+//    QFile *f = new QFile("Filter.txt");
+//    f->open(QIODevice::WriteOnly | QIODevice::Text);
+//    QTextStream out(f);
+//    for(int i = 0; i < order; i++) {
+//        out << kernel[i] << "\n";
+//    }
+//    f->close();
+//    delete f;
+
+    overlap = new float[2*order];
+    zero_array(overlap, 2*order);
+}
+
+FirFilter::~FirFilter()
+{
+    delete [] kernel;
+    delete [] overlap;
+}
+
+// Input must be longer than kernel for now
+// In-place safe
+void FirFilter::Filter(const float *in, float *out, int n)
+{
+    assert(n > order);
+
+    int ix = 0, eix = 0;
+
+    // Copy initial input into overlap buffer
+    copy_array(in, overlap + (order-1), order);
+
+    for(; ix < order - 1; ix++) {
+        out[ix] = mul_accum(overlap + ix, kernel, order);
+    }
+
+    // Finish filter
+    for(; ix < n; ix++, eix++) {
+        out[ix] = mul_accum(in + eix, kernel, order);
+    }
+
+    // Copy input into overlap
+    copy_array(in + (n-(order-1)), overlap, order - 1);
+}
+
+void FirFilter::Reset()
+{
+    zero_array(overlap, 2*order);
 }
