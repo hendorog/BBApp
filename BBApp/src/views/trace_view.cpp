@@ -730,7 +730,7 @@ void TraceView::RenderMarkers()
 
 void TraceView::DrawMarker(int x, int y, int num)
 {
-    glQColor(GetSession()->colors.background);
+    glQColor(GetSession()->colors.markerBackground);
     glBegin(GL_POLYGON);
     glVertex2f(x, y);
     glVertex2f(x + 10, y + 15);

@@ -136,9 +136,6 @@ GLShader::~GLShader()
     }
 }
 
-#include "C:\Program Files (x86)\Intel\Composer XE 2013\ipp\include\ipp.h"
-
-
 bool GLShader::Compile(QOpenGLFunctions *gl)
 {    
     if(compiled == GL_TRUE) {
@@ -662,27 +659,27 @@ void demod_am(const complex_f *src, float *dst, int len)
 //    }
 }
 
-void demod_fm(const complex_f *src, float *dst, int len, double *phase)
-{
-    double lastPhase = (phase) ? (*phase) : 0.0;
+//void demod_fm(const complex_f *src, float *dst, int len, double *phase)
+//{
+//    double lastPhase = (phase) ? (*phase) : 0.0;
 
-    for(int i = 0; i < len; i++) {
-        double newPhase = atan2(src[i].im, src[i].re);
-        double delPhase = newPhase - lastPhase;
-        lastPhase = newPhase;
+//    for(int i = 0; i < len; i++) {
+//        double newPhase = atan2(src[i].im, src[i].re);
+//        double delPhase = newPhase - lastPhase;
+//        lastPhase = newPhase;
 
-        if(delPhase > BB_PI) delPhase -= BB_TWO_PI;
-        else if(delPhase < (-BB_PI)) delPhase += BB_TWO_PI;
+//        if(delPhase > BB_PI) delPhase -= BB_TWO_PI;
+//        else if(delPhase < (-BB_PI)) delPhase += BB_TWO_PI;
 
-        dst[i] = delPhase;
-    }
+//        dst[i] = delPhase;
+//    }
 
-    for(int i = 0; i < len; i++) {
-        dst[i] *= PHASE_TO_FREQ;
-    }
+//    for(int i = 0; i < len; i++) {
+//        dst[i] *= PHASE_TO_FREQ;
+//    }
 
-    if(phase) *phase = lastPhase;
-}
+//    if(phase) *phase = lastPhase;
+//}
 
 void demod_fm(const std::vector<complex_f> &src,
               std::vector<float> &dst, double sampleRate)
@@ -702,7 +699,7 @@ void demod_fm(const std::vector<complex_f> &src,
 
         dst.push_back(delPhase * phaseToFreq);
     }
-}
+}            
 
 int find_rising_trigger(const complex_f *array, double t, int len)
 {

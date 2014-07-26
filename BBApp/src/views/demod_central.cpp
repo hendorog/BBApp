@@ -156,7 +156,7 @@ void DemodCentral::changeMode(int newState)
     }
 }
 
-void DemodCentral::Reconfigure(DemodSettings *ds, IQCapture *iqc)
+void DemodCentral::Reconfigure(DemodSettings *ds, IQCapture *iqc, IQSweep &iqs)
 {
     if(!sessionPtr->device->Reconfigure(ds, &iqc->desc)) {
         *ds = lastConfig;
@@ -169,8 +169,10 @@ void DemodCentral::Reconfigure(DemodSettings *ds, IQCapture *iqc)
 
     int sweepLen = ds->SweepTime().Val() / iqc->desc.timeDelta;
 
-    sessionPtr->iq_capture.iq.resize(sweepLen);
-    sessionPtr->iq_capture.settings = *ds;
+//    sessionPtr->iq_capture.iq.resize(sweepLen);
+//    sessionPtr->iq_capture.settings = *ds;
+    iqs.iq.resize(sweepLen);
+    iqs.settings = *ds;
 
     reconfigure = false;
 }
@@ -235,27 +237,36 @@ void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &
 void DemodCentral::StreamThread()
 {
     IQCapture iqc;
-    IQSweep &iqs = sessionPtr->iq_capture;
+    //IQSweep &iqs = sessionPtr->iq_capture;
+    IQSweep sweep;
 
-    Reconfigure(sessionPtr->demod_settings, &iqc);
+    Reconfigure(sessionPtr->demod_settings, &iqc, sweep);
 
     while(streaming) {
 
         if(captureCount) {
             if(reconfigure) {
-                Reconfigure(sessionPtr->demod_settings, &iqc);
+                Reconfigure(sessionPtr->demod_settings, &iqc, sweep);
             }
             qint64 start = bb_lib::get_ms_since_epoch();
 
-            GetCapture(sessionPtr->demod_settings, iqc, iqs, sessionPtr->device);
+            GetCapture(sessionPtr->demod_settings, iqc, sweep, sessionPtr->device);
 
-            UpdateView();
+            if(demodArea->viewLock.try_lock()) {
+                sweep.Demod();
+                if(sweep.settings.MREnabled()) {
+                    sweep.CalculateReceiverStats();
+                }
+                sessionPtr->iq_capture = sweep;
+                UpdateView();
+                demodArea->viewLock.unlock();
+            }
 
             // Force 30 fps update rate
             qint64 elapsed = bb_lib::get_ms_since_epoch() - start;
             if(elapsed < 64) Sleep(64 - elapsed);
             if(captureCount > 0) {
-                if(iqs.triggered) {
+                if(sweep.triggered) {
                     captureCount--;
                 }
             }

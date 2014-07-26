@@ -13,18 +13,8 @@ enum DemodType {
     DemodTypePM = 2
 };
 
-struct ReceiverStats {
-    ReceiverStats()
-    {
-        RMS = peakPlus = peakMinus = audioFreq = 0.0;
-    }
-
-    double RMS;
-    double peakPlus, peakMinus;
-    double audioFreq;
-};
-
-ReceiverStats getReceiverStats(DemodType type, const GLVector &waveform, double sampleRate);
+//ReceiverStats getReceiverStats(DemodType type, const GLVector &waveform, double sampleRate);
+//ReceiverStats getReceiverStats(const IQSweep &sweep);
 
 // AM/FM/PM Demod Plot Window
 class DemodSweepPlot : public GLSubView {
@@ -54,8 +44,6 @@ private:
 
     GLFont textFont, divFont;
 
-    // Demodulated waveform AM/FM/PM
-    GLVector waveform;
     // Waveform paired with x-position values
     GLVector trace;
     GLuint traceVBO;

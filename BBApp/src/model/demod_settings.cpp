@@ -316,3 +316,143 @@ void DemodSettings::UpdateAutoBandwidths()
         bandwidth = max_bw_table[decimationFactor];
     }
 }
+
+void IQSweep::Demod()
+{
+    Q_ASSERT(iq.size() > 0);
+    if(iq.size() <= 0) {
+        return;
+    }
+
+    amWaveform.clear();
+    fmWaveform.clear();
+    pmWaveform.clear();
+
+    for(complex_f cplx : iq) {
+        amWaveform.push_back(cplx.re * cplx.re + cplx.im * cplx.im);
+        pmWaveform.push_back(atan2(cplx.im, cplx.re));
+    }
+
+    double phaseToFreq = settings.SampleRate() / BB_TWO_PI;
+    double lastPhase = pmWaveform[0];
+
+    for(float phase : pmWaveform) {
+        double delPhase = phase - lastPhase;
+        lastPhase = phase;
+
+        if(delPhase > BB_PI)
+            delPhase -= BB_TWO_PI;
+        else if(delPhase < (-BB_PI))
+            delPhase += BB_TWO_PI;
+
+        fmWaveform.push_back(delPhase * phaseToFreq);
+    }
+}
+
+void IQSweep::CalculateReceiverStats()
+{
+    const std::vector<float> &am = amWaveform;
+    const std::vector<float> &fm = fmWaveform;
+
+    std::vector<float> temp;
+    temp.resize(fm.size());
+
+    FirFilter fir(0.03, 1024); // Filter AM and FM
+
+    fir.Filter(&fm[0], &temp[0], fm.size());
+    fir.Reset();
+
+    // Start with FM
+    stats.fmPeakPlus = std::numeric_limits<double>::lowest();
+    stats.fmPeakMinus = std::numeric_limits<double>::max();
+    stats.fmRMS = 0.0;
+
+    float fmLastVal = 1.0;
+    double fmLastCrossing, fmFirstCrossing = 0.0;
+    bool fmFirstCross = true;
+    int fmCrossCounter = 0;
+
+    for(int i = 1024; i < temp.size(); i++) {
+        float f = temp[i];
+
+        if(f > stats.fmPeakPlus) stats.fmPeakPlus = f;
+        if(f < stats.fmPeakMinus) stats.fmPeakMinus = f;
+        stats.fmRMS += (f*f);
+
+        if(f > 0.0 && fmLastVal < 0.0) {
+            double crossLerp = double(i-1) + ((0.0 - fmLastVal) / (f - fmLastVal));
+            if(fmFirstCross) {
+                fmFirstCrossing = crossLerp;
+                fmFirstCross = false;
+            } else {
+                fmLastCrossing = crossLerp;
+                fmCrossCounter++;
+            }
+        }
+        fmLastVal = f;
+    }
+
+    stats.fmRMS = sqrt(stats.fmRMS / temp.size() - 1024);
+    if(fmCrossCounter == 0) {
+        stats.fmAudioFreq = 0.0;
+    } else {
+        stats.fmAudioFreq = (fmLastCrossing - fmFirstCrossing) / fmCrossCounter;
+        stats.fmAudioFreq = settings.SampleRate() / stats.fmAudioFreq;
+    }
+
+    // AM
+    stats.amPeakPlus = std::numeric_limits<double>::lowest();
+    stats.amPeakMinus = std::numeric_limits<double>::max();
+    stats.amRMS = 0.0;
+    double invAvg = 0.0;
+    float amLastVal = 1.0;
+    double amLastCrossing, amFirstCrossing = 0.0;
+    bool amFirstCross = true;
+    int amCrossCounter = 0;
+
+    for(int i = 0; i < am.size(); i++) {
+        float v = sqrt(am[i] * 50000.0);
+        temp[i] = v;
+        invAvg += v;
+    }
+
+    invAvg = (am.size() / invAvg);
+
+    std::vector<float> temp2;
+    temp2.resize(temp.size());
+
+    for(int i = 0; i < temp.size(); i++) {
+        temp2[i] = (temp[i] * invAvg) - 1.0;
+    }
+
+    fir.Filter(&temp2[0], &temp[0], temp2.size());
+
+    // Normalize between [-1.0, 1.0]
+    for(int i = 1024; i < temp.size(); i++) {
+        float n = temp[i]; // normalized value
+
+        if(n < stats.amPeakMinus) stats.amPeakMinus = n;
+        if(n > stats.amPeakPlus) stats.amPeakPlus = n;
+        stats.amRMS += (n*n);
+
+        if(n > 0.0 && amLastVal < 0.0) {
+            double crossLerp = double(i - 1) + ((-amLastVal) / (n - amLastVal));
+            if(amFirstCross) {
+                amFirstCrossing = crossLerp;
+                amFirstCross = false;
+            } else {
+                amLastCrossing = crossLerp;
+                amCrossCounter++;
+            }
+        }
+        amLastVal = n;
+    }
+
+    stats.amRMS = sqrt(stats.amRMS / (temp.size() - 1024));
+    if(amCrossCounter == 0) {
+        stats.amAudioFreq = 0.0;
+    } else {
+        stats.amAudioFreq = (amLastCrossing - amFirstCrossing) / amCrossCounter;
+        stats.amAudioFreq = settings.SampleRate() / stats.amAudioFreq;
+    }
+}

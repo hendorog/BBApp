@@ -5,52 +5,107 @@
 
 #include <limits>
 
-ReceiverStats getReceiverStats(DemodType type, const GLVector &waveform, double sampleRate)
-{
-    ReceiverStats stats;
+//ReceiverStats getReceiverStats(const IQSweep &sweep)
+//{
+//    ReceiverStats stats;
+//    const std::vector<float> &am = sweep.amWaveform;
+//    const std::vector<float> &fm = sweep.fmWaveform;
 
-    if(type == DemodTypeFM) {
-        stats.peakPlus = std::numeric_limits<float>::lowest();
-        stats.peakMinus = std::numeric_limits<float>::max();
+//    std::vector<float> temp;
+//    temp.resize(fm.size());
 
-        float lastVal = 1.0;
-        double lastCrossing, firstCrossing = 0.0;
-        bool firstCross = true;
-        int crossCounter = 0;
+//    FirFilter fir(0.03, 1024); // Filter AM and FM
 
-        for(int i = 0; i < waveform.size(); i++) {
-            float f = waveform[i];
+//    fir.Filter(&fm[0], &temp[0], fm.size());
+//    fir.Reset();
 
-            if(f > stats.peakPlus) stats.peakPlus = f;
-            if(f < stats.peakMinus) stats.peakMinus = f;
-            stats.RMS += (f*f);
+//    // Start with FM
+//    stats.fmPeakPlus = std::numeric_limits<double>::lowest();
+//    stats.fmPeakMinus = std::numeric_limits<double>::max();
+//    stats.fmRMS = 0.0;
 
-            if(f > 0.0 && lastVal < 0.0) {
-                double crossLerp = double(i-1) + ((0.0 - lastVal) / (f - lastVal));
-                if(firstCross) {
-                    firstCrossing = crossLerp;
-                    firstCross = false;
-                } else {
-                    //crossSum += (crossLerp - lastCross);
-                    lastCrossing = crossLerp;
-                    crossCounter++;
-                }
-            }
-            lastVal = f;
-        }
+//    float fmLastVal = 1.0;
+//    double fmLastCrossing, fmFirstCrossing = 0.0;
+//    bool fmFirstCross = true;
+//    int fmCrossCounter = 0;
 
-        stats.RMS = sqrt(stats.RMS / waveform.size());
-        if(crossCounter == 0) {
-            stats.audioFreq = 0.0;
-        } else {
-            //stats.audioFreq = sampleRate / (crossSum / crossCounter);
-            stats.audioFreq = (lastCrossing - firstCrossing) / crossCounter;
-            stats.audioFreq = sampleRate / stats.audioFreq;
-        }
-    }
+//    for(int i = 1024; i < temp.size(); i++) {
+//        float f = temp[i];
 
-    return stats;
-}
+//        if(f > stats.fmPeakPlus) stats.fmPeakPlus = f;
+//        if(f < stats.fmPeakMinus) stats.fmPeakMinus = f;
+//        stats.fmRMS += (f*f);
+
+//        if(f > 0.0 && fmLastVal < 0.0) {
+//            double crossLerp = double(i-1) + ((0.0 - fmLastVal) / (f - fmLastVal));
+//            if(fmFirstCross) {
+//                fmFirstCrossing = crossLerp;
+//                fmFirstCross = false;
+//            } else {
+//                fmLastCrossing = crossLerp;
+//                fmCrossCounter++;
+//            }
+//        }
+//        fmLastVal = f;
+//    }
+
+//    stats.fmRMS = sqrt(stats.fmRMS / temp.size() - 1024);
+//    if(fmCrossCounter == 0) {
+//        stats.fmAudioFreq = 0.0;
+//    } else {
+//        stats.fmAudioFreq = (fmLastCrossing - fmFirstCrossing) / fmCrossCounter;
+//        stats.fmAudioFreq = sweep.settings.SampleRate() / stats.fmAudioFreq;
+//    }
+
+//    // AM
+//    stats.amPeakPlus = std::numeric_limits<double>::lowest();
+//    stats.amPeakMinus = std::numeric_limits<double>::max();
+//    stats.amRMS = 0.0;
+//    double invAvg = 0.0;
+//    float amLastVal = 1.0;
+//    double amLastCrossing, amFirstCrossing = 0.0;
+//    bool amFirstCross = true;
+//    int amCrossCounter = 0;
+
+//    for(int i = 0; i < am.size(); i++) {
+//        float v = sqrt(am[i] * 50000.0);
+//        temp[i] = v;
+//        invAvg += v;
+//    }
+
+//    invAvg = (am.size() / invAvg);
+
+//    // Normalize between [-1.0, 1.0]
+//    for(int i = 0; i < temp.size(); i++) {
+//        float n = (temp[i] * invAvg) - 1.0; // normalized value
+
+//        if(n < stats.amPeakMinus) stats.amPeakMinus = n;
+//        if(n > stats.amPeakPlus) stats.amPeakPlus = n;
+//        stats.amRMS += (n*n);
+
+//        if(n > 0.0 && amLastVal < 0.0) {
+//            double crossLerp = double(i - 1) + ((-amLastVal) / (n - amLastVal));
+//            if(amFirstCross) {
+//                amFirstCrossing = crossLerp;
+//                amFirstCross = false;
+//            } else {
+//                amLastCrossing = crossLerp;
+//                amCrossCounter++;
+//            }
+//        }
+//        amLastVal = n;
+//    }
+
+//    stats.amRMS = sqrt(stats.amRMS / temp.size());
+//    if(amCrossCounter == 0) {
+//        stats.amAudioFreq = 0.0;
+//    } else {
+//        stats.amAudioFreq = (amLastCrossing - amFirstCrossing) / amCrossCounter;
+//        stats.amAudioFreq = sweep.settings.SampleRate() / stats.amAudioFreq;
+//    }
+
+//    return stats;
+//}
 
 DemodSweepPlot::DemodSweepPlot(Session *session, QWidget *parent) :
     GLSubView(session, parent),
@@ -144,8 +199,10 @@ void DemodSweepPlot::paintEvent(QPaintEvent *)
 {
     makeCurrent();
 
-    if(true) {
+    if(GetSession()->demod_settings->MREnabled()) {
         grat_sz = QPoint(size().width() - 380, size().height() - 100);
+    } else {
+        grat_sz = QPoint(size().width() - 80, size().height() - 100);
     }
 
     glQClearColor(GetSession()->colors.background);
@@ -213,57 +270,69 @@ void DemodSweepPlot::DemodAndDraw()
     const IQSweep &iq = GetSession()->iq_capture;
     if(iq.iq.size() <= 1) return;
 
-    waveform.clear();
+    //waveform.clear();
     trace.clear();
 
     double ref, botRef;
 
     if(demodType == DemodTypeAM) {
-        for(int i = 0; i < iq.iq.size(); i++) {
-            waveform.push_back(iq.iq[i].re * iq.iq[i].re +
-                            iq.iq[i].im * iq.iq[i].im);
-        }
+//        for(int i = 0; i < iq.iq.size(); i++) {
+//            waveform.push_back(iq.iq[i].re * iq.iq[i].re +
+//                               iq.iq[i].im * iq.iq[i].im);
+//        }
         if(ds->InputPower().IsLogScale()) {
             ref = ds->InputPower().ConvertToUnits(DBM);
             botRef = ref - 100.0;
-            for(int i = 0; i < waveform.size(); i++) {
-                waveform[i] = 10.0 * log10(waveform[i]);
+//            for(int i = 0; i < waveform.size(); i++) {
+//                waveform[i] = 10.0 * log10(waveform[i]);
+//            }
+            for(int i = 0; i < iq.amWaveform.size(); i++) {
+                trace.push_back(i);
+                trace.push_back(10.0 * log10(iq.amWaveform[i]));
             }
         } else {
             ref = ds->InputPower();
             botRef = 0.0;
-            for(int i = 0; i < waveform.size(); i++) {
-                waveform[i] = sqrt(waveform[i] * 50000.0);
+//            for(int i = 0; i < waveform.size(); i++) {
+//                waveform[i] = sqrt(waveform[i] * 50000.0);
+//            }
+            for(int i = 0; i < iq.amWaveform.size(); i++) {
+                trace.push_back(i);
+                trace.push_back(sqrt((double)iq.amWaveform[i] * 50000.0));
             }
         }
 
     } else if(demodType == DemodTypeFM) {
-        double sr = 40.0e6 / (0x1 << ds->DecimationFactor());
-        demod_fm(iq.iq, waveform, sr / 2.0);
+        //double sr = 40.0e6 / (0x1 << ds->DecimationFactor());
+        //demod_fm(iq.iq, waveform, sr / 2.0);
         ref = 40.0e6 / (0x1 << ds->DecimationFactor()) / 2.0;
         botRef = -ref;
 
-//        FirFilter fir(0.03, 1024);
-//        std::vector<float> temp;
-//        temp.resize(waveform.size());
-//        fir.Filter(&waveform[0], &temp[0], waveform.size());
-//        waveform.clear();
-//        for(int i = 512; i < temp.size(); i++) {
-//            waveform.push_back(temp[i]);
-//        }
+        //        FirFilter fir(0.03, 1024);
+        //        std::vector<float> temp;
+        //        temp.resize(waveform.size());
+        //        fir.Filter(&waveform[0], &temp[0], waveform.size());
+        //        waveform.clear();
+        //        for(int i = 512; i < temp.size(); i++) {
+        //            waveform.push_back(temp[i]);
+        //        }
 
+        for(int i = 0; i < iq.fmWaveform.size(); i++) {
+            trace.push_back(i);
+            trace.push_back(iq.fmWaveform[i]);
+        }
 
     } else if(demodType == DemodTypePM) {
-        for(int i = 0; i < iq.iq.size(); i++) {
-            waveform.push_back(atan2(iq.iq[i].im, iq.iq[i].re));
-        }
+        //        for(int i = 0; i < iq.iq.size(); i++) {
+        //            waveform.push_back(atan2(iq.iq[i].im, iq.iq[i].re));
+        //        }
         ref = BB_PI;
         botRef = -BB_PI;
-    }
 
-    for(int i = 0; i < waveform.size(); i++) {
-        trace.push_back(i);
-        trace.push_back(waveform[i]);
+        for(int i = 0; i < iq.pmWaveform.size(); i++) {
+            trace.push_back(i);
+            trace.push_back(iq.pmWaveform[i]);
+        }
     }
 
     glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
@@ -390,7 +459,7 @@ void DemodSweepPlot::DrawPlotText()
         DrawString("Uncal", textFont, grat_ul.x() - 5, grat_ul.y() - 22, RIGHT_ALIGNED);
     }
 
-    if(true) {
+    if(GetSession()->demod_settings->MREnabled()) {
         glQColor(GetSession()->colors.text);
         DrawMeasuringReceiverStats();
     }
@@ -486,8 +555,6 @@ void DemodSweepPlot::DrawMarkers()
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glPopAttrib();
-
-
 }
 
 void DemodSweepPlot::DrawTrace(const GLVector &v)
@@ -512,7 +579,7 @@ void DemodSweepPlot::DrawTrace(const GLVector &v)
 
 void DemodSweepPlot::DrawMarker(int x, int y, int num)
 {
-    glColor3f(1.0, 1.0, 1.0);
+    glQColor(GetSession()->colors.markerBackground);
     glBegin(GL_POLYGON);
     glVertex2f(x, y);
     glVertex2f(x + 10, y + 15);
@@ -520,8 +587,7 @@ void DemodSweepPlot::DrawMarker(int x, int y, int num)
     glVertex2f(x - 10, y + 15);
     glEnd();
 
-    //glQColor(session_ptr->colors.markers);
-    glColor3f(0.0, 0.0, 0.0);
+    glQColor(GetSession()->colors.markerBorder);
     glBegin(GL_LINE_STRIP);
     glVertex2f(x, y);
     glVertex2f(x + 10, y + 15);
@@ -530,7 +596,7 @@ void DemodSweepPlot::DrawMarker(int x, int y, int num)
     glVertex2f(x, y);
     glEnd();
 
-    glColor3f(0.0, 0.0, 0.0);
+    glQColor(GetSession()->colors.markerText);
     QString str;
     str.sprintf("%d", num);
     DrawString(str, divFont,
@@ -539,7 +605,7 @@ void DemodSweepPlot::DrawMarker(int x, int y, int num)
 
 void DemodSweepPlot::DrawDeltaMarker(int x, int y, int num)
 {
-    glColor3f(1.0, 1.0, 1.0);
+    glQColor(GetSession()->colors.markerBackground);
     glBegin(GL_POLYGON);
     glVertex2f(x, y);
     glVertex2f(x + 11, y + 11);
@@ -548,8 +614,7 @@ void DemodSweepPlot::DrawDeltaMarker(int x, int y, int num)
     glVertex2f(x - 11, y + 11);
     glEnd();
 
-    //glQColor(session_ptr->colors.markers);
-    glColor3f(0.0, 0.0, 0.0);
+    glQColor(GetSession()->colors.markerBorder);
     glBegin(GL_LINE_STRIP);
     glVertex2f(x, y);
     glVertex2f(x + 11, y + 11);
@@ -559,7 +624,7 @@ void DemodSweepPlot::DrawDeltaMarker(int x, int y, int num)
     glVertex2f(x, y);
     glEnd();
 
-    glColor3f(0.0, 0.0, 0.0);
+    glQColor(GetSession()->colors.markerText);
     QString str;
     str.sprintf("R%d", num);
     DrawString(str, divFont,
@@ -568,19 +633,30 @@ void DemodSweepPlot::DrawDeltaMarker(int x, int y, int num)
 
 void DemodSweepPlot::DrawMeasuringReceiverStats()
 {
-    const DemodSettings *ds = GetSession()->demod_settings;
-    double sr = 40.0e6 / (0x1 << ds->DecimationFactor());
-    ReceiverStats stats = getReceiverStats(demodType, waveform, sr);
+    ReceiverStats stats = GetSession()->iq_capture.stats;
 
-    QPoint pos(grat_ul.x() + grat_sz.x() + 10, grat_ul.y());
+    QPoint pos(grat_ul.x() + grat_sz.x() + 10, grat_ul.y() - 20);
+    QString str;
 
     DrawString("Measuring Reciever", textFont, pos, LEFT_ALIGNED);
     pos += QPoint(0, -20);
-    DrawString("RMS " + Frequency(stats.RMS).GetFreqString(), textFont, pos, LEFT_ALIGNED);
+    DrawString("FM RMS " + Frequency(stats.fmRMS).GetFreqString(), divFont, pos, LEFT_ALIGNED);
     pos += QPoint(0, -20);
-    DrawString("Peak+ " + Frequency(stats.peakPlus).GetFreqString(), textFont, pos, LEFT_ALIGNED);
+    DrawString("FM Peak+ " + Frequency(stats.fmPeakPlus).GetFreqString(), divFont, pos, LEFT_ALIGNED);
     pos += QPoint(0, -20);
-    DrawString("Peak- " + Frequency(stats.peakMinus).GetFreqString(), textFont, pos, LEFT_ALIGNED);
+    DrawString("FM Peak- " + Frequency(stats.fmPeakMinus).GetFreqString(), divFont, pos, LEFT_ALIGNED);
     pos += QPoint(0, -20);
-    DrawString("Audio Freq " + Frequency(stats.audioFreq).GetFreqString(), textFont, pos, LEFT_ALIGNED);
+    DrawString("FM Audio Freq " + Frequency(stats.fmAudioFreq).GetFreqString(), divFont, pos, LEFT_ALIGNED);
+    pos += QPoint(0, -20);
+
+    str.sprintf("AM RMS %.3lf%%", stats.amRMS * 100.0);
+    DrawString(str, divFont, pos, LEFT_ALIGNED);
+    pos += QPoint(0, -20);
+    str.sprintf("AM Peak+ %.3lf%%", stats.amPeakPlus * 100.0);
+    DrawString(str, divFont, pos, LEFT_ALIGNED);
+    pos += QPoint(0, -20);
+    str.sprintf("AM Peak- %.3lf%%", stats.amPeakMinus * 100.0);
+    DrawString(str, divFont, pos, LEFT_ALIGNED);
+    pos += QPoint(0, -20);
+    DrawString("AM Audio Freq " + Frequency(stats.amAudioFreq).GetFreqString(), divFont, pos, LEFT_ALIGNED);
 }

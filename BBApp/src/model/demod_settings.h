@@ -41,6 +41,7 @@ public:
     int Gain() const { return gain; }
     int Atten() const { return atten; }
     int DecimationFactor() const { return decimationFactor; }
+    double SampleRate() const { return 40.0e6 / (0x1 << DecimationFactor()); }
     Frequency Bandwidth() const { return bandwidth; }
     bool AutoBandwidth() const { return autoBandwidth; }
     Time SweepTime() const { return sweepTime; }
@@ -109,10 +110,9 @@ struct IQDescriptor {
     double bandwidth;
 };
 
-// Represents a single
+// Represents a single IQ capture
 struct IQCapture {
-    IQCapture()
-    {
+    IQCapture() {
         simdZero_32s(triggers, 70);
     }
     ~IQCapture() {}
@@ -122,12 +122,36 @@ struct IQCapture {
     int triggers[70];
 };
 
+struct ReceiverStats {
+    ReceiverStats()
+    {
+        fmRMS = amRMS = 0.0;
+        fmPeakPlus = fmPeakMinus = 0.0;
+        amPeakPlus = amPeakMinus = 0.0;
+        fmAudioFreq = amAudioFreq = 0.0;
+    }
+
+    double fmRMS, amRMS;
+    double fmPeakPlus, fmPeakMinus;
+    double amPeakPlus, amPeakMinus;
+    double fmAudioFreq, amAudioFreq;
+};
+
 // One full sweep
 typedef struct IQSweep {
     DemodSettings settings;
-    std::vector<complex_f> iq;
-    std::vector<float> waveform;
+    std::vector<complex_f> iq; // Full IQ capture
+    std::vector<float> amWaveform; // i*i + q*q
+    std::vector<float> fmWaveform;
+    std::vector<float> pmWaveform;
+    ReceiverStats stats;
     bool triggered;
+
+    // Convert IQ to AM/FM/PM waveforms
+    void Demod();
+    // From AM/FM/PM waveforms, get receiver stats
+    void CalculateReceiverStats();
+
 } IQSweep;
 
 #endif // DEMOD_SETTINGS_H

@@ -464,10 +464,10 @@ void build_blackman_window(complex_f *dst, int len);
 void build_flattop_window(float *dst, int len);
 void build_flattop_window(complex_f *dst, int len);
 
-void demod_am(const complex_f *src, float *dst, int len);
-void demod_fm(const complex_f *src, float *dst, int len, double *phase);
-void demod_fm(const std::vector<complex_f> &src,
-              std::vector<float> &dst, double sampleRate);
+//void demod_am(const complex_f *src, float *dst, int len);
+//void demod_fm(const complex_f *src, float *dst, int len, double *phase);
+//void demod_fm(const std::vector<complex_f> &src,
+//              std::vector<float> &dst, double sampleRate);
 
 // Get index of a trigger
 // Returns -1 if not found

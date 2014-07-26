@@ -7,9 +7,10 @@
 #include <QMdiSubWindow>
 #include <QPaintEvent>
 
+#include <mutex>
+
 #include "lib/bb_lib.h"
 #include "model/session.h"
-
 #include "central_stack.h"
 #include "gl_sub_view.h"
 
@@ -45,11 +46,16 @@ public:
         list.at(2)->resize(width() / 2, height() / 2);
     }
 
+    std::mutex viewLock;
+
 public slots:
     void updateViews() {
-        QList<QMdiSubWindow*> list = subWindowList();
-        for(QMdiSubWindow *view : list) {
-            view->widget()->update();
+        {
+            std::lock_guard<std::mutex> guard(viewLock);
+            QList<QMdiSubWindow*> list = subWindowList();
+            for(QMdiSubWindow *view : list) {
+                view->widget()->update();
+            }
         }
     }
 
@@ -78,7 +84,7 @@ protected:
     void resizeEvent(QResizeEvent *);
 
 private:
-    void Reconfigure(DemodSettings *ds, IQCapture *iqc);
+    void Reconfigure(DemodSettings *ds, IQCapture *iqc, IQSweep &iqSweep);
     void GetCapture(const DemodSettings *ds, IQCapture &iqc,
                     IQSweep &iq, Device *device);
     void StreamThread();

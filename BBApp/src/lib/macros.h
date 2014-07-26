@@ -23,8 +23,6 @@
 #define BB_TWO_PI (2 * BB_PI)
 #define BB_FOUR_PI (4 * BB_PI)
 
-#define PHASE_TO_FREQ (80.0e6 / BB_TWO_PI)
-
 // Minimum IQ sweep length
 // Ensures we can still do a 16 point FFT
 const int MIN_IQ_SWEEP_LEN = 20;
