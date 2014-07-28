@@ -268,6 +268,26 @@ inline void simdMul_32fc(const complex_f *src1, const complex_f *src2, complex_f
     }
 }
 
+//template<class FloatType>
+//inline FloatType averagePower(const std::vector<FloatType> &input)
+//{
+//    double sum = 0.0;
+//    for(std::vector<FloatType>::size_type i = 0; i < input.size(); i++) {
+//        sum += (input[i] * input[i]);
+//    }
+//    return sum / input.size();
+//}
+
+template<class FloatType>
+inline FloatType averagePower(const FloatType *input, int len)
+{
+    double sum = 0.0;
+    for(int i = 0; i < len; i++) {
+        sum += (input[i]*input[i]);
+    }
+    return sum / len;
+}
+
 namespace bb_lib {
 
 // Returns true if a new value was retrieved
@@ -477,6 +497,55 @@ int find_falling_trigger(const complex_f *array, double t, int len);
 
 void firLowpass(double fc, int n, float *kernel);
 void flip_array_i(double *srcDst, int len);
+
+// Bandwidth limit of 0.0003 for single precision
+template<class FloatType>
+void iirBandPass(const FloatType *input, FloatType *output, double center, double width, int len)
+{
+    Q_ASSERT(input && output);
+
+    double R = 1.0 - (3.0*width);
+    double K = (1.0 - 2.0*R*cos(BB_TWO_PI*center) + R*R) /
+            (2.0 - 2.0*cos(BB_TWO_PI*center));
+    double a0 = 1.0 - K;
+    double a1 = 2.0*(K - R)*cos(BB_TWO_PI*center);
+    double a2 = R*R - K;
+    double b1 = 2.0*R*cos(BB_TWO_PI*center);
+    double b2 = -(R*R);
+
+    if(len <= 3) return;
+
+    output[0] = a0*input[0];
+    output[1] = a0*input[1] + a1*input[0] + b1*output[0];
+    for(int i = 2; i < len; i++) {
+        output[i] = a0*input[i] + a1*input[i-1] + a2*input[i-2] +
+                b1*output[i-1] + b2*output[i-2];
+    }
+}
+
+template<class FloatType>
+void iirBandReject(const FloatType *input, FloatType *output, double center, double width, int len)
+{
+    Q_ASSERT(input && output);
+
+    double R = 1.0 - (3.0*width);
+    double K = (1.0 - 2.0*R*cos(BB_TWO_PI*center) + R*R) /
+            (2.0 - 2.0*cos(BB_TWO_PI*center));
+    double a0 = K;
+    double a1 = -2.0*K*cos(BB_TWO_PI*center);
+    double a2 = K;
+    double b1 = 2.0*R*cos(BB_TWO_PI*center);
+    double b2 = -(R*R);
+
+    if(len <= 3) return;
+
+    output[0] = a0*input[0];
+    output[1] = a0*input[1] + a1*input[0] + b1*output[0];
+    for(int i = 2; i < len; i++) {
+        output[i] = a0*input[i] + a1*input[i-1] + a2*input[i-2] +
+                b1*output[i-1] + b2*output[i-2];
+    }
+}
 
 // FFT complex-to-complex
 // Blackman window

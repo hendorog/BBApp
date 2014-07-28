@@ -638,7 +638,9 @@ void DemodSweepPlot::DrawMeasuringReceiverStats()
     QPoint pos(grat_ul.x() + grat_sz.x() + 10, grat_ul.y() - 20);
     QString str;
 
-    DrawString("Measuring Reciever", textFont, pos, LEFT_ALIGNED);
+    DrawString("AM/FM Modulation Analysis", textFont, pos, LEFT_ALIGNED);
+    pos += QPoint(0, -20);
+    DrawString("RF Center " + Frequency(stats.rfCenter).GetFreqString(), divFont, pos, LEFT_ALIGNED);
     pos += QPoint(0, -20);
     DrawString("FM RMS " + Frequency(stats.fmRMS).GetFreqString(), divFont, pos, LEFT_ALIGNED);
     pos += QPoint(0, -20);
@@ -659,4 +661,6 @@ void DemodSweepPlot::DrawMeasuringReceiverStats()
     DrawString(str, divFont, pos, LEFT_ALIGNED);
     pos += QPoint(0, -20);
     DrawString("AM Audio Freq " + Frequency(stats.amAudioFreq).GetFreqString(), divFont, pos, LEFT_ALIGNED);
+    pos+= QPoint(0, -20);
+    DrawString("SINAD " + QVariant(stats.SINAD).toString() + " dB", divFont, pos, LEFT_ALIGNED);
 }

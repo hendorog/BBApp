@@ -812,6 +812,55 @@ inline double mul_accum(const float *src1, const float *src2, int len) {
     return sum;
 }
 
+//template<class FloatType>
+//void iirBandPass(FloatType *input, FloatType *output, double center, double width, int len)
+//{
+//    Q_ASSERT(input && output);
+
+//    double R = 1.0 - (3.0*width);
+//    double K = (1.0 - 2.0*R*cos(BB_TWO_PI*center) + R*R) /
+//            (2.0 - 2.0*cos(BB_TWO_PI*center));
+//    double a0 = 1.0 - K;
+//    double a1 = 2.0*(K - R)*cos(BB_TWO_PI*center);
+//    double a2 = R*R - K;
+//    double b1 = 2.0*R*cos(BB_TWO_PI*center);
+//    double b2 = -(R*R);
+
+//    if(len <= 3) return;
+
+//    output[0] = a0*input[0];
+//    output[1] = a0*input[1] + a1*input[0] + b1*output[0];
+//    for(int i = 2; i < len; i++) {
+//        output[i] = a0*input[i] + a1*input[i-1] + a2*input[i-2] +
+//                b1*output[i-1] + b2*output[i-2];
+//    }
+//}
+
+//template<class FloatType>
+//void iirBandReject(FloatType *input, FloatType *output, double center, double width, int len)
+//{
+//    Q_ASSERT(input && output);
+
+//    double R = 1.0 - (3.0*width);
+//    double K = (1.0 - 2.0*R*cos(BB_TWO_PI*center) + R*R) /
+//            (2.0 - 2.0*cos(BB_TWO_PI*center));
+//    double a0 = K;
+//    double a1 = -2.0*K*cos(BB_TWO_PI*center);
+//    double a2 = K;
+//    double b1 = 2.0*R*cos(BB_TWO_PI*center);
+//    double b2 = -(R*R);
+
+//    if(len <= 3) return;
+
+//    output[0] = a0*input[0];
+//    output[1] = a0*input[1] + a1*input[0] + b1*output[0];
+//    for(int i = 2; i < len; i++) {
+//        output[i] = a0*input[i] + a1*input[i-1] + a2*input[i-2] +
+//                b1*output[i-1] + b2*output[i-2];
+//    }
+//}
+
+
 FirFilter::FirFilter(double fc, int filter_len)
     : order(filter_len), cutoff(fc)
 {

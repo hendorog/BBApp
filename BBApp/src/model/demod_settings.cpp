@@ -400,6 +400,16 @@ void IQSweep::CalculateReceiverStats()
         stats.fmAudioFreq = settings.SampleRate() / stats.fmAudioFreq;
     }
 
+    stats.SINAD = 10.0 * log10(CalculateSINAD(/*temp*/fm, stats.fmAudioFreq));
+
+    // Calculate RF Center based on average of FM frequencies
+    stats.rfCenter = 0.0;
+    for(int i = 1024; i < temp.size(); i++) {
+        stats.rfCenter += temp[i];
+    }
+    stats.rfCenter /= (temp.size() - 1024);
+    stats.rfCenter = settings.CenterFreq() + stats.rfCenter;
+
     // AM
     stats.amPeakPlus = std::numeric_limits<double>::lowest();
     stats.amPeakMinus = std::numeric_limits<double>::max();
@@ -455,4 +465,18 @@ void IQSweep::CalculateReceiverStats()
         stats.amAudioFreq = (amLastCrossing - amFirstCrossing) / amCrossCounter;
         stats.amAudioFreq = settings.SampleRate() / stats.amAudioFreq;
     }
+}
+
+double CalculateSINAD(const std::vector<float> &waveform, double centerFreq)
+{
+    std::vector<float> rejected;
+    rejected.resize(waveform.size());
+
+    //iirBandReject(&waveform[0], &rejected[0], centerFreq / 312.5e3, 0.01, waveform.size());
+    iirBandPass(&waveform[0], &rejected[0], centerFreq / 312.5e3, 0.1, waveform.size());
+
+    qDebug() << averagePower(&waveform[32768], waveform.size() - 32768);
+    qDebug() << "Rejected " << averagePower(&rejected[32768], rejected.size() - 32768);
+    return averagePower(&waveform[32768], waveform.size() - 32768) /
+            averagePower(&rejected[32768], rejected.size() - 32768);
 }

@@ -125,16 +125,20 @@ struct IQCapture {
 struct ReceiverStats {
     ReceiverStats()
     {
+        rfCenter = 0.0;
         fmRMS = amRMS = 0.0;
         fmPeakPlus = fmPeakMinus = 0.0;
         amPeakPlus = amPeakMinus = 0.0;
         fmAudioFreq = amAudioFreq = 0.0;
+        SINAD = THD = 0.0;
     }
 
+    double rfCenter; // Avg of fm frequencies
     double fmRMS, amRMS;
     double fmPeakPlus, fmPeakMinus;
     double amPeakPlus, amPeakMinus;
     double fmAudioFreq, amAudioFreq;
+    double SINAD, THD;
 };
 
 // One full sweep
@@ -151,7 +155,9 @@ typedef struct IQSweep {
     void Demod();
     // From AM/FM/PM waveforms, get receiver stats
     void CalculateReceiverStats();
-
 } IQSweep;
+
+// waveform: filtered waveform
+double CalculateSINAD(const std::vector<float> &waveform, double centerFreq);
 
 #endif // DEMOD_SETTINGS_H

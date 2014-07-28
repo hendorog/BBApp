@@ -7,7 +7,7 @@ DemodPanel::DemodPanel(const QString &title,
 {
     DockPage *demodPage = new DockPage(tr("Capture Settings"));
     DockPage *triggerPage = new DockPage(tr("Trigger Settings"));
-    DockPage *mrPage = new DockPage(tr("Measuring Receiver"));
+    DockPage *mrPage = new DockPage(tr("AM/FM Modulation Analysis"));
 
     inputPowerEntry = new AmpEntry(tr("Input Pwr"), 0.0);
     centerEntry = new FrequencyEntry(tr("Center"), 0.0);
