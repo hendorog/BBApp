@@ -199,7 +199,7 @@ void DemodSweepPlot::paintEvent(QPaintEvent *)
 {
     makeCurrent();
 
-    if(GetSession()->demod_settings->MREnabled()) {
+    if(GetSession()->demod_settings->MAEnabled()) {
         grat_sz = QPoint(size().width() - 380, size().height() - 100);
     } else {
         grat_sz = QPoint(size().width() - 80, size().height() - 100);
@@ -459,7 +459,7 @@ void DemodSweepPlot::DrawPlotText()
         DrawString("Uncal", textFont, grat_ul.x() - 5, grat_ul.y() - 22, RIGHT_ALIGNED);
     }
 
-    if(GetSession()->demod_settings->MREnabled()) {
+    if(GetSession()->demod_settings->MAEnabled()) {
         glQColor(GetSession()->colors.text);
         DrawMeasuringReceiverStats();
     }
@@ -662,5 +662,9 @@ void DemodSweepPlot::DrawMeasuringReceiverStats()
     pos += QPoint(0, -20);
     DrawString("AM Audio Freq " + Frequency(stats.amAudioFreq).GetFreqString(), divFont, pos, LEFT_ALIGNED);
     pos+= QPoint(0, -20);
-    DrawString("SINAD " + QVariant(stats.SINAD).toString() + " dB", divFont, pos, LEFT_ALIGNED);
+    str.sprintf("SINAD %.2f dB", stats.SINAD);
+    DrawString(str, divFont, pos, LEFT_ALIGNED);
+    pos+= QPoint(0, -20);
+    str.sprintf("THD %.2f %%", stats.THD);
+    DrawString(str, divFont, pos, LEFT_ALIGNED);
 }

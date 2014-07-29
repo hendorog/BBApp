@@ -254,7 +254,7 @@ void DemodCentral::StreamThread()
 
             if(demodArea->viewLock.try_lock()) {
                 sweep.Demod();
-                if(sweep.settings.MREnabled()) {
+                if(sweep.settings.MAEnabled()) {
                     sweep.CalculateReceiverStats();
                 }
                 sessionPtr->iq_capture = sweep;

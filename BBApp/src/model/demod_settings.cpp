@@ -83,7 +83,8 @@ DemodSettings& DemodSettings::operator=(const DemodSettings &other)
     trigEdge = other.TrigEdge();
     trigAmplitude = other.TrigAmplitude();
 
-    mrEnabled = other.MREnabled();
+    maEnabled = other.MAEnabled();
+    maLowPass = other.MALowPass();
 
     return *this;
 }
@@ -103,7 +104,8 @@ bool DemodSettings::operator==(const DemodSettings &other) const
     if(trigEdge != other.TrigEdge()) return false;
     if(trigAmplitude != other.TrigAmplitude()) return false;
 
-    if(mrEnabled != other.MREnabled()) return false;
+    if(maEnabled != other.MAEnabled()) return false;
+    if(maLowPass != other.MALowPass()) return false;
 
     return true;
 }
@@ -129,7 +131,8 @@ void DemodSettings::LoadDefaults()
     trigEdge = TriggerEdgeRising;
     trigAmplitude = 0.0;
 
-    mrEnabled = false;
+    maEnabled = false;
+    maLowPass = 10.0e3;
 }
 
 bool DemodSettings::Load(QSettings &s)
@@ -273,13 +276,22 @@ void DemodSettings::setTrigAmplitude(Amplitude ta)
     emit updated(this);
 }
 
-void DemodSettings::setMREnabled(bool enabled)
+void DemodSettings::setMAEnabled(bool enabled)
 {
-    mrEnabled = enabled;
+    maEnabled = enabled;
 
-    if(mrEnabled) {
+    if(maEnabled) {
         SetMRConfiguration();
     }
+
+    emit updated(this);
+}
+
+void DemodSettings::setMALowPass(Frequency f)
+{
+    f.Clamp(100.0, 20.0e3);
+
+    maLowPass = f;
 
     emit updated(this);
 }
@@ -357,79 +369,86 @@ void IQSweep::CalculateReceiverStats()
     std::vector<float> temp;
     temp.resize(fm.size());
 
-    FirFilter fir(0.03, 1024); // Filter AM and FM
+    FirFilter fir(settings.MALowPass() / settings.SampleRate(),
+                  1024); // Filter AM and FM
+
+    // Calculate RF Center based on average of FM frequencies
+    stats.rfCenter = 0.0;
+    for(int i = 2048; i < temp.size(); i++) {
+        stats.rfCenter += temp[i];
+    }
+    double fmAvg = stats.rfCenter / (temp.size() - 2048);
+    stats.rfCenter = settings.CenterFreq() + fmAvg;
+
+    // Remove DC offset
+    for(int i = 0; i < temp.size(); i++) {
+        temp[i] -= fmAvg;
+    }
 
     fir.Filter(&fm[0], &temp[0], fm.size());
     fir.Reset();
 
     // Start with FM
+
+//    float fmLastVal = 1.0;
+//    double fmLastCrossing, fmFirstCrossing = 0.0;
+//    bool fmFirstCross = true;
+//    int fmCrossCounter = 0;
+
+//    for(int i = 1024; i < temp.size(); i++) {
+//        float f = temp[i];
+
+//        if(f > stats.fmPeakPlus) stats.fmPeakPlus = f;
+//        if(f < stats.fmPeakMinus) stats.fmPeakMinus = f;
+
+//        if(f > 0.0 && fmLastVal < 0.0) {
+//            double crossLerp = double(i-1) + ((0.0 - fmLastVal) / (f - fmLastVal));
+//            if(fmFirstCross) {
+//                fmFirstCrossing = crossLerp;
+//                fmFirstCross = false;
+//            } else {
+//                fmLastCrossing = crossLerp;
+//                fmCrossCounter++;
+//            }
+//        }
+//        fmLastVal = f;
+//    }
+
+//    if(fmCrossCounter == 0) {
+//        stats.fmAudioFreq = 0.0;
+//    } else {
+//        stats.fmAudioFreq = (fmLastCrossing - fmFirstCrossing) / fmCrossCounter;
+//        stats.fmAudioFreq = settings.SampleRate() / stats.fmAudioFreq;
+//    }
+
+    stats.fmAudioFreq = getAudioFreq(temp, settings.SampleRate(), 1024);
+
+    // FM RMS
     stats.fmPeakPlus = std::numeric_limits<double>::lowest();
     stats.fmPeakMinus = std::numeric_limits<double>::max();
     stats.fmRMS = 0.0;
-
-    float fmLastVal = 1.0;
-    double fmLastCrossing, fmFirstCrossing = 0.0;
-    bool fmFirstCross = true;
-    int fmCrossCounter = 0;
-
     for(int i = 1024; i < temp.size(); i++) {
-        float f = temp[i];
-
-        if(f > stats.fmPeakPlus) stats.fmPeakPlus = f;
-        if(f < stats.fmPeakMinus) stats.fmPeakMinus = f;
-        stats.fmRMS += (f*f);
-
-        if(f > 0.0 && fmLastVal < 0.0) {
-            double crossLerp = double(i-1) + ((0.0 - fmLastVal) / (f - fmLastVal));
-            if(fmFirstCross) {
-                fmFirstCrossing = crossLerp;
-                fmFirstCross = false;
-            } else {
-                fmLastCrossing = crossLerp;
-                fmCrossCounter++;
-            }
-        }
-        fmLastVal = f;
+        if(temp[i] > stats.fmPeakPlus) stats.fmPeakPlus = temp[i];
+        if(temp[i] < stats.fmPeakMinus) stats.fmPeakMinus = temp[i];
+        stats.fmRMS += temp[i] * temp[i];
     }
+    stats.fmRMS = sqrt(stats.fmRMS / (temp.size() - 1024));
 
-    stats.fmRMS = sqrt(stats.fmRMS / temp.size() - 1024);
-    if(fmCrossCounter == 0) {
-        stats.fmAudioFreq = 0.0;
-    } else {
-        stats.fmAudioFreq = (fmLastCrossing - fmFirstCrossing) / fmCrossCounter;
-        stats.fmAudioFreq = settings.SampleRate() / stats.fmAudioFreq;
-    }
-
-    stats.SINAD = 10.0 * log10(CalculateSINAD(/*temp*/fm, stats.fmAudioFreq));
-
-    // Calculate RF Center based on average of FM frequencies
-    stats.rfCenter = 0.0;
-    for(int i = 1024; i < temp.size(); i++) {
-        stats.rfCenter += temp[i];
-    }
-    stats.rfCenter /= (temp.size() - 1024);
-    stats.rfCenter = settings.CenterFreq() + stats.rfCenter;
+//    std::vector<double> audioRate;
+//    downsample(temp, audioRate, 8);
+//    stats.SINAD = 10.0 * log10(CalculateSINAD(audioRate, 39062.5, stats.fmAudioFreq));
 
     // AM
-    stats.amPeakPlus = std::numeric_limits<double>::lowest();
-    stats.amPeakMinus = std::numeric_limits<double>::max();
-    stats.amRMS = 0.0;
-    double invAvg = 0.0;
-    float amLastVal = 1.0;
-    double amLastCrossing, amFirstCrossing = 0.0;
-    bool amFirstCross = true;
-    int amCrossCounter = 0;
+    std::vector<float> temp2;
+    temp2.resize(temp.size());
 
+    double invAvg = 0.0;
     for(int i = 0; i < am.size(); i++) {
         float v = sqrt(am[i] * 50000.0);
         temp[i] = v;
         invAvg += v;
     }
-
-    invAvg = (am.size() / invAvg);
-
-    std::vector<float> temp2;
-    temp2.resize(temp.size());
+    invAvg = am.size() / invAvg;
 
     for(int i = 0; i < temp.size(); i++) {
         temp2[i] = (temp[i] * invAvg) - 1.0;
@@ -437,46 +456,120 @@ void IQSweep::CalculateReceiverStats()
 
     fir.Filter(&temp2[0], &temp[0], temp2.size());
 
-    // Normalize between [-1.0, 1.0]
+    stats.amAudioFreq = getAudioFreq(temp, settings.SampleRate(), 1024);
+    stats.amPeakPlus = std::numeric_limits<double>::lowest();
+    stats.amPeakMinus = std::numeric_limits<double>::max();
+    stats.amRMS = 0.0;
     for(int i = 1024; i < temp.size(); i++) {
-        float n = temp[i]; // normalized value
-
-        if(n < stats.amPeakMinus) stats.amPeakMinus = n;
-        if(n > stats.amPeakPlus) stats.amPeakPlus = n;
-        stats.amRMS += (n*n);
-
-        if(n > 0.0 && amLastVal < 0.0) {
-            double crossLerp = double(i - 1) + ((-amLastVal) / (n - amLastVal));
-            if(amFirstCross) {
-                amFirstCrossing = crossLerp;
-                amFirstCross = false;
-            } else {
-                amLastCrossing = crossLerp;
-                amCrossCounter++;
-            }
-        }
-        amLastVal = n;
+        if(temp[i] > stats.amPeakPlus) stats.amPeakPlus = temp[i];
+        if(temp[i] < stats.amPeakMinus) stats.amPeakMinus = temp[i];
+        stats.amRMS += (temp[i] * temp[i]);
     }
-
     stats.amRMS = sqrt(stats.amRMS / (temp.size() - 1024));
-    if(amCrossCounter == 0) {
-        stats.amAudioFreq = 0.0;
-    } else {
-        stats.amAudioFreq = (amLastCrossing - amFirstCrossing) / amCrossCounter;
-        stats.amAudioFreq = settings.SampleRate() / stats.amAudioFreq;
-    }
+
+    std::vector<double> audioRate;
+    downsample(temp, audioRate, 8);
+
+    stats.SINAD = 10.0 * log10(CalculateSINAD(audioRate, 39062.5, stats.amAudioFreq));
+    stats.THD = CalculateTHD(audioRate, 39062.5, stats.amAudioFreq);
+
+    //    double invAvg = 0.0;
+    //    float amLastVal = 1.0;
+    //    double amLastCrossing, amFirstCrossing = 0.0;
+    //    bool amFirstCross = true;
+    //    int amCrossCounter = 0;
+
+    //    for(int i = 0; i < am.size(); i++) {
+    //        float v = sqrt(am[i] * 50000.0);
+    //        temp[i] = v;
+    //        invAvg += v;
+//    }
+
+//    invAvg = (am.size() / invAvg);
+
+//    std::vector<float> temp2;
+//    temp2.resize(temp.size());
+
+//    for(int i = 0; i < temp.size(); i++) {
+//        temp2[i] = (temp[i] * invAvg) - 1.0;
+//    }
+
+//    fir.Filter(&temp2[0], &temp[0], temp2.size());
+
+//    // Normalize between [-1.0, 1.0]
+//    for(int i = 1024; i < temp.size(); i++) {
+//        float n = temp[i]; // normalized value
+
+//        if(n < stats.amPeakMinus) stats.amPeakMinus = n;
+//        if(n > stats.amPeakPlus) stats.amPeakPlus = n;
+//        stats.amRMS += (n*n);
+
+//        if(n > 0.0 && amLastVal < 0.0) {
+//            double crossLerp = double(i - 1) + ((-amLastVal) / (n - amLastVal));
+//            if(amFirstCross) {
+//                amFirstCrossing = crossLerp;
+//                amFirstCross = false;
+//            } else {
+//                amLastCrossing = crossLerp;
+//                amCrossCounter++;
+//            }
+//        }
+//        amLastVal = n;
+//    }
+
+//    stats.amRMS = sqrt(stats.amRMS / (temp.size() - 1024));
+//    if(amCrossCounter == 0) {
+//        stats.amAudioFreq = 0.0;
+//    } else {
+//        stats.amAudioFreq = (amLastCrossing - amFirstCrossing) / amCrossCounter;
+//        stats.amAudioFreq = settings.SampleRate() / stats.amAudioFreq;
+//    }
 }
 
-double CalculateSINAD(const std::vector<float> &waveform, double centerFreq)
+// Returns dB ratio of the average power of the waveform over the average
+//   power of the waveform with a band reject filter on center freq
+double CalculateSINAD(const std::vector<double> &waveform, double sampleRate, double centerFreq)
 {
-    std::vector<float> rejected;
-    rejected.resize(waveform.size());
+    auto len = waveform.size();
+    std::vector<double> rejected;
+    std::vector<double> filtered;
+    filtered.resize(len);
+    rejected.resize(len);
 
-    //iirBandReject(&waveform[0], &rejected[0], centerFreq / 312.5e3, 0.01, waveform.size());
-    iirBandPass(&waveform[0], &rejected[0], centerFreq / 312.5e3, 0.1, waveform.size());
+    iirHighPass(&waveform[0], &filtered[0], len);
+    iirBandReject(&filtered[0], &rejected[0], centerFreq / sampleRate, 0.005, len);
+    //iirBandPass(&waveform[0], &rejected[0], centerFreq / 312.5e3, 0.1, waveform.size());
 
-    qDebug() << averagePower(&waveform[32768], waveform.size() - 32768);
-    qDebug() << "Rejected " << averagePower(&rejected[32768], rejected.size() - 32768);
-    return averagePower(&waveform[32768], waveform.size() - 32768) /
-            averagePower(&rejected[32768], rejected.size() - 32768);
+    qDebug() << averagePower(&filtered[len/2], len/2);
+    qDebug() << "Rejected " << averagePower(&rejected[len/2], len/2);
+    return averagePower(&filtered[len/2], len/2) /
+            averagePower(&rejected[len/2], len/2);
+}
+
+
+double CalculateTHD(const std::vector<double> &waveform, double sampleRate, double centerFreq)
+{
+    auto len = waveform.size();
+    std::vector<double> filtered;
+    filtered.resize(len);
+    double Vharmonics[5] = {0};
+
+    for(int h = 0; h < 5; h++) {
+        iirBandPass(&waveform[0], &filtered[0], ((h+1) * centerFreq) / sampleRate, 0.00512, len);
+
+        for(int i = 1024; i < len; i++) {
+            //Vharmonics[h] += (filtered[i] * filtered[i]);
+            Vharmonics[h] += filtered[i];
+        }
+        //Vharmonics[h] = sqrt(Vharmonics[h]) / (len - 1024);
+        Vharmonics[h] /= (len - 1024);
+    }
+
+    double Vrms = 0.0;
+    for(int h = 1; h < 5; h++) {
+        Vrms += Vharmonics[h] * Vharmonics[h];
+    }
+    Vrms = sqrt(Vrms) / 4;
+
+    return Vrms / Vharmonics[0];
 }

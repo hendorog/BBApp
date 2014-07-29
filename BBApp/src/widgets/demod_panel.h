@@ -29,7 +29,8 @@ private:
     ComboEntry *triggerEdgeEntry;
     AmpEntry *triggerAmplitudeEntry; // Only for video triggers
 
-    CheckBoxEntry *mrEnabledEntry;
+    CheckBoxEntry *maEnabledEntry;
+    FrequencyEntry *maLowPass;
 
 public slots:
     void updatePanel(const DemodSettings *ds);

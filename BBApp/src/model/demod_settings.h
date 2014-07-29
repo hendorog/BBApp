@@ -50,7 +50,8 @@ public:
     TriggerEdge TrigEdge() const { return trigEdge; }
     Amplitude TrigAmplitude() const { return trigAmplitude; }
 
-    bool MREnabled() const { return mrEnabled; }
+    bool MAEnabled() const { return maEnabled; }
+    Frequency MALowPass() const { return maLowPass; }
 
 private:
     // Call before updating, configures an appropriate sweep time value
@@ -71,7 +72,8 @@ private:
     TriggerEdge trigEdge;
     Amplitude trigAmplitude;
 
-    bool mrEnabled;
+    bool maEnabled; // Mod-Analysis enabled
+    Frequency maLowPass; // Mod-analysis low pass filter on audio
 
 public slots:
     void setInputPower(Amplitude);
@@ -87,7 +89,8 @@ public slots:
     void setTrigEdge(int);
     void setTrigAmplitude(Amplitude);
 
-    void setMREnabled(bool);
+    void setMAEnabled(bool);
+    void setMALowPass(Frequency);
 
 signals:
     void updated(const DemodSettings*);
@@ -145,9 +148,9 @@ struct ReceiverStats {
 typedef struct IQSweep {
     DemodSettings settings;
     std::vector<complex_f> iq; // Full IQ capture
-    std::vector<float> amWaveform; // i*i + q*q
-    std::vector<float> fmWaveform;
-    std::vector<float> pmWaveform;
+    std::vector<float> amWaveform; // (i*i + q*q) over time
+    std::vector<float> fmWaveform; // Frequency over time
+    std::vector<float> pmWaveform; // Phase over time
     ReceiverStats stats;
     bool triggered;
 
@@ -158,6 +161,7 @@ typedef struct IQSweep {
 } IQSweep;
 
 // waveform: filtered waveform
-double CalculateSINAD(const std::vector<float> &waveform, double centerFreq);
+double CalculateSINAD(const std::vector<double> &waveform, double sampleRate, double centerFreq);
+double CalculateTHD(const std::vector<double> &waveform, double sampleRate, double centerFreq);
 
 #endif // DEMOD_SETTINGS_H

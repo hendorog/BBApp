@@ -7,7 +7,7 @@ DemodPanel::DemodPanel(const QString &title,
 {
     DockPage *demodPage = new DockPage(tr("Capture Settings"));
     DockPage *triggerPage = new DockPage(tr("Trigger Settings"));
-    DockPage *mrPage = new DockPage(tr("AM/FM Modulation Analysis"));
+    DockPage *maPage = new DockPage(tr("AM/FM Modulation Analysis"));
 
     inputPowerEntry = new AmpEntry(tr("Input Pwr"), 0.0);
     centerEntry = new FrequencyEntry(tr("Center"), 0.0);
@@ -46,7 +46,8 @@ DemodPanel::DemodPanel(const QString &title,
 
     triggerAmplitudeEntry = new AmpEntry(tr("Video Trigger Level"), 0.0);
 
-    mrEnabledEntry = new CheckBoxEntry(tr("Enabled"));
+    maEnabledEntry = new CheckBoxEntry(tr("Enabled"));
+    maLowPass = new FrequencyEntry(tr("Low Pass"), 0.0);
 
     demodPage->AddWidget(inputPowerEntry);
     demodPage->AddWidget(centerEntry);
@@ -61,11 +62,12 @@ DemodPanel::DemodPanel(const QString &title,
     triggerPage->AddWidget(triggerEdgeEntry);
     triggerPage->AddWidget(triggerAmplitudeEntry);
 
-    mrPage->AddWidget(mrEnabledEntry);
+    maPage->AddWidget(maEnabledEntry);
+    maPage->AddWidget(maLowPass);
 
     AddPage(demodPage);
     AddPage(triggerPage);
-    AddPage(mrPage);
+    AddPage(maPage);
 
     updatePanel(settings);
 
@@ -95,8 +97,10 @@ DemodPanel::DemodPanel(const QString &title,
     connect(triggerAmplitudeEntry, SIGNAL(amplitudeChanged(Amplitude)),
             settings, SLOT(setTrigAmplitude(Amplitude)));
 
-    connect(mrEnabledEntry, SIGNAL(clicked(bool)),
-            settings, SLOT(setMREnabled(bool)));
+    connect(maEnabledEntry, SIGNAL(clicked(bool)),
+            settings, SLOT(setMAEnabled(bool)));
+    connect(maLowPass, SIGNAL(freqViewChanged(Frequency)),
+            settings, SLOT(setMALowPass(Frequency)));
 }
 
 DemodPanel::~DemodPanel()
@@ -106,7 +110,7 @@ DemodPanel::~DemodPanel()
 
 void DemodPanel::updatePanel(const DemodSettings *ds)
 {
-    bool mrActive = ds->MREnabled();
+    bool mrActive = ds->MAEnabled();
 
     inputPowerEntry->SetAmplitude(ds->InputPower());
     centerEntry->SetFrequency(ds->CenterFreq());
@@ -123,5 +127,6 @@ void DemodPanel::updatePanel(const DemodSettings *ds)
     triggerEdgeEntry->setComboIndex(ds->TrigEdge());
     triggerAmplitudeEntry->SetAmplitude(ds->TrigAmplitude());
 
-    mrEnabledEntry->SetChecked(ds->MREnabled());
+    maEnabledEntry->SetChecked(ds->MAEnabled());
+    maLowPass->SetFrequency(ds->MALowPass());
 }

@@ -498,6 +498,51 @@ int find_falling_trigger(const complex_f *array, double t, int len);
 void firLowpass(double fc, int n, float *kernel);
 void flip_array_i(double *srcDst, int len);
 
+// Returns a frequency by counting zero-crossings of a vector
+// Assumes no DC/offset is present, aka waveform center line at zero
+// Provide a start index
+template<class FloatType>
+double getAudioFreq(const std::vector<FloatType> &src,
+                    double sampleRate,
+                    typename std::vector<FloatType>::size_type start_ix = 0)
+{
+    if(start_ix >= src.size()) return 0.0;
+
+    FloatType lastVal = (FloatType)1.0;
+    double lastCrossing, firstCrossing = 0.0;
+    bool crossed = false;
+    int crossCounter = 0;
+
+    for(auto i = start_ix; i < src.size(); i++) {
+        if(src[i] > 0.0 && lastVal < 0.0) {
+            double crossLerp = double(i-1) + (-lastVal / (src[i] - lastVal));
+            if(crossed) {
+                lastCrossing = crossLerp;
+                crossCounter++;
+            } else {
+                crossed = true;
+                firstCrossing = crossLerp;
+            }
+        }
+        lastVal = src[i];
+    }
+
+    if(crossCounter == 0) {
+        return 0.0;
+    }
+
+    return sampleRate /
+            ((lastCrossing - firstCrossing) / crossCounter);
+}
+
+template<class InType, class OutType>
+void downsample(std::vector<InType> &src, std::vector<OutType> &dst, int amount)
+{
+    for(int i = 0; i < src.size(); i += amount) {
+        dst.push_back(src[i]);
+    }
+}
+
 // Bandwidth limit of 0.0003 for single precision
 template<class FloatType>
 void iirBandPass(const FloatType *input, FloatType *output, double center, double width, int len)
@@ -536,6 +581,36 @@ void iirBandReject(const FloatType *input, FloatType *output, double center, dou
     double a2 = K;
     double b1 = 2.0*R*cos(BB_TWO_PI*center);
     double b2 = -(R*R);
+
+    if(len <= 3) return;
+
+    output[0] = a0*input[0];
+    output[1] = a0*input[1] + a1*input[0] + b1*output[0];
+    for(int i = 2; i < len; i++) {
+        output[i] = a0*input[i] + a1*input[i-1] + a2*input[i-2] +
+                b1*output[i-1] + b2*output[i-2];
+    }
+}
+
+template<class FloatType>
+void iirHighPass(const FloatType *input, FloatType *output, int len)
+{
+    Q_ASSERT(input && output);
+
+    // 0.00128 - 50 Hz
+    double a0 = 0.98552035899432355;
+    double a1 = -1.9710407179886471;
+    double a2 = 0.98552035899432355;
+    double b1 = 1.9731243435450900;
+    double b2 = -0.97349819497429058;
+
+    // 0.00768 - 300 Hz
+//    double a0 = 0.98859879054251221;
+//    double a1 = -1.9771975810850244;
+//    double a2 = 0.98859879054251221;
+//    double b1 = 1.9793646569776204;
+//    double b2 = -0.97958579259959844;
+
 
     if(len <= 3) return;
 
