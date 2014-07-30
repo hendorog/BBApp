@@ -281,6 +281,8 @@ inline void simdMul_32fc(const complex_f *src1, const complex_f *src2, complex_f
 template<class FloatType>
 inline FloatType averagePower(const FloatType *input, int len)
 {
+    assert(len > 0);
+
     double sum = 0.0;
     for(int i = 0; i < len; i++) {
         sum += (input[i]*input[i]);
@@ -547,7 +549,7 @@ void downsample(std::vector<InType> &src, std::vector<OutType> &dst, int amount)
 template<class FloatType>
 void iirBandPass(const FloatType *input, FloatType *output, double center, double width, int len)
 {
-    Q_ASSERT(input && output);
+    assert(input && output);
 
     double R = 1.0 - (3.0*width);
     double K = (1.0 - 2.0*R*cos(BB_TWO_PI*center) + R*R) /
@@ -571,7 +573,7 @@ void iirBandPass(const FloatType *input, FloatType *output, double center, doubl
 template<class FloatType>
 void iirBandReject(const FloatType *input, FloatType *output, double center, double width, int len)
 {
-    Q_ASSERT(input && output);
+    assert(input && output);
 
     double R = 1.0 - (3.0*width);
     double K = (1.0 - 2.0*R*cos(BB_TWO_PI*center) + R*R) /

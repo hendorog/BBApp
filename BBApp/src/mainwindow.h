@@ -76,6 +76,9 @@ public slots:
     void presetDevice();
 
 private slots:
+    // Restore the default layout for control panels
+    void restoreDefaultLayout();
+
     void aboutToShowFileMenu();
     void aboutToShowSettingsMenu();
     void aboutToShowModeMenu();

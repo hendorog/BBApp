@@ -26,10 +26,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Side widgets have priority over top/bottom widgets
     this->setDockNestingEnabled(true);
-    //this->setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
-    //this->setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
-    //this->setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
-    //this->setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
 
     // Tab positions on the outside
     setTabPosition(Qt::RightDockWidgetArea, QTabWidget::East);
@@ -119,7 +115,10 @@ void MainWindow::InitMenuBar()
     file_menu->addSeparator();
     file_menu->addAction(tr("Exit"), this, SLOT(close()));
 
+    // Edit Menu
     QMenu *edit_menu = main_menu->addMenu(tr("Edit"));
+    edit_menu->addAction(tr("Restore Default Layout"), this, SLOT(restoreDefaultLayout()));
+    edit_menu->addSeparator();
     edit_menu->addAction(tr("Title"), this, SLOT(setTitle()));
     edit_menu->addAction(tr("Clear Title"), this, SLOT(clearTitle()));
     QMenu *view_color_menu = edit_menu->addMenu(tr("Colors"));
@@ -222,9 +221,7 @@ void MainWindow::InitMenuBar()
             this, SLOT(aboutToShowModeMenu()));
 
     utilities_menu = main_menu->addMenu(tr("Utilities"));
-
     utilities_menu->addAction(tr("Audio Player"), this, SLOT(startAudioPlayer()));
-
     connect(utilities_menu, SIGNAL(aboutToShow()), this, SLOT(aboutToShowUtilitiesMenu()));
 
     help_menu = main_menu->addMenu(tr("Help"));
@@ -297,9 +294,28 @@ void MainWindow::RestoreState()
     demodPanel->RestoreState(settings);
 }
 
-/*
- * Hide Connect/Disconnect Device Options
- */
+void MainWindow::restoreDefaultLayout()
+{
+    removeDockWidget(sweep_panel);
+    removeDockWidget(measure_panel);
+    removeDockWidget(demodPanel);
+
+    addDockWidget(Qt::RightDockWidgetArea, sweep_panel);
+    addDockWidget(Qt::LeftDockWidgetArea, measure_panel);
+    addDockWidget(Qt::RightDockWidgetArea, demodPanel);
+
+    if(session->sweep_settings->Mode() == MODE_ZERO_SPAN) {
+        sweep_panel->hide();
+        measure_panel->hide();
+        demodPanel->show();
+    } else {
+        demodPanel->hide();
+        sweep_panel->show();
+        measure_panel->show();
+    }
+}
+
+// Hide Connect/Disconnect Device Options
 void MainWindow::aboutToShowFileMenu()
 {
     QList<QAction*> a_list = file_menu->actions();
@@ -453,14 +469,6 @@ void MainWindow::deviceConnected(bool success)
 
         centralStack->CurrentWidget()->changeMode(BB_SWEEPING);
 
-//        QList<QAction*> mode_list = mode_menu->actions();
-//        for(QAction *action : mode_list) {
-//            if(action->data().toInt() == MODE_SWEEPING) {
-//                mode_menu->setActiveAction(action);
-//                break;
-//            }
-//        }
-
         if(session->device->DeviceType() == BB_DEVICE_BB60A) {
             SweepSettings::maxRealTimeSpan = BB60A_MAX_RT_SPAN;
         } else {
@@ -549,10 +557,10 @@ void MainWindow::saveAsDefaultColorScheme()
 
 void MainWindow::loadDefaultSettings()
 {
-    //central_widget->StopStreaming();
     centralStack->CurrentWidget()->StopStreaming();
+
     session->LoadDefaults();
-    //central_widget->StartStreaming();
+
     centralStack->CurrentWidget()->StartStreaming();
 }
 
@@ -683,7 +691,6 @@ void MainWindow::startAudioPlayer()
 {
     int temp_mode = session->sweep_settings->Mode();
 
-    //central_widget->changeMode(MODE_IDLE);
     centralStack->CurrentWidget()->changeMode(MODE_IDLE);
     // Start the Audio Dialog with the active center frequency
     session->audio_settings->setCenterFrequency(
@@ -695,7 +702,6 @@ void MainWindow::startAudioPlayer()
     *session->audio_settings = *dlg->Configuration();
     delete dlg;
 
-    //central_widget->changeMode(temp_mode);
     centralStack->CurrentWidget()->changeMode(temp_mode);
 }
 
@@ -720,7 +726,7 @@ QChar copyright_char(short(169));
 const QString about_string =
         QWidget::tr("Signal Hound") + trademark_char + QWidget::tr("\n") +
         QWidget::tr("Copyright ") + copyright_char + QWidget::tr(" 2014\n");
-const QString gui_version = QWidget::tr("Software Version 2.0.3\n");
+const QString gui_version = QWidget::tr("Software Version 2.0.4\n");
 
 void MainWindow::showAboutBox()
 {

@@ -6,7 +6,6 @@ DockPanel::DockPanel(const QString &title,
 {
     // Minimal features, no floating
     setFeatures(QDockWidget::DockWidgetMovable);
-    //            | QDockWidget::DockWidgetClosable);
 
     setMaximumWidth(DOCK_WIDTH + 20);
     //setMinimumWidth(50);
@@ -15,7 +14,7 @@ DockPanel::DockPanel(const QString &title,
     QString objectName = title + "Panel";
     //setObjectName(objectName);
 
-    scrollArea = new QScrollArea(this);
+    scrollArea = new QScrollArea();
     scrollArea->move(0, 0);
     scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     setWidget(scrollArea);

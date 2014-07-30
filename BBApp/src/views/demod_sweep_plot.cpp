@@ -5,108 +5,6 @@
 
 #include <limits>
 
-//ReceiverStats getReceiverStats(const IQSweep &sweep)
-//{
-//    ReceiverStats stats;
-//    const std::vector<float> &am = sweep.amWaveform;
-//    const std::vector<float> &fm = sweep.fmWaveform;
-
-//    std::vector<float> temp;
-//    temp.resize(fm.size());
-
-//    FirFilter fir(0.03, 1024); // Filter AM and FM
-
-//    fir.Filter(&fm[0], &temp[0], fm.size());
-//    fir.Reset();
-
-//    // Start with FM
-//    stats.fmPeakPlus = std::numeric_limits<double>::lowest();
-//    stats.fmPeakMinus = std::numeric_limits<double>::max();
-//    stats.fmRMS = 0.0;
-
-//    float fmLastVal = 1.0;
-//    double fmLastCrossing, fmFirstCrossing = 0.0;
-//    bool fmFirstCross = true;
-//    int fmCrossCounter = 0;
-
-//    for(int i = 1024; i < temp.size(); i++) {
-//        float f = temp[i];
-
-//        if(f > stats.fmPeakPlus) stats.fmPeakPlus = f;
-//        if(f < stats.fmPeakMinus) stats.fmPeakMinus = f;
-//        stats.fmRMS += (f*f);
-
-//        if(f > 0.0 && fmLastVal < 0.0) {
-//            double crossLerp = double(i-1) + ((0.0 - fmLastVal) / (f - fmLastVal));
-//            if(fmFirstCross) {
-//                fmFirstCrossing = crossLerp;
-//                fmFirstCross = false;
-//            } else {
-//                fmLastCrossing = crossLerp;
-//                fmCrossCounter++;
-//            }
-//        }
-//        fmLastVal = f;
-//    }
-
-//    stats.fmRMS = sqrt(stats.fmRMS / temp.size() - 1024);
-//    if(fmCrossCounter == 0) {
-//        stats.fmAudioFreq = 0.0;
-//    } else {
-//        stats.fmAudioFreq = (fmLastCrossing - fmFirstCrossing) / fmCrossCounter;
-//        stats.fmAudioFreq = sweep.settings.SampleRate() / stats.fmAudioFreq;
-//    }
-
-//    // AM
-//    stats.amPeakPlus = std::numeric_limits<double>::lowest();
-//    stats.amPeakMinus = std::numeric_limits<double>::max();
-//    stats.amRMS = 0.0;
-//    double invAvg = 0.0;
-//    float amLastVal = 1.0;
-//    double amLastCrossing, amFirstCrossing = 0.0;
-//    bool amFirstCross = true;
-//    int amCrossCounter = 0;
-
-//    for(int i = 0; i < am.size(); i++) {
-//        float v = sqrt(am[i] * 50000.0);
-//        temp[i] = v;
-//        invAvg += v;
-//    }
-
-//    invAvg = (am.size() / invAvg);
-
-//    // Normalize between [-1.0, 1.0]
-//    for(int i = 0; i < temp.size(); i++) {
-//        float n = (temp[i] * invAvg) - 1.0; // normalized value
-
-//        if(n < stats.amPeakMinus) stats.amPeakMinus = n;
-//        if(n > stats.amPeakPlus) stats.amPeakPlus = n;
-//        stats.amRMS += (n*n);
-
-//        if(n > 0.0 && amLastVal < 0.0) {
-//            double crossLerp = double(i - 1) + ((-amLastVal) / (n - amLastVal));
-//            if(amFirstCross) {
-//                amFirstCrossing = crossLerp;
-//                amFirstCross = false;
-//            } else {
-//                amLastCrossing = crossLerp;
-//                amCrossCounter++;
-//            }
-//        }
-//        amLastVal = n;
-//    }
-
-//    stats.amRMS = sqrt(stats.amRMS / temp.size());
-//    if(amCrossCounter == 0) {
-//        stats.amAudioFreq = 0.0;
-//    } else {
-//        stats.amAudioFreq = (amLastCrossing - amFirstCrossing) / amCrossCounter;
-//        stats.amAudioFreq = sweep.settings.SampleRate() / stats.amAudioFreq;
-//    }
-
-//    return stats;
-//}
-
 DemodSweepPlot::DemodSweepPlot(Session *session, QWidget *parent) :
     GLSubView(session, parent),
     textFont("Arial", 14),
@@ -481,10 +379,10 @@ void DemodSweepPlot::DrawMarkers()
     QString str, delStr;
     double binSize = 1.0 / (40.0e6 / (0x1 << ds->DecimationFactor()));
 
-    int index = (trace.size()/2) * markerPos.x();
-    markerPos.setX((double)index / (trace.size() / 2));
-    str = QVariant(index * binSize * 1000.0).toString() + " ms : ";
-    index = index * 2 + 1;
+    markerIndex = (trace.size() / 2) * markerPos.x();
+    markerPos.setX((double)markerIndex / (trace.size() / 2));
+    str = QVariant(markerIndex * binSize * 1000.0).toString() + " ms : ";
+    int index = index * 2 + 1;
 
     // Clamp to size, no out of bound indexing please
     if(index < 0) index = 1;
@@ -539,6 +437,7 @@ void DemodSweepPlot::DrawMarkers()
         DrawDeltaMarker(deltaPos.x() * grat_sz.x(), deltaPos.y() * grat_sz.y(), 1);
         float diff = markerVal - deltaVal;
         delStr = "Delta : ";
+        delStr += QVariant((markerIndex - deltaIndex) * binSize * 1000.0).toString() + " ms, ";
         delStr += QVariant(diff).toString() + ((ds->InputPower().IsLogScale()) ?
                                                    " dB" : " mV");
     }
@@ -665,6 +564,6 @@ void DemodSweepPlot::DrawMeasuringReceiverStats()
     str.sprintf("SINAD %.2f dB", stats.SINAD);
     DrawString(str, divFont, pos, LEFT_ALIGNED);
     pos+= QPoint(0, -20);
-    str.sprintf("THD %.2f %%", stats.THD);
+    str.sprintf("THD %.2f %%", stats.THD * 100.0);
     DrawString(str, divFont, pos, LEFT_ALIGNED);
 }

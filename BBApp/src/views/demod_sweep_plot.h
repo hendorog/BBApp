@@ -52,6 +52,7 @@ private:
 
     bool markerOn, deltaOn;
     float markerVal, deltaVal;
+    int markerIndex, deltaIndex;
     QPointF markerPos, deltaPos;
 
 public slots:
@@ -68,6 +69,7 @@ public slots:
     void toggleDelta() {
         deltaOn = !deltaOn;
         if(deltaOn) {
+            deltaIndex = markerIndex;
             deltaPos = markerPos;
             deltaVal = markerVal;
         }

@@ -27,7 +27,6 @@ void get_next_iq_bandwidth(Frequency current,
     while(current < iq_auto_bandwidth_lut[lutIx].bandwidth &&
           lutIx < iq_auto_bandwidth_lut_sz)
         lutIx++;
-
 }
 
 // Index is the decimation index
@@ -366,82 +365,52 @@ void IQSweep::CalculateReceiverStats()
     const std::vector<float> &am = amWaveform;
     const std::vector<float> &fm = fmWaveform;
 
-    std::vector<float> temp;
-    temp.resize(fm.size());
+    // Temp buffers, storing offset removed modulations
+    std::vector<float> temp, temp2;
+    std::vector<double> audioRate; // Downsampled audio
 
+    temp.resize(fm.size());
+    temp2.resize(fm.size());
+
+    // Low pass filter
     FirFilter fir(settings.MALowPass() / settings.SampleRate(),
                   1024); // Filter AM and FM
 
     // Calculate RF Center based on average of FM frequencies
     stats.rfCenter = 0.0;
-    for(int i = 2048; i < temp.size(); i++) {
-        stats.rfCenter += temp[i];
+    for(int i = 2048; i < fm.size(); i++) {
+        stats.rfCenter += fm[i];
     }
     double fmAvg = stats.rfCenter / (temp.size() - 2048);
+    qDebug() << "FM Avg " << fmAvg;
     stats.rfCenter = settings.CenterFreq() + fmAvg;
 
     // Remove DC offset
-    for(int i = 0; i < temp.size(); i++) {
-        temp[i] -= fmAvg;
+    for(int i = 0; i < fm.size(); i++) {
+        temp[i] = fm[i] - fmAvg;
     }
 
-    fir.Filter(&fm[0], &temp[0], fm.size());
+    fir.Filter(&temp[0], &temp2[0], fm.size());
     fir.Reset();
 
-    // Start with FM
-
-//    float fmLastVal = 1.0;
-//    double fmLastCrossing, fmFirstCrossing = 0.0;
-//    bool fmFirstCross = true;
-//    int fmCrossCounter = 0;
-
-//    for(int i = 1024; i < temp.size(); i++) {
-//        float f = temp[i];
-
-//        if(f > stats.fmPeakPlus) stats.fmPeakPlus = f;
-//        if(f < stats.fmPeakMinus) stats.fmPeakMinus = f;
-
-//        if(f > 0.0 && fmLastVal < 0.0) {
-//            double crossLerp = double(i-1) + ((0.0 - fmLastVal) / (f - fmLastVal));
-//            if(fmFirstCross) {
-//                fmFirstCrossing = crossLerp;
-//                fmFirstCross = false;
-//            } else {
-//                fmLastCrossing = crossLerp;
-//                fmCrossCounter++;
-//            }
-//        }
-//        fmLastVal = f;
-//    }
-
-//    if(fmCrossCounter == 0) {
-//        stats.fmAudioFreq = 0.0;
-//    } else {
-//        stats.fmAudioFreq = (fmLastCrossing - fmFirstCrossing) / fmCrossCounter;
-//        stats.fmAudioFreq = settings.SampleRate() / stats.fmAudioFreq;
-//    }
-
-    stats.fmAudioFreq = getAudioFreq(temp, settings.SampleRate(), 1024);
+    stats.fmAudioFreq = getAudioFreq(temp2, settings.SampleRate(), 1024);
 
     // FM RMS
     stats.fmPeakPlus = std::numeric_limits<double>::lowest();
     stats.fmPeakMinus = std::numeric_limits<double>::max();
     stats.fmRMS = 0.0;
-    for(int i = 1024; i < temp.size(); i++) {
-        if(temp[i] > stats.fmPeakPlus) stats.fmPeakPlus = temp[i];
-        if(temp[i] < stats.fmPeakMinus) stats.fmPeakMinus = temp[i];
-        stats.fmRMS += temp[i] * temp[i];
+    for(int i = 1024; i < temp2.size(); i++) {
+        if(temp2[i] > stats.fmPeakPlus) stats.fmPeakPlus = temp2[i];
+        if(temp2[i] < stats.fmPeakMinus) stats.fmPeakMinus = temp2[i];
+        stats.fmRMS += temp2[i] * temp2[i];
     }
-    stats.fmRMS = sqrt(stats.fmRMS / (temp.size() - 1024));
+    stats.fmRMS = sqrt(stats.fmRMS / (temp2.size() - 1024));
 
-//    std::vector<double> audioRate;
-//    downsample(temp, audioRate, 8);
-//    stats.SINAD = 10.0 * log10(CalculateSINAD(audioRate, 39062.5, stats.fmAudioFreq));
+    downsample(temp2, audioRate, 8);
+    stats.SINAD = 10.0 * log10(CalculateSINAD(audioRate, 39062.5, stats.fmAudioFreq));
+    stats.THD = CalculateTHD(audioRate, 39062.5, stats.fmAudioFreq);
 
     // AM
-    std::vector<float> temp2;
-    temp2.resize(temp.size());
-
     double invAvg = 0.0;
     for(int i = 0; i < am.size(); i++) {
         float v = sqrt(am[i] * 50000.0);
@@ -467,63 +436,9 @@ void IQSweep::CalculateReceiverStats()
     }
     stats.amRMS = sqrt(stats.amRMS / (temp.size() - 1024));
 
-    std::vector<double> audioRate;
-    downsample(temp, audioRate, 8);
-
-    stats.SINAD = 10.0 * log10(CalculateSINAD(audioRate, 39062.5, stats.amAudioFreq));
-    stats.THD = CalculateTHD(audioRate, 39062.5, stats.amAudioFreq);
-
-    //    double invAvg = 0.0;
-    //    float amLastVal = 1.0;
-    //    double amLastCrossing, amFirstCrossing = 0.0;
-    //    bool amFirstCross = true;
-    //    int amCrossCounter = 0;
-
-    //    for(int i = 0; i < am.size(); i++) {
-    //        float v = sqrt(am[i] * 50000.0);
-    //        temp[i] = v;
-    //        invAvg += v;
-//    }
-
-//    invAvg = (am.size() / invAvg);
-
-//    std::vector<float> temp2;
-//    temp2.resize(temp.size());
-
-//    for(int i = 0; i < temp.size(); i++) {
-//        temp2[i] = (temp[i] * invAvg) - 1.0;
-//    }
-
-//    fir.Filter(&temp2[0], &temp[0], temp2.size());
-
-//    // Normalize between [-1.0, 1.0]
-//    for(int i = 1024; i < temp.size(); i++) {
-//        float n = temp[i]; // normalized value
-
-//        if(n < stats.amPeakMinus) stats.amPeakMinus = n;
-//        if(n > stats.amPeakPlus) stats.amPeakPlus = n;
-//        stats.amRMS += (n*n);
-
-//        if(n > 0.0 && amLastVal < 0.0) {
-//            double crossLerp = double(i - 1) + ((-amLastVal) / (n - amLastVal));
-//            if(amFirstCross) {
-//                amFirstCrossing = crossLerp;
-//                amFirstCross = false;
-//            } else {
-//                amLastCrossing = crossLerp;
-//                amCrossCounter++;
-//            }
-//        }
-//        amLastVal = n;
-//    }
-
-//    stats.amRMS = sqrt(stats.amRMS / (temp.size() - 1024));
-//    if(amCrossCounter == 0) {
-//        stats.amAudioFreq = 0.0;
-//    } else {
-//        stats.amAudioFreq = (amLastCrossing - amFirstCrossing) / amCrossCounter;
-//        stats.amAudioFreq = settings.SampleRate() / stats.amAudioFreq;
-//    }
+//    downsample(temp, audioRate, 8);
+//    stats.SINAD = 10.0 * log10(CalculateSINAD(audioRate, 39062.5, stats.amAudioFreq));
+//    stats.THD = CalculateTHD(audioRate, 39062.5, stats.amAudioFreq);
 }
 
 // Returns dB ratio of the average power of the waveform over the average
@@ -549,27 +464,38 @@ double CalculateSINAD(const std::vector<double> &waveform, double sampleRate, do
 
 double CalculateTHD(const std::vector<double> &waveform, double sampleRate, double centerFreq)
 {
+    const int TOTAL_HARMONICS = 9;
+    const double PASS_BAND = 50.0;
+
     auto len = waveform.size();
-    std::vector<double> filtered;
+    std::vector<double> filtered, filtered2;
     filtered.resize(len);
-    double Vharmonics[5] = {0};
+    filtered2.resize(len);
+    double Vharmonics[TOTAL_HARMONICS] = {0};
 
-    for(int h = 0; h < 5; h++) {
-        iirBandPass(&waveform[0], &filtered[0], ((h+1) * centerFreq) / sampleRate, 0.00512, len);
+    for(int h = 0; h < TOTAL_HARMONICS; h++) {
+        iirBandPass(&waveform[0], &filtered[0], ((h+1) * centerFreq) / sampleRate,
+                PASS_BAND / sampleRate, len);
+        iirBandPass(&filtered[0], &filtered2[0], ((h+1) * centerFreq) / sampleRate,
+                PASS_BAND / sampleRate, len);
+        iirBandPass(&filtered2[0], &filtered[0], ((h+1) * centerFreq) / sampleRate,
+                PASS_BAND / sampleRate, len);
 
-        for(int i = 1024; i < len; i++) {
-            //Vharmonics[h] += (filtered[i] * filtered[i]);
-            Vharmonics[h] += filtered[i];
+        for(int i = 2048; i < len; i++) {
+            Vharmonics[h] += (filtered[i] * filtered[i]);
         }
-        //Vharmonics[h] = sqrt(Vharmonics[h]) / (len - 1024);
-        Vharmonics[h] /= (len - 1024);
+        Vharmonics[h] = sqrt(Vharmonics[h] / (len - 2048));
     }
 
     double Vrms = 0.0;
-    for(int h = 1; h < 5; h++) {
+    for(int h = 1; h < TOTAL_HARMONICS; h++) {
         Vrms += Vharmonics[h] * Vharmonics[h];
     }
-    Vrms = sqrt(Vrms) / 4;
+    Vrms = sqrt(Vrms);
+
+    for(int i = 0; i < TOTAL_HARMONICS; i++) {
+        qDebug() << "V" << QVariant(i+1).toString() << " " << Vharmonics[i];
+    }
 
     return Vrms / Vharmonics[0];
 }
