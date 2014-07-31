@@ -32,6 +32,8 @@ private:
     void InitMenuBar();
     void SaveState();
     void RestoreState();
+    // Change centralWidget, toolBars, dockWidgets
+    void ChangeMode(OperationalMode newMode);
 
     void RenamePreset(int p);
 
@@ -66,6 +68,7 @@ private:
     // Used for opening/closing BB60
     std::thread device_thread;
     ProgressDialog progressDialog;
+    bool saveLayoutOnClose;
 
 public slots:
     void connectDevice();

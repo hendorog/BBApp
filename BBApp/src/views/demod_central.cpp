@@ -9,10 +9,10 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     sessionPtr(sPtr),
     reconfigure(false)
 {
-    toolBar = new QToolBar(this);
-    toolBar->move(0, 0);
+    toolBar = new QToolBar(0);
     toolBar->layout()->setContentsMargins(0, 0, 0, 0);
     toolBar->layout()->setSpacing(0);
+    toolBar->setMovable(false);
 
     ComboBox *demodSelect = new ComboBox();
     QStringList comboString;
@@ -66,9 +66,8 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     toolBar->addWidget(presetBtn);
 
     demodArea = new MdiArea(this);
-    demodArea->move(0, TOOLBAR_HEIGHT);
+    demodArea->move(0, 0);
 
-    //DemodSweepArea *sweepPlot = new DemodSweepArea(sPtr);
     DemodSweepPlot *sweepPlot = new DemodSweepPlot(sPtr);
     demodArea->addSubWindow(sweepPlot);
 
@@ -138,9 +137,7 @@ void DemodCentral::GetViewImage(QImage &image)
 
 void DemodCentral::resizeEvent(QResizeEvent *)
 {
-    toolBar->resize(width(), TOOLBAR_HEIGHT);
-    demodArea->resize(width(), height() - TOOLBAR_HEIGHT);
-
+    demodArea->resize(width(), height());
     demodArea->retile();
 }
 

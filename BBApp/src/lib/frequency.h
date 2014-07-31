@@ -126,13 +126,13 @@ private:
         }
 
         if(freq < 1.0e3)
-            s.sprintf("%s%.7f Hz", neg?"-":"", freq);
+            s.sprintf("%s%.6f Hz", neg?"-":"", freq);
         else if(freq < 1.0e6)
-            s.sprintf("%s%.7f kHz", neg?"-":"", freq * 0.001);
+            s.sprintf("%s%.6f kHz", neg?"-":"", freq * 0.001);
         else if(freq < 1.0e9)
-            s.sprintf("%s%.7f MHz", neg?"-":"", freq * 1.0e-6);
+            s.sprintf("%s%.6f MHz", neg?"-":"", freq * 1.0e-6);
         else
-            s.sprintf("%s%.7f GHz", neg?"-":"", freq * 1.0e-9);
+            s.sprintf("%s%.6f GHz", neg?"-":"", freq * 1.0e-9);
     }
 
     // Variable digits after decimal and optional unit string, and negatives

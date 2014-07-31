@@ -70,8 +70,8 @@ TraceView::TraceView(Session *session, QWidget *parent)
       persist_on(false),
       clear_persistence(false),
       waterfall_state(WaterfallOFF),
-      textFont("Arial", 14),
-      divFont("Arial", 12),
+      textFont(12),
+      divFont(12),
       hasOpenGL3(false)
 {
     setAutoBufferSwap(false);
@@ -144,7 +144,7 @@ TraceView::TraceView(Session *session, QWidget *parent)
 
     swap_thread = new SwapThread(this);
     swap_thread->start();
-    Sleep(25);
+    Sleep(25); // Wait for thread to start? Find better way.
 }
 
 TraceView::~TraceView()
@@ -163,7 +163,7 @@ TraceView::~TraceView()
     delete swap_thread;
     ClearWaterfall();
 
-    Sleep(100);
+    Sleep(100); // Odd crashes on closing too quick? Still exist?
 }
 
 bool TraceView::InitPersistFBO()
@@ -339,6 +339,15 @@ void TraceView::Paint()
         return;
     }
 
+    if(grat_sz.x() >= 600) {
+        textFont = GLFont(14);
+    } else if(grat_sz.x() <= 350) {
+        textFont = GLFont(8);
+    } else {
+        int mod = (600 - grat_sz.x()) / 50;
+        textFont = GLFont(13 - mod);
+    }
+
     // Calculate dimensions based on window size
     grat_ll = QPoint(60, 50);
     QPoint grat_upper_left = QPoint(60, size().height() - 50);
@@ -466,16 +475,16 @@ void TraceView::RenderGratText()
 
     str = GetSession()->GetTitle();
     if(!str.isNull()) {
-        DrawString(str, GLFont("Arial", 20), width() / 2, height() - 22, CENTER_ALIGNED);
+        DrawString(str, GLFont(20), width() / 2, height() - 22, CENTER_ALIGNED);
     }
 
     str.sprintf("%d pts in %d ms", tm->GetTrace(0)->Length(), elapsed.toInt());
     DrawString(str, textFont, grat_ll.x()+grat_sz.x()-5,
                grat_ll.y()-40, RIGHT_ALIGNED);
     DrawString("Center " + s->Center().GetFreqString(), textFont,
-               size().width()/2, grat_ll.y()-20, CENTER_ALIGNED);
+               grat_ll.x() + grat_sz.x()/2, grat_ll.y()-20, CENTER_ALIGNED);
     DrawString("Span " + s->Span().GetFreqString(), textFont,
-               size().width()/2, grat_ll.y()-40, CENTER_ALIGNED);
+               grat_ll.x() + grat_sz.x()/2, grat_ll.y()-40, CENTER_ALIGNED);
     DrawString("Start " + (s->Start()).GetFreqString(), textFont,
                grat_ll.x()+5, grat_ll.y()-20, LEFT_ALIGNED);
     DrawString("Stop " + (s->Stop()).GetFreqString(), textFont,
@@ -485,10 +494,10 @@ void TraceView::RenderGratText()
     str.sprintf("Div %.1f", div);
     DrawString(str, textFont, grat_ul.x()+5, grat_ul.y()+2, LEFT_ALIGNED);
     DrawString("RBW " + s->RBW().GetFreqString(), textFont,
-               size().width()/2, grat_ul.y()+22, CENTER_ALIGNED);
+               grat_ll.x() + grat_sz.x()/2, grat_ul.y()+22, CENTER_ALIGNED);
     s->GetAttenString(str);
-    DrawString(str, textFont, size().width() / 2, grat_ul.y() + 2, CENTER_ALIGNED);
-    DrawString("VBW " + s->VBW().GetFreqString(), textFont,
+    DrawString(str, textFont, grat_ll.x() + grat_sz.x()/2, grat_ul.y() + 2, CENTER_ALIGNED);
+    DrawString("VBW " + s->VBW().GetFreqString(3, true), textFont,
                grat_ul.x()+grat_sz.x()-5, grat_ul.y()+22, RIGHT_ALIGNED);
 
     // y-axis labels

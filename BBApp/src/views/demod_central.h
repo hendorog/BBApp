@@ -92,7 +92,7 @@ private:
 
     Session *sessionPtr; // Copy, does not own
 
-    QToolBar *toolBar;
+    //QToolBar *toolBar;
     MdiArea *demodArea;
 
     DemodSettings lastConfig;

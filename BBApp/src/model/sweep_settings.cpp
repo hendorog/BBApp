@@ -194,6 +194,10 @@ void SweepSettings::AutoBandwidthAdjust(bool force)
         vbw = rbw;
     }
 
+    if(rbw > vbw * 1000.0) {
+        vbw = rbw / 1000.0;
+    }
+
     if(mode == BB_REAL_TIME) {
         double clamped = rbw;
         bb_lib::clamp(clamped, BB_MIN_RT_RBW, BB_MAX_RT_RBW);
@@ -405,11 +409,8 @@ void SweepSettings::rbwIncrease(bool inc)
 
     rbw = new_rbw;
     auto_rbw = false;
+
     AutoBandwidthAdjust(false);
-
-//    if(auto_vbw) vbw = rbw;
-//    if(vbw > rbw) vbw = rbw;
-
     emit updated(this);
 }
 
@@ -431,7 +432,6 @@ void SweepSettings::setAutoRbw(bool new_auto)
     auto_rbw = new_auto;
 
     AutoBandwidthAdjust(false);
-
     emit updated(this);
 }
 
@@ -452,7 +452,6 @@ void SweepSettings::setNativeRBW(bool native)
     auto_rbw = true;
 
     AutoBandwidthAdjust(true);
-
     emit updated(this);
 }
 

@@ -7,8 +7,8 @@
 
 DemodSweepPlot::DemodSweepPlot(Session *session, QWidget *parent) :
     GLSubView(session, parent),
-    textFont("Arial", 14),
-    divFont("Arial", 12),
+    textFont(14),
+    divFont(12),
     demodType(DemodTypeAM),
     markerOn(false),
     deltaOn(false)

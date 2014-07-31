@@ -2,8 +2,8 @@
 
 DemodIQTimePlot::DemodIQTimePlot(Session *session, QWidget *parent) :
     GLSubView(session, parent),
-    textFont("Arial", 14),
-    divFont("Arial", 12)
+    textFont(14),
+    divFont(12)
 {
     for(int i = 0; i < 11; i++) {
         grat.push_back(0.0);

@@ -16,7 +16,8 @@ BBStatusBar *MainWindow::status_bar;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
-      progressDialog(this)
+      progressDialog(this),
+      saveLayoutOnClose(true)
 {
     setWindowTitle(tr("Broadband Spectrum Analyzer"));
     move(200, 0);
@@ -26,6 +27,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Side widgets have priority over top/bottom widgets
     this->setDockNestingEnabled(true);
+
+    setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
 
     // Tab positions on the outside
     setTabPosition(Qt::RightDockWidgetArea, QTabWidget::East);
@@ -51,6 +54,7 @@ MainWindow::MainWindow(QWidget *parent)
     InitMenuBar();
 
     centralStack = new CentralStack(this);
+    setCentralWidget(centralStack);
 
     sweepCentral = new SweepCentral(session);
     connect(sweepCentral, SIGNAL(presetDevice()), this, SLOT(presetDevice()));
@@ -59,13 +63,12 @@ MainWindow::MainWindow(QWidget *parent)
     demodCentral = new DemodCentral(session);
     centralStack->AddWidget(demodCentral);
 
-    setCentralWidget(centralStack);
-
     RestoreState();
 
-    sweep_panel->show();
-    measure_panel->show();
-    demodPanel->hide();
+    //sweep_panel->show();
+    //measure_panel->show();
+    //demodPanel->hide();
+    ChangeMode(MODE_SWEEPING);
 
     connect(session->device, SIGNAL(connectionIssues()), this, SLOT(forceDisconnectDevice()));
 
@@ -238,6 +241,10 @@ void MainWindow::InitMenuBar()
  */
 void MainWindow::SaveState()
 {
+    if(!saveLayoutOnClose) {
+        return;
+    }
+
     // Use .ini files in AppData folder to save settings
     //  instead of the registry, user scope
     QSettings settings(QSettings::IniFormat,
@@ -259,7 +266,7 @@ void MainWindow::SaveState()
  * Do nothing if the save .ini file doesn't exist
  */
 void MainWindow::RestoreState()
-{
+{   
     // Use .ini files in AppData folder to save settings
     //  instead of the registry, user scope
     QSettings settings(QSettings::IniFormat,
@@ -296,23 +303,29 @@ void MainWindow::RestoreState()
 
 void MainWindow::restoreDefaultLayout()
 {
-    removeDockWidget(sweep_panel);
-    removeDockWidget(measure_panel);
-    removeDockWidget(demodPanel);
-
-    addDockWidget(Qt::RightDockWidgetArea, sweep_panel);
-    addDockWidget(Qt::LeftDockWidgetArea, measure_panel);
-    addDockWidget(Qt::RightDockWidgetArea, demodPanel);
-
-    if(session->sweep_settings->Mode() == MODE_ZERO_SPAN) {
-        sweep_panel->hide();
-        measure_panel->hide();
-        demodPanel->show();
-    } else {
-        demodPanel->hide();
-        sweep_panel->show();
-        measure_panel->show();
+    // Get the file name of the layout .inf file
+    QString fileName;
+    {
+        // QSettings must be destroyed before attempting to open
+        //   QFile?
+        QSettings settings(QSettings::IniFormat,
+                           QSettings::UserScope,
+                           "SignalHound",
+                           "Layout");
+        fileName = settings.fileName();
     }
+
+    QFile file(fileName);
+    if(file.exists()) {
+        file.remove();
+    }
+
+    // Doesn't technically matter if the file existed to delete or not
+    // Tell user to restart program
+    saveLayoutOnClose = false;
+    QMessageBox::information(this, "Restart Application",
+                             "The default application layout will be restored "
+                             "the next time the application is started.");
 }
 
 // Hide Connect/Disconnect Device Options
@@ -467,6 +480,7 @@ void MainWindow::deviceConnected(bool success)
         status_bar->SetDeviceType(session->device->GetDeviceString());
         status_bar->UpdateDeviceInfo(device_string);
 
+        ChangeMode(MODE_SWEEPING);
         centralStack->CurrentWidget()->changeMode(BB_SWEEPING);
 
         if(session->device->DeviceType() == BB_DEVICE_BB60A) {
@@ -496,9 +510,7 @@ void MainWindow::printView()
     QPainter painter(&printer);
     QRect rect = painter.viewport();
 
-    //view->render(&painter);
     QImage image;
-    //central_widget->GetViewImage(image);
     centralStack->CurrentWidget()->GetViewImage(image);
 
     QSize size = image.size();
@@ -630,19 +642,21 @@ void MainWindow::loadPreset(QAction *a)
 {
     centralStack->CurrentWidget()->StopStreaming();
     session->LoadPreset(a->data().toInt());
+
     int newMode = session->sweep_settings->Mode();
 
-    if(newMode == MODE_ZERO_SPAN) {
-        centralStack->setCurrentWidget(demodCentral);
-        sweep_panel->hide();
-        measure_panel->hide();
-        demodPanel->show();
-    } else {
-        demodPanel->hide();
-        sweep_panel->show();
-        measure_panel->show();
-        centralStack->setCurrentWidget(sweepCentral);
-    }
+    ChangeMode((OperationalMode)newMode);
+//    if(newMode == MODE_ZERO_SPAN) {
+//        centralStack->setCurrentWidget(demodCentral);
+//        sweep_panel->hide();
+//        measure_panel->hide();
+//        demodPanel->show();
+//    } else {
+//        demodPanel->hide();
+//        sweep_panel->show();
+//        measure_panel->show();
+//        centralStack->setCurrentWidget(sweepCentral);
+//    }
 
     centralStack->CurrentWidget()->changeMode(newMode);
 }
@@ -652,6 +666,27 @@ void MainWindow::modeChanged(QAction *a)
     centralStack->CurrentWidget()->StopStreaming();
 
     int newMode = a->data().toInt();
+    ChangeMode((OperationalMode)newMode);
+
+//    if(newMode == MODE_ZERO_SPAN) {
+//        centralStack->setCurrentWidget(demodCentral);
+//        sweep_panel->hide();
+//        measure_panel->hide();
+//        demodPanel->show();
+//    } else {
+//        demodPanel->hide();
+//        sweep_panel->show();
+//        measure_panel->show();
+//        centralStack->setCurrentWidget(sweepCentral);
+//        addToolBar(centralStack->CurrentWidget()->GetToolBar());
+//    }
+
+    centralStack->CurrentWidget()->changeMode(newMode);
+}
+
+void MainWindow::ChangeMode(OperationalMode newMode)
+{
+    removeToolBar(centralStack->CurrentWidget()->GetToolBar());
 
     if(newMode == MODE_ZERO_SPAN) {
         centralStack->setCurrentWidget(demodCentral);
@@ -664,8 +699,8 @@ void MainWindow::modeChanged(QAction *a)
         measure_panel->show();
         centralStack->setCurrentWidget(sweepCentral);
     }
-
-    centralStack->CurrentWidget()->changeMode(newMode);
+    addToolBar(centralStack->CurrentWidget()->GetToolBar());
+    centralStack->CurrentWidget()->GetToolBar()->show();
 }
 
 // Function gets called when the zero-span button is pressed on the sweep panel
@@ -678,11 +713,12 @@ void MainWindow::zeroSpanPressed()
     Frequency currentCenter = session->sweep_settings->Center();
     session->demod_settings->setCenterFreq(currentCenter);
 
-    // Hide sweep panels, show zero-span ones
-    centralStack->setCurrentWidget(demodCentral);
-    sweep_panel->hide();
-    measure_panel->hide();
-    demodPanel->show();
+    ChangeMode(MODE_ZERO_SPAN);
+//    // Hide sweep panels, show zero-span ones
+//    centralStack->setCurrentWidget(demodCentral);
+//    sweep_panel->hide();
+//    measure_panel->hide();
+//    demodPanel->show();
 
     centralStack->CurrentWidget()->changeMode(MODE_ZERO_SPAN);
 }

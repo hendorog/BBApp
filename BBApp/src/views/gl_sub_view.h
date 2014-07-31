@@ -12,17 +12,20 @@
 // Cache Metrics with Font
 class GLFont {
 public:
-    GLFont(const QString &family, int pointSize, int weight = -1, bool italic = false) :
-        font(family, pointSize, weight, italic),
+    GLFont(int size, const QString &family = "Arial", int weight = -1, bool italic = false) :
+        font(family, size, weight, italic),
         fontMetrics(font) {}
     ~GLFont() {}
 
     const QFont& Font() const { return font; }
     const QFontMetrics& FontMetrics() const { return fontMetrics; }
 
-    int GetTextWidth(const QString &s) const
-    {
+    int GetTextWidth(const QString &s) const {
         return fontMetrics.width(s);
+    }
+
+    int GetTextHeight() const {
+        return fontMetrics.height() - 1;
     }
 
 private:

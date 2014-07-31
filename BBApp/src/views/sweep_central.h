@@ -46,7 +46,6 @@ private:
 
     TraceView *trace_view;
 
-    QToolBar *tool_bar;
     ComboBox *waterfall_combo;
     QCheckBox *persistence_check;
     QPushButton *persistence_clear;

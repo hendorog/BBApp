@@ -2,6 +2,7 @@
 #define CENTRAL_STACK_H
 
 #include <QStackedWidget>
+#include <QToolBar>
 
 #include "lib/frequency.h"
 
@@ -12,7 +13,7 @@ class CentralWidget : public QWidget {
 
 public:
     CentralWidget(QWidget *parent = 0, Qt::WindowFlags f = 0) :
-        QWidget(parent, f) {}
+        QWidget(parent, f), toolBar(nullptr) {}
     virtual ~CentralWidget() = 0;
 
     virtual void GetViewImage(QImage &image) = 0;
@@ -22,7 +23,10 @@ public:
 
     virtual Frequency GetCurrentCenterFreq() const = 0;
 
-private:
+    QToolBar* GetToolBar() const { return toolBar; }
+
+protected:
+    QToolBar *toolBar;
 
 public slots:
     virtual void changeMode(int newState) = 0;

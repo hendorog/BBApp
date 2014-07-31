@@ -22,41 +22,44 @@ SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
     trace_view = new TraceView(session_ptr, this);
     connect(this, SIGNAL(updateView()), trace_view, SLOT(update()));
 
-    tool_bar = new QToolBar(this);
-    tool_bar->layout()->setContentsMargins(0, 0, 0, 0);
-    tool_bar->layout()->setSpacing(0);
-    //tool_bar->layout()->
-    tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
+    toolBar = new QToolBar();
+    toolBar->setObjectName("SweepToolBar");
+    toolBar->setMovable(false);
+    //toolBar->setFloatable(false);
+    //toolBar->setAllowedAreas(Qt::TopToolBarArea | Qt::BottomToolBarArea);
+    toolBar->layout()->setContentsMargins(0, 0, 0, 0);
+    toolBar->layout()->setSpacing(0);
+    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
 
-    Label *waterfall_label = new Label(tr("Spectrogram"), tool_bar);
+    Label *waterfall_label = new Label(tr("Spectrogram"), toolBar);
     waterfall_label->resize(100, 25);
-    tool_bar->addWidget(waterfall_label);
-    tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
+    toolBar->addWidget(waterfall_label);
+    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
 
-    waterfall_combo = new ComboBox(tool_bar);
+    waterfall_combo = new ComboBox(toolBar);
     waterfall_combo->setFixedSize(150, 25);
     QStringList spectrogram_list;
     spectrogram_list << tr("Off") << tr("2-D") << tr("3-D");
     waterfall_combo->insertItems(0, spectrogram_list);
-    tool_bar->addWidget(waterfall_combo);
+    toolBar->addWidget(waterfall_combo);
     connect(waterfall_combo, SIGNAL(currentIndexChanged(int)),
             trace_view, SLOT(enableWaterfall(int)));
 
-    tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
-    tool_bar->addSeparator();
-    tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
+    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
+    toolBar->addSeparator();
+    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
 
     persistence_check = new QCheckBox(tr("Persistence"));
     persistence_check->setObjectName("SH_CheckBox");
     persistence_check->setFixedSize(120, 25);
-    tool_bar->addWidget(persistence_check);
+    toolBar->addWidget(persistence_check);
     connect(persistence_check, SIGNAL(stateChanged(int)),
             trace_view, SLOT(enablePersistence(int)));
 
-    persistence_clear = new QPushButton(tr("Clear"), tool_bar);
+    persistence_clear = new QPushButton(tr("Clear"), toolBar);
     persistence_clear->setObjectName("BBPushButton");
     persistence_clear->setFixedSize(100, TOOLBAR_H - 4);
-    tool_bar->addWidget(persistence_clear);
+    toolBar->addWidget(persistence_clear);
     connect(persistence_clear, SIGNAL(clicked()), trace_view, SLOT(clearPersistence()));
 
     if(!trace_view->HasOpenGL3()) {
@@ -68,43 +71,40 @@ SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
 
     QWidget *spacer = new QWidget();
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    tool_bar->addWidget(spacer);
+    toolBar->addWidget(spacer);
 
-    single_sweep = new QPushButton(tr("Single Trig"), tool_bar);
+    single_sweep = new QPushButton(tr("Single Trig"), toolBar);
     single_sweep->setObjectName("BBPushButton");
     single_sweep->setFixedSize(120, TOOLBAR_H - 4);
-    tool_bar->addWidget(single_sweep);
+    toolBar->addWidget(single_sweep);
 
-    continuous_sweep = new QPushButton(tr("Continuous"), tool_bar);
+    continuous_sweep = new QPushButton(tr("Continuous"), toolBar);
     continuous_sweep->setObjectName("BBPushButton");
     continuous_sweep->setFixedSize(120, TOOLBAR_H - 4);
-    tool_bar->addWidget(continuous_sweep);
+    toolBar->addWidget(continuous_sweep);
 
     connect(single_sweep, SIGNAL(clicked()), SLOT(singleSweepPressed()));
     connect(continuous_sweep, SIGNAL(clicked()), SLOT(continuousSweepPressed()));
 
-    tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
-    tool_bar->addSeparator();
-    tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
+    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
+    toolBar->addSeparator();
+    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
 
-    preset_button = new QPushButton(tr("Preset"), tool_bar);
+    preset_button = new QPushButton(tr("Preset"), toolBar);
     preset_button->setObjectName("BBPresetButton");
     preset_button->setFixedSize(120, TOOLBAR_H - 4);
-    tool_bar->addWidget(preset_button);
+    toolBar->addWidget(preset_button);
 
     connect(preset_button, SIGNAL(clicked()),
             this, SIGNAL(presetDevice()));
 
-    tool_bar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
+    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
 
-    tool_bar->move(0, 0);
-    tool_bar->resize(size().width(), TOOLBAR_H);
-
-    trace_view->move(0, TOOLBAR_H);
-    trace_view->resize(size().width(), size().height() - TOOLBAR_H - 32);
+    trace_view->move(0, 0);
+    trace_view->resize(size().width(), size().height() - 32);
 
     playback = new PlaybackToolBar(&session_ptr->prefs, this);
-    playback->move(0, TOOLBAR_H + trace_view->height());
+    playback->move(0, trace_view->height());
     playback->resize(size().width(), 32);
 
     sweeping = true;
@@ -127,7 +127,7 @@ SweepCentral::~SweepCentral()
     //playback->Stop();
     //StopStreaming();
 
-    delete tool_bar;
+    //delete tool_bar;
     delete trace_view;
     delete playback;
 
@@ -185,9 +185,8 @@ void SweepCentral::GetViewImage(QImage &image)
 
 void SweepCentral::resizeEvent(QResizeEvent *)
 {
-    tool_bar->resize(size().width(), TOOLBAR_H);
-    trace_view->resize(size().width(), size().height() - TOOLBAR_H - 32);
-    playback->move(0, TOOLBAR_H + trace_view->height());
+    trace_view->resize(size().width(), size().height() - 32);
+    playback->move(0, trace_view->height());
     playback->resize(size().width(), 32);
 }
 
