@@ -25,7 +25,8 @@ public:
     }
 
     int GetTextHeight() const {
-        return fontMetrics.height() - 1;
+        return fontMetrics.ascent() + fontMetrics.descent();
+        return fontMetrics.height();
     }
 
 private:

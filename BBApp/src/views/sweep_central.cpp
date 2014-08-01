@@ -24,7 +24,7 @@ SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
 
     toolBar = new QToolBar();
     toolBar->setObjectName("SweepToolBar");
-    toolBar->setMovable(false);
+    //toolBar->setMovable(false);
     //toolBar->setFloatable(false);
     //toolBar->setAllowedAreas(Qt::TopToolBarArea | Qt::BottomToolBarArea);
     toolBar->layout()->setContentsMargins(0, 0, 0, 0);
@@ -95,8 +95,7 @@ SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
     preset_button->setFixedSize(120, TOOLBAR_H - 4);
     toolBar->addWidget(preset_button);
 
-    connect(preset_button, SIGNAL(clicked()),
-            this, SIGNAL(presetDevice()));
+    connect(preset_button, SIGNAL(clicked()), this, SIGNAL(presetDevice()));
 
     toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
 

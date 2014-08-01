@@ -13,7 +13,7 @@ class CentralWidget : public QWidget {
 
 public:
     CentralWidget(QWidget *parent = 0, Qt::WindowFlags f = 0) :
-        QWidget(parent, f), toolBar(nullptr) {}
+        QWidget(parent, f), toolBar(0) {}
     virtual ~CentralWidget() = 0;
 
     virtual void GetViewImage(QImage &image) = 0;

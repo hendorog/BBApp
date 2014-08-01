@@ -174,16 +174,9 @@ void DemodSweepPlot::DemodAndDraw()
     double ref, botRef;
 
     if(demodType == DemodTypeAM) {
-//        for(int i = 0; i < iq.iq.size(); i++) {
-//            waveform.push_back(iq.iq[i].re * iq.iq[i].re +
-//                               iq.iq[i].im * iq.iq[i].im);
-//        }
         if(ds->InputPower().IsLogScale()) {
             ref = ds->InputPower().ConvertToUnits(DBM);
             botRef = ref - 100.0;
-//            for(int i = 0; i < waveform.size(); i++) {
-//                waveform[i] = 10.0 * log10(waveform[i]);
-//            }
             for(int i = 0; i < iq.amWaveform.size(); i++) {
                 trace.push_back(i);
                 trace.push_back(10.0 * log10(iq.amWaveform[i]));
@@ -191,9 +184,6 @@ void DemodSweepPlot::DemodAndDraw()
         } else {
             ref = ds->InputPower();
             botRef = 0.0;
-//            for(int i = 0; i < waveform.size(); i++) {
-//                waveform[i] = sqrt(waveform[i] * 50000.0);
-//            }
             for(int i = 0; i < iq.amWaveform.size(); i++) {
                 trace.push_back(i);
                 trace.push_back(sqrt((double)iq.amWaveform[i] * 50000.0));
@@ -201,19 +191,8 @@ void DemodSweepPlot::DemodAndDraw()
         }
 
     } else if(demodType == DemodTypeFM) {
-        //double sr = 40.0e6 / (0x1 << ds->DecimationFactor());
-        //demod_fm(iq.iq, waveform, sr / 2.0);
         ref = 40.0e6 / (0x1 << ds->DecimationFactor()) / 2.0;
         botRef = -ref;
-
-        //        FirFilter fir(0.03, 1024);
-        //        std::vector<float> temp;
-        //        temp.resize(waveform.size());
-        //        fir.Filter(&waveform[0], &temp[0], waveform.size());
-        //        waveform.clear();
-        //        for(int i = 512; i < temp.size(); i++) {
-        //            waveform.push_back(temp[i]);
-        //        }
 
         for(int i = 0; i < iq.fmWaveform.size(); i++) {
             trace.push_back(i);
@@ -221,9 +200,6 @@ void DemodSweepPlot::DemodAndDraw()
         }
 
     } else if(demodType == DemodTypePM) {
-        //        for(int i = 0; i < iq.iq.size(); i++) {
-        //            waveform.push_back(atan2(iq.iq[i].im, iq.iq[i].re));
-        //        }
         ref = BB_PI;
         botRef = -BB_PI;
 

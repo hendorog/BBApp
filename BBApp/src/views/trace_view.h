@@ -14,7 +14,8 @@
 #include "lib/bb_lib.h"
 #include "gl_sub_view.h"
 
-#define MAX_WATERFALL_LINES 128
+//#define MAX_WATERFALL_LINES 128
+#define MAX_WATERFALL_LINES 256
 
 class Session;
 class SwapThread;

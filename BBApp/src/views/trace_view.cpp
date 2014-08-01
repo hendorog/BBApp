@@ -215,11 +215,15 @@ bool TraceView::InitPersistFBO()
 
 void TraceView::resizeEvent(QResizeEvent *)
 {
-    grat_ll = QPoint(60, 50);
-    grat_ul = QPoint(60, size().height() - 50);
+//    grat_ll = QPoint(60, 50);
+//    grat_ul = QPoint(60, size().height() - 50);
 
-    grat_sz = QPoint(size().width() - 80,
-                     size().height() - 100);
+//    grat_sz = QPoint(size().width() - 80,
+//                     size().height() - 100);
+
+    grat_ll.setX(60);
+    grat_ul.setX(60);
+    grat_sz.setX(width() - 80);
 
     //QGLWidget::resize(size());
 }
@@ -333,12 +337,6 @@ void TraceView::Paint()
     // Must be called for textures to be drawn properly
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 
-    // Draw nothing but background color if the graticule has a
-    //   negative width or height
-    if(grat_sz.x() <= 0 || grat_sz.y() <= 0) {
-        return;
-    }
-
     if(grat_sz.x() >= 600) {
         textFont = GLFont(14);
     } else if(grat_sz.x() <= 350) {
@@ -348,29 +346,33 @@ void TraceView::Paint()
         textFont = GLFont(13 - mod);
     }
 
-    // Calculate dimensions based on window size
-    grat_ll = QPoint(60, 50);
-    QPoint grat_upper_left = QPoint(60, size().height() - 50);
-    QPoint grat_size = QPoint(width() - 80, height() - 100);
+    int textHeight = textFont.GetTextHeight() + 2;
+    grat_ll.setY(textHeight * 2);
+    grat_ul.setY(height() - (textHeight*2));
+    grat_sz.setY(height() - (textHeight*4));
 
+    // Draw nothing but background color if the graticule has a
+    //   negative width or height
+    if(width() <= 80 || grat_sz.y() <= 0) {
+        return;
+    }
+
+    // Calculate dimensions for the presence of the title bar or waterfall
     if(!GetSession()->GetTitle().isNull()) {
-        grat_upper_left = QPoint(60, size().height() - 70);
-        grat_size = QPoint(width() - 80, height() - 120);
+        grat_ul -= QPoint(0, 20);
+        grat_sz -= QPoint(0, 20);
     }
-
     if(waterfall_state != WaterfallOFF) {
-        grat_upper_left = QPoint(60, size().height() / 2);
-        grat_size = QPoint(width() - 80, size().height() / 2 - 50);
+        grat_ul -= QPoint(0, height() / 2);
+        grat_sz -= QPoint(0, height() / 2);
     }
-    grat_ul = grat_upper_left;
-    grat_sz = grat_size;
 
-    glViewport(0, 0, size().width(), size().height());
+    glViewport(0, 0, width(), height());
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, size().width(), 0, size().height(), -1, 1);
+    glOrtho(0, width(), 0, height(), -1, 1);
 
     glEnable(GL_DEPTH_TEST);
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -380,12 +382,12 @@ void TraceView::Paint()
     if(!GetSession()->device->IsOpen()) {
         glQColor(GetSession()->colors.text);
         DrawString(tr("No Device Connected"), textFont,
-                   QPoint(grat_ul.x(), grat_ul.y() + 5), LEFT_ALIGNED);
+                   QPoint(grat_ul.x(), grat_ul.y() + 2), LEFT_ALIGNED);
 
     } else if(GetSession()->sweep_settings->Mode() == BB_IDLE) {
         glQColor(GetSession()->colors.text);
         DrawString(tr("Device Idle"), textFont,
-                   QPoint(grat_ul.x(), grat_ul.y() + 5), LEFT_ALIGNED);
+                   QPoint(grat_ul.x(), grat_ul.y() + 2), LEFT_ALIGNED);
     } else {
 
         RenderTraces();
@@ -470,6 +472,7 @@ void TraceView::RenderGratText()
     TraceManager *tm = GetSession()->trace_manager;
     QVariant elapsed = time.restart();
     QString str;
+    int textHeight = textFont.GetTextHeight();
 
     double div = s->RefLevel().IsLogScale() ? s->Div() : (s->RefLevel().Val() / 10.0);
 
@@ -480,25 +483,25 @@ void TraceView::RenderGratText()
 
     str.sprintf("%d pts in %d ms", tm->GetTrace(0)->Length(), elapsed.toInt());
     DrawString(str, textFont, grat_ll.x()+grat_sz.x()-5,
-               grat_ll.y()-40, RIGHT_ALIGNED);
+               grat_ll.y()-textHeight*2, RIGHT_ALIGNED);
     DrawString("Center " + s->Center().GetFreqString(), textFont,
-               grat_ll.x() + grat_sz.x()/2, grat_ll.y()-20, CENTER_ALIGNED);
+               grat_ll.x() + grat_sz.x()/2, grat_ll.y()-textHeight, CENTER_ALIGNED);
     DrawString("Span " + s->Span().GetFreqString(), textFont,
-               grat_ll.x() + grat_sz.x()/2, grat_ll.y()-40, CENTER_ALIGNED);
+               grat_ll.x() + grat_sz.x()/2, grat_ll.y()-textHeight*2, CENTER_ALIGNED);
     DrawString("Start " + (s->Start()).GetFreqString(), textFont,
-               grat_ll.x()+5, grat_ll.y()-20, LEFT_ALIGNED);
+               grat_ll.x()+5, grat_ll.y()-textHeight, LEFT_ALIGNED);
     DrawString("Stop " + (s->Stop()).GetFreqString(), textFont,
-               grat_ll.x()+grat_sz.x()-5, grat_ll.y()-20, RIGHT_ALIGNED);
+               grat_ll.x()+grat_sz.x()-5, grat_ll.y()-textHeight, RIGHT_ALIGNED);
     DrawString("Ref " + s->RefLevel().GetString(), textFont,
-               grat_ll.x()+5, grat_ul.y()+22, LEFT_ALIGNED);
+               grat_ll.x()+5, grat_ul.y()+textHeight, LEFT_ALIGNED);
     str.sprintf("Div %.1f", div);
-    DrawString(str, textFont, grat_ul.x()+5, grat_ul.y()+2, LEFT_ALIGNED);
+    DrawString(str, textFont, grat_ul.x()+5, grat_ul.y()+2 , LEFT_ALIGNED);
     DrawString("RBW " + s->RBW().GetFreqString(), textFont,
-               grat_ll.x() + grat_sz.x()/2, grat_ul.y()+22, CENTER_ALIGNED);
+               grat_ll.x() + grat_sz.x()/2, grat_ul.y()+textHeight, CENTER_ALIGNED);
     s->GetAttenString(str);
-    DrawString(str, textFont, grat_ll.x() + grat_sz.x()/2, grat_ul.y() + 2, CENTER_ALIGNED);
-    DrawString("VBW " + s->VBW().GetFreqString(3, true), textFont,
-               grat_ul.x()+grat_sz.x()-5, grat_ul.y()+22, RIGHT_ALIGNED);
+    DrawString(str, textFont, grat_ll.x() + grat_sz.x()/2, grat_ul.y()+2, CENTER_ALIGNED);
+    DrawString("VBW " + s->VBW().GetFreqString(), textFont,
+               grat_ul.x()+grat_sz.x()-5, grat_ul.y()+textHeight, RIGHT_ALIGNED);
 
     // y-axis labels
     for(int i = 0; i <= 8; i += 2) {
@@ -529,25 +532,25 @@ void TraceView::RenderGratText()
 
     // Uncal text strings
     bool uncal = false;
-    int uncal_x = grat_ul.x() + 5, uncal_y = grat_ul.y() - 22;
+    int uncal_x = grat_ul.x() + 5, uncal_y = grat_ul.y() - textHeight;
     glColor3f(1.0, 0.0, 0.0);
     if(!GetSession()->device->IsPowered()) {
         uncal = true;
         DrawString("Low Voltage", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
-        uncal_y -= 16;
+        uncal_y -= textHeight;
     }
     if(GetSession()->device->ADCOverflow()) {
         uncal = true;
         DrawString("IF Overload", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
-        uncal_y -= 16;
+        uncal_y -= textHeight;
     }
     if(GetSession()->device->NeedsTempCal()) {
         uncal = true;
         DrawString("Device Temp", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
-        uncal_y -= 16;
+        uncal_y -= textHeight;
     }
     if(uncal) {
-        DrawString("Uncal", textFont, grat_ul.x() - 5, grat_ul.y() - 22, RIGHT_ALIGNED);
+        DrawString("Uncal", textFont, grat_ul.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
     }
 
     glMatrixMode(GL_MODELVIEW);
@@ -843,7 +846,8 @@ void TraceView::RenderChannelPower()
     double span = stop - start;
     if(span == 0.0) return;
 
-    AmpUnits printUnits = GetSession()->sweep_settings->RefLevel().Units();
+    AmpUnits printUnits = (GetSession()->sweep_settings->RefLevel().Units() == MV) ?
+                MV : DBM;
 
     glPushAttrib(GL_VIEWPORT_BIT);
     glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
@@ -865,6 +869,15 @@ void TraceView::RenderChannelPower()
                 x2 = (cp->GetChannelStop(i) - start) / span;
         double xCen = (x1 + x2) / 2.0;
 
+        if(i != 1) { // Push channel text out 100 px?
+            int realCenter = grat_sz.x() / 2;
+            // Get largest possible width with extra space
+            int textWidth = textFont.GetTextWidth(" -12.345 dBm");
+            if(abs(xCen*grat_sz.x() - realCenter) < textWidth) {
+                xCen = double(realCenter + (i-1)*textWidth) / grat_sz.x();
+            }
+        }
+
         glColor4f(0.5, 0.5, 0.5, 0.4);
         glBegin(GL_QUADS);
         glVertex2f(x1 * grat_sz.x(), 0.0);
@@ -878,13 +891,13 @@ void TraceView::RenderChannelPower()
         QString cp_string;
         Amplitude power(cp->GetChannelPower(i), (printUnits == MV) ? MV : DBM);
         DrawString(power.ConvertToUnits(printUnits).GetString(),
-                   textFont, xCen * grat_sz.x(), 40, CENTER_ALIGNED);
+                   textFont, xCen * grat_sz.x(), textFont.GetTextHeight()*3 + 2, CENTER_ALIGNED);
 
         // Draw adjacent channel power text
         if(i == 0 || i == 2) {
             cp_string.sprintf("%.2f %s", cp->GetChannelPower(i) - cp->GetChannelPower(1),
                               (printUnits == MV) ? "mV" : "dBc");
-            DrawString(cp_string, textFont, xCen * grat_sz.x(), 20, CENTER_ALIGNED);
+            DrawString(cp_string, textFont, xCen * grat_sz.x(), textFont.GetTextHeight()*2 + 2, CENTER_ALIGNED);
         }
     }
 
@@ -918,8 +931,10 @@ void TraceView::RenderOccupiedBandwidth()
     DrawOCBWMarker(info.rightMarker.xRatio() * grat_sz.x(),
                    info.rightMarker.yRatio() * grat_sz.y(), false);
 
-    DrawString("Occupied Bandwidth " + info.bandwidth.GetFreqString(), textFont, 5, 40, LEFT_ALIGNED);
-    DrawString("Total Power " + info.totalPower.GetString(), textFont, 5, 20, LEFT_ALIGNED);
+    DrawString("Occupied Bandwidth " + info.bandwidth.GetFreqString(),
+               textFont, 5, textFont.GetTextHeight(), LEFT_ALIGNED);
+    DrawString("Total Power " + info.totalPower.GetString(),
+               textFont, 5, 2, LEFT_ALIGNED);
 
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
@@ -1075,8 +1090,7 @@ void TraceView::AddToWaterfall(const GLVector &v)
         waterfall_coords.pop_back();
     }
 
-    if(v.size() * 0.25 > grat_sz.x() * 0.5)
-        degenHack = true;
+    if(v.size() * 0.25 > grat_sz.x() * 0.5) degenHack = true;
 
     waterfall_verts.insert(waterfall_verts.begin(), new GLVector);
     waterfall_coords.insert(waterfall_coords.begin(), new GLVector);
@@ -1152,19 +1166,15 @@ void TraceView::DrawWaterfall()
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_LINE_SMOOTH);
-    //glEnable(GL_BLEND);
+//    glEnable(GL_LINE_SMOOTH);
+//    glEnable(GL_BLEND);
 
     glPushAttrib(GL_VIEWPORT_BIT);
-    // Load the proper spectrum texture
-    //if(this->colorBlindSpectrum)
-    //    glBindTexture( GL_TEXTURE_2D, cbSpectrumTex );
-    //else
-        glBindTexture(GL_TEXTURE_2D, waterfall_tex);
+    glBindTexture(GL_TEXTURE_2D, waterfall_tex);
 
     if(waterfall_state == Waterfall2D) {
         // Create perfect fit viewport for 2D waterfall, auto clips for us
-        glViewport(grat_ul.x(), grat_ul.y() + 50, grat_sz.x(), height() * 0.40);
+        glViewport(grat_ul.x(), height() / 2 + 20, grat_sz.x(), height() / 2 - 40);
         glMatrixMode( GL_MODELVIEW );
         glPushMatrix();
         glLoadIdentity();
@@ -1172,7 +1182,7 @@ void TraceView::DrawWaterfall()
         glMatrixMode(GL_PROJECTION);
         glPushMatrix();
         glLoadIdentity();
-        glOrtho(0, grat_sz.x(), 0, height() * 0.35, -1, 1);
+        glOrtho(0, grat_sz.x(), 0, height() / 2 - 40, -1, 1);
 
     } else if(waterfall_state == Waterfall3D) {
         glViewport(0, grat_ul.y() + 50, width(), height() * 0.4);
@@ -1209,13 +1219,13 @@ void TraceView::DrawWaterfall()
 
         if(waterfall_state == Waterfall2D) {
             // Reset glPointers, draw line across top of trace, then shift
-            glLineWidth(5.0);
+            glLineWidth(2.0);
             glBindBuffer(GL_ARRAY_BUFFER, textureVBO);
             glTexCoordPointer(2, GL_FLOAT, 16, (GLvoid*)0);
             glBindBuffer(GL_ARRAY_BUFFER, traceVBO);
             glVertexPointer(3, GL_FLOAT, 24, (GLvoid*)0);
             glDrawArrays(GL_LINE_STRIP, 0, r.size() / 6);
-            glTranslatef(0.0, 4.0f, 0.0);
+            glTranslatef(0.0, 2.0, 0.0);
             glLineWidth(1.0);
 
         } else if (waterfall_state == Waterfall3D) {
@@ -1255,79 +1265,3 @@ void TraceView::DrawWaterfall()
     glPopAttrib();
     glDisable(GL_DEPTH_TEST);
 }
-
-//void TraceView::DrawPersistence()
-//{
-//    static bool first_time = true;
-//    static GLuint persistTex;
-
-//    if(first_time) {
-//        glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
-//        // Render buffer start, build the tex we are writing to
-//        glGenTextures( 1 , &persistTex );
-//        glBindTexture( GL_TEXTURE_2D , persistTex );
-//        glTexParameteri( GL_TEXTURE_2D , GL_TEXTURE_WRAP_S , GL_CLAMP );
-//        glTexParameteri( GL_TEXTURE_2D , GL_TEXTURE_WRAP_T , GL_CLAMP );
-//        glTexParameteri( GL_TEXTURE_2D , GL_TEXTURE_MAG_FILTER , GL_LINEAR );
-//        glTexParameteri( GL_TEXTURE_2D , GL_TEXTURE_MIN_FILTER , GL_LINEAR );
-//        glBindTexture( 1, 0 );
-
-//        first_time = false;
-//    }
-
-//    // Prep viewport
-//    glViewport(grat_ll.x(), grat_ll.y(),
-//               grat_sz.x(), grat_sz.y());
-
-//    // Prep modelview
-//    glMatrixMode(GL_MODELVIEW);
-//    glLoadIdentity();
-
-//    // Ortho
-//    glMatrixMode(GL_PROJECTION);
-//    glLoadIdentity();
-//    glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
-
-//    Persistence *p = session_ptr->trace_manager->GetPersistence();
-
-//    glEnable(GL_TEXTURE_2D);
-//    glBindTexture(GL_TEXTURE_2D, persistTex);
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, p->Width(), p->Height(), 0,
-//        GL_RGBA, GL_FLOAT, (unsigned char*)p->GetImage());
-
-//    // Draw a single quad over our grat
-//    glUseProgram(persist_program->Handle());
-//    //glBindTexture(GL_TEXTURE_2D, persistTex);
-//    //glGenerateMipmap(GL_TEXTURE_2D);
-
-////    glMatrixMode(GL_MODELVIEW);
-////    glPushMatrix();
-////    glLoadIdentity();
-////    glTranslatef((float)xMargin, (float)botYMargin, 0.0f);
-////    glScalef((float)tenXgrat, (float)tenYgrat, 1.0f);
-
-//    glEnable(GL_BLEND);
-//    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-//    glBegin(GL_QUADS);
-//    glTexCoord2f(0,0); glVertex2f(0,0);
-//    glTexCoord2f(0,1); glVertex2f(0,1);
-//    glTexCoord2f(1,1); glVertex2f(1,1);
-//    glTexCoord2f(1,0); glVertex2f(1,0);
-//    glEnd();
-
-//    glDisable(GL_BLEND);
-//    glDisable(GL_TEXTURE_2D);
-
-//    glMatrixMode(GL_MODELVIEW);
-//    glLoadIdentity();
-//    glMatrixMode(GL_PROJECTION);
-//    glLoadIdentity();
-
-//    glUseProgram(0);
-//}

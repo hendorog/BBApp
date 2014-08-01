@@ -9,7 +9,8 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     sessionPtr(sPtr),
     reconfigure(false)
 {
-    toolBar = new QToolBar(0);
+    toolBar = new QToolBar();
+    toolBar->setObjectName("DemodToolBar");
     toolBar->layout()->setContentsMargins(0, 0, 0, 0);
     toolBar->layout()->setSpacing(0);
     toolBar->setMovable(false);
@@ -127,7 +128,7 @@ void DemodCentral::GetViewImage(QImage &image)
     painter.begin(&temp);
     for(int i = 0; i < list.length(); i++) {
         QMdiSubWindow *window = list.at(i);
-        QGLWidget *view = dynamic_cast<QGLWidget*>(window->widget());
+        QGLWidget *view = static_cast<QGLWidget*>(window->widget());
         painter.drawImage(window->x(), window->y(), view->grabFrameBuffer());
     }
     painter.end();
