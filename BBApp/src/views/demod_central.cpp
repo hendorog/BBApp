@@ -65,6 +65,7 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     toolBar->addSeparator();
     toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
     toolBar->addWidget(presetBtn);
+    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
 
     demodArea = new MdiArea(this);
     demodArea->move(0, 0);
@@ -218,6 +219,7 @@ void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &
             }
         }
     }
+
     // Retrieve the rest of the capture after the trigger, or retrieve the
     //   entire capture if there is no trigger
     while(toRetrieve > 0) {
@@ -262,14 +264,16 @@ void DemodCentral::StreamThread()
 
             // Force 30 fps update rate
             qint64 elapsed = bb_lib::get_ms_since_epoch() - start;
-            if(elapsed < 64) Sleep(64 - elapsed);
+            if(elapsed < MAX_ZERO_SPAN_UPDATE_RATE) {
+                Sleep(MAX_ZERO_SPAN_UPDATE_RATE - elapsed);
+            }
             if(captureCount > 0) {
                 if(sweep.triggered) {
                     captureCount--;
                 }
             }
         } else {
-            Sleep(64);
+            Sleep(MAX_ZERO_SPAN_UPDATE_RATE);
         }
     }
 }

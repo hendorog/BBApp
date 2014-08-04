@@ -150,6 +150,9 @@ bool DemodSettings::Load(QSettings &s)
     trigAmplitude = s.value("Demod/TriggerAmplitude",
                             TrigAmplitude().Val()).toDouble();
 
+    maEnabled = s.value("Demod/MAEnabled", false).toBool();
+    maLowPass = s.value("Demod/MALowPass", 10.0e3).toDouble();
+
     emit updated(this);
     return true;
 }
@@ -168,6 +171,9 @@ bool DemodSettings::Save(QSettings &s) const
     s.setValue("Demod/TriggerType", TrigType());
     s.setValue("Demod/TriggerEdge", TrigEdge());
     s.setValue("Demod/TriggerAmplitude", TrigAmplitude().Val());
+
+    s.setValue("Demod/MAEnabled", MAEnabled());
+    s.setValue("Demod/MALowPass", MALowPass().Val());
 
     return true;
 }
@@ -373,8 +379,7 @@ void IQSweep::CalculateReceiverStats()
     temp2.resize(fm.size());
 
     // Low pass filter
-    FirFilter fir(settings.MALowPass() / settings.SampleRate(),
-                  1024); // Filter AM and FM
+    FirFilter fir(settings.MALowPass() / settings.SampleRate(), 1024); // Filters AM and FM
 
     // Calculate RF Center based on average of FM frequencies
     stats.rfCenter = 0.0;
@@ -382,7 +387,7 @@ void IQSweep::CalculateReceiverStats()
         stats.rfCenter += fm[i];
     }
     double fmAvg = stats.rfCenter / (temp.size() - 2048);
-    qDebug() << "FM Avg " << fmAvg;
+//    qDebug() << "FM Avg " << fmAvg;
     stats.rfCenter = settings.CenterFreq() + fmAvg;
 
     // Remove DC offset
@@ -407,8 +412,8 @@ void IQSweep::CalculateReceiverStats()
     stats.fmRMS = sqrt(stats.fmRMS / (temp2.size() - 1024));
 
     downsample(temp2, audioRate, 8);
-    stats.SINAD = 10.0 * log10(CalculateSINAD(audioRate, 39062.5, stats.fmAudioFreq));
-    stats.THD = CalculateTHD(audioRate, 39062.5, stats.fmAudioFreq);
+    stats.fmSINAD = 10.0 * log10(CalculateSINAD(audioRate, 39062.5, stats.fmAudioFreq));
+    stats.fmTHD = CalculateTHD(audioRate, 39062.5, stats.fmAudioFreq);
 
     // AM
     double invAvg = 0.0;
@@ -419,6 +424,7 @@ void IQSweep::CalculateReceiverStats()
     }
     invAvg = am.size() / invAvg;
 
+    // Normalize around zero
     for(int i = 0; i < temp.size(); i++) {
         temp2[i] = (temp[i] * invAvg) - 1.0;
     }
@@ -436,9 +442,10 @@ void IQSweep::CalculateReceiverStats()
     }
     stats.amRMS = sqrt(stats.amRMS / (temp.size() - 1024));
 
-//    downsample(temp, audioRate, 8);
-//    stats.SINAD = 10.0 * log10(CalculateSINAD(audioRate, 39062.5, stats.amAudioFreq));
-//    stats.THD = CalculateTHD(audioRate, 39062.5, stats.amAudioFreq);
+    audioRate.clear();
+    downsample(temp, audioRate, 8);
+    stats.amSINAD = 10.0 * log10(CalculateSINAD(audioRate, 39062.5, stats.amAudioFreq));
+    stats.amTHD = CalculateTHD(audioRate, 39062.5, stats.amAudioFreq);
 }
 
 // Returns dB ratio of the average power of the waveform over the average
@@ -455,8 +462,8 @@ double CalculateSINAD(const std::vector<double> &waveform, double sampleRate, do
     iirBandReject(&filtered[0], &rejected[0], centerFreq / sampleRate, 0.005, len);
     //iirBandPass(&waveform[0], &rejected[0], centerFreq / 312.5e3, 0.1, waveform.size());
 
-    qDebug() << averagePower(&filtered[len/2], len/2);
-    qDebug() << "Rejected " << averagePower(&rejected[len/2], len/2);
+//    qDebug() << averagePower(&filtered[len/2], len/2);
+//    qDebug() << "Rejected " << averagePower(&rejected[len/2], len/2);
     return averagePower(&filtered[len/2], len/2) /
             averagePower(&rejected[len/2], len/2);
 }
@@ -493,9 +500,9 @@ double CalculateTHD(const std::vector<double> &waveform, double sampleRate, doub
     }
     Vrms = sqrt(Vrms);
 
-    for(int i = 0; i < TOTAL_HARMONICS; i++) {
-        qDebug() << "V" << QVariant(i+1).toString() << " " << Vharmonics[i];
-    }
+//    for(int i = 0; i < TOTAL_HARMONICS; i++) {
+//        qDebug() << "V" << QVariant(i+1).toString() << " " << Vharmonics[i];
+//    }
 
     return Vrms / Vharmonics[0];
 }

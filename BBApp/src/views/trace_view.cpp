@@ -717,12 +717,12 @@ void TraceView::RenderMarkers()
         }
         // Does not have to be in view to draw the delta values
         if(m->DeltaActive()) {
-            glQColor(GetSession()->colors.markerText);
+            glQColor(GetSession()->colors.text);
             DrawString("Mkr " + QVariant(i+1).toString() + " Delta: " + m->DeltaText(),
                        textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
             y_print -= 20;
         } else if(m->Active()) {
-            glQColor(GetSession()->colors.markerText);
+            glQColor(GetSession()->colors.text);
             DrawString("Mkr " + QVariant(i+1).toString() + ": " + m->Text(),
                        textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
             y_print -= 20;

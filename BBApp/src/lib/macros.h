@@ -32,8 +32,10 @@ const int MIN_IQ_SWEEP_LEN = 20;
 //  the sweep will be plotted.
 const int MAX_IQ_SWEEP_LEN = 65536;
 
-const double MIN_OCBW_PERCENT_POWER = 90.0;
+const double MIN_OCBW_PERCENT_POWER = 70.0;
 const double MAX_OCBW_PERCENT_POWER = 99.9;
+
+const int MAX_ZERO_SPAN_UPDATE_RATE = 64;
 
 #define DISALLOW_COPY_AND_ASSIGN(class_name) \
     class_name(class_name&); \

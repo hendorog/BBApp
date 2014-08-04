@@ -133,7 +133,8 @@ struct ReceiverStats {
         fmPeakPlus = fmPeakMinus = 0.0;
         amPeakPlus = amPeakMinus = 0.0;
         fmAudioFreq = amAudioFreq = 0.0;
-        SINAD = THD = 0.0;
+        fmSINAD = fmTHD = 0.0;
+        amSINAD = amTHD = 0.0;
     }
 
     double rfCenter; // Avg of fm frequencies
@@ -141,7 +142,8 @@ struct ReceiverStats {
     double fmPeakPlus, fmPeakMinus;
     double amPeakPlus, amPeakMinus;
     double fmAudioFreq, amAudioFreq;
-    double SINAD, THD;
+    double fmSINAD, fmTHD;
+    double amSINAD, amTHD;
 };
 
 // One full sweep

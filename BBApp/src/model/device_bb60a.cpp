@@ -214,6 +214,8 @@ bool DeviceBB60A::GetIQ(IQCapture *iqc)
     return true;
 }
 
+// Keep getting IQ data while the device returns immediately.
+// We want to remove any queued data
 bool DeviceBB60A::GetIQFlush(IQCapture *iqc, bool flush)
 {
     if(!flush) {

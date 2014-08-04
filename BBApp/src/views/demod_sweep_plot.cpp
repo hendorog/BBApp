@@ -75,10 +75,9 @@ DemodSweepPlot::~DemodSweepPlot()
 void DemodSweepPlot::resizeEvent(QResizeEvent *)
 {
     grat_ll = QPoint(60, 50);
-    grat_ul = QPoint(60, size().height() - 50);
+    grat_ul = QPoint(60, height() - 50);
 
-    grat_sz = QPoint(size().width() - 80,
-                     size().height() - 100);
+    grat_sz = QPoint(width() - 80, height() - 100);
 }
 
 void DemodSweepPlot::mousePressEvent(QMouseEvent *e)
@@ -98,9 +97,9 @@ void DemodSweepPlot::paintEvent(QPaintEvent *)
     makeCurrent();
 
     if(GetSession()->demod_settings->MAEnabled()) {
-        grat_sz = QPoint(size().width() - 380, size().height() - 100);
+        grat_sz = QPoint(width()/2 - 80, height() - 100);
     } else {
-        grat_sz = QPoint(size().width() - 80, size().height() - 100);
+        grat_sz = QPoint(width() - 80, height() - 100);
     }
 
     glQClearColor(GetSession()->colors.background);
@@ -344,7 +343,6 @@ void DemodSweepPlot::DrawPlotText()
     glPopMatrix();
 
     glPopAttrib();
-
 }
 
 void DemodSweepPlot::DrawMarkers()
@@ -358,7 +356,7 @@ void DemodSweepPlot::DrawMarkers()
     markerIndex = (trace.size() / 2) * markerPos.x();
     markerPos.setX((double)markerIndex / (trace.size() / 2));
     str = QVariant(markerIndex * binSize * 1000.0).toString() + " ms : ";
-    int index = index * 2 + 1;
+    int index = markerIndex * 2 + 1;
 
     // Clamp to size, no out of bound indexing please
     if(index < 0) index = 1;
@@ -411,13 +409,23 @@ void DemodSweepPlot::DrawMarkers()
     DrawMarker(markerPos.x() * grat_sz.x(), markerPos.y() * grat_sz.y(), 1);
     if(deltaOn) {
         DrawDeltaMarker(deltaPos.x() * grat_sz.x(), deltaPos.y() * grat_sz.y(), 1);
-        float diff = markerVal - deltaVal;
+        double diff = markerVal - deltaVal;
         delStr = "Delta : ";
         delStr += QVariant((markerIndex - deltaIndex) * binSize * 1000.0).toString() + " ms, ";
-        delStr += QVariant(diff).toString() + ((ds->InputPower().IsLogScale()) ?
-                                                   " dB" : " mV");
+        if(demodType == DemodTypeAM) {
+            QString val;
+            val.sprintf("%.2f %s", diff, ds->InputPower().IsLogScale() ? "dB" : "mV");
+            delStr += val;
+        } else if(demodType == DemodTypeFM) {
+            delStr += Frequency(diff).GetFreqString();
+        } else {
+            QString val;
+            val.sprintf("%.2f rad", diff);
+            delStr += val;
+        }
     }
 
+    glQColor(GetSession()->colors.text);
     DrawString(str, textFont, grat_sz.x() - 5, grat_sz.y() - 22, RIGHT_ALIGNED);
     DrawString(delStr, textFont, grat_sz.x() - 5, grat_sz.y() - 42, RIGHT_ALIGNED);
 
@@ -508,38 +516,52 @@ void DemodSweepPlot::DrawDeltaMarker(int x, int y, int num)
 
 void DemodSweepPlot::DrawMeasuringReceiverStats()
 {
-    ReceiverStats stats = GetSession()->iq_capture.stats;
+    const ReceiverStats stats = GetSession()->iq_capture.stats;
 
-    QPoint pos(grat_ul.x() + grat_sz.x() + 10, grat_ul.y() - 20);
+    QPoint textHeight(0, divFont.GetTextHeight());
+
+    QPoint leftPos(width() / 2 + grat_ll.x(), grat_ul.y() - 20);
+    QPoint rightPos(leftPos.x() + grat_sz.x() / 2, leftPos.y() - textHeight.y() * 3.5);
+
     QString str;
 
-    DrawString("AM/FM Modulation Analysis", textFont, pos, LEFT_ALIGNED);
-    pos += QPoint(0, -20);
-    DrawString("RF Center " + Frequency(stats.rfCenter).GetFreqString(), divFont, pos, LEFT_ALIGNED);
-    pos += QPoint(0, -20);
-    DrawString("FM RMS " + Frequency(stats.fmRMS).GetFreqString(), divFont, pos, LEFT_ALIGNED);
-    pos += QPoint(0, -20);
-    DrawString("FM Peak+ " + Frequency(stats.fmPeakPlus).GetFreqString(), divFont, pos, LEFT_ALIGNED);
-    pos += QPoint(0, -20);
-    DrawString("FM Peak- " + Frequency(stats.fmPeakMinus).GetFreqString(), divFont, pos, LEFT_ALIGNED);
-    pos += QPoint(0, -20);
-    DrawString("FM Audio Freq " + Frequency(stats.fmAudioFreq).GetFreqString(), divFont, pos, LEFT_ALIGNED);
-    pos += QPoint(0, -20);
+    DrawString("AM/FM Modulation Analysis", textFont, leftPos, LEFT_ALIGNED);
+    leftPos -= textHeight*2;
+    DrawString("RF Center " + Frequency(stats.rfCenter).GetFreqString(), divFont, leftPos, LEFT_ALIGNED);
+    leftPos -= textHeight*1.5;
+
+    DrawString("FM RMS: " + Frequency(stats.fmRMS).GetFreqString(), divFont, leftPos, LEFT_ALIGNED);
+    leftPos -= textHeight;
+    DrawString("FM Peak+: " + Frequency(stats.fmPeakPlus).GetFreqString(), divFont, leftPos, LEFT_ALIGNED);
+    leftPos -= textHeight;
+    DrawString("FM Peak-: " + Frequency(stats.fmPeakMinus).GetFreqString(), divFont, leftPos, LEFT_ALIGNED);
+    leftPos -= textHeight;
+    DrawString("FM Rate: " + Frequency(stats.fmAudioFreq).GetFreqString(), divFont, leftPos, LEFT_ALIGNED);
+    leftPos -= textHeight*2;
 
     str.sprintf("AM RMS %.3lf%%", stats.amRMS * 100.0);
-    DrawString(str, divFont, pos, LEFT_ALIGNED);
-    pos += QPoint(0, -20);
+    DrawString(str, divFont, rightPos, LEFT_ALIGNED);
+    rightPos -= textHeight;
     str.sprintf("AM Peak+ %.3lf%%", stats.amPeakPlus * 100.0);
-    DrawString(str, divFont, pos, LEFT_ALIGNED);
-    pos += QPoint(0, -20);
+    DrawString(str, divFont, rightPos, LEFT_ALIGNED);
+    rightPos -= textHeight;
     str.sprintf("AM Peak- %.3lf%%", stats.amPeakMinus * 100.0);
-    DrawString(str, divFont, pos, LEFT_ALIGNED);
-    pos += QPoint(0, -20);
-    DrawString("AM Audio Freq " + Frequency(stats.amAudioFreq).GetFreqString(), divFont, pos, LEFT_ALIGNED);
-    pos+= QPoint(0, -20);
-    str.sprintf("SINAD %.2f dB", stats.SINAD);
-    DrawString(str, divFont, pos, LEFT_ALIGNED);
-    pos+= QPoint(0, -20);
-    str.sprintf("THD %.2f %%", stats.THD * 100.0);
-    DrawString(str, divFont, pos, LEFT_ALIGNED);
+    DrawString(str, divFont, rightPos, LEFT_ALIGNED);
+    rightPos -= textHeight;
+    DrawString("AM Rate " + Frequency(stats.amAudioFreq).GetFreqString(), divFont, rightPos, LEFT_ALIGNED);
+    rightPos -= textHeight;
+
+    if(demodType == DemodTypeAM) {
+        str.sprintf("AM SINAD %.2f dB", stats.amSINAD);
+        DrawString(str, divFont, leftPos, LEFT_ALIGNED);
+        leftPos -= textHeight;
+        str.sprintf("AM THD %.2f %%", stats.amTHD * 100.0);
+        DrawString(str, divFont, leftPos, LEFT_ALIGNED);
+    } else if(demodType == DemodTypeFM) {
+        str.sprintf("FM SINAD %.2f dB", stats.fmSINAD);
+        DrawString(str, divFont, leftPos, LEFT_ALIGNED);
+        leftPos -= textHeight;
+        str.sprintf("FM THD %.2f %%", stats.fmTHD * 100.0);
+        DrawString(str, divFont, leftPos, LEFT_ALIGNED);
+    }
 }
