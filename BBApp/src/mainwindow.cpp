@@ -3,6 +3,7 @@
 #include "widgets/audio_dialog.h"
 #include "widgets/progress_dialog.h"
 #include "widgets/preferences_dialog.h"
+#include "widgets/measuring_receiver_dialog.h"
 
 #include <QFile>
 #include <QSplitter>
@@ -229,6 +230,7 @@ void MainWindow::InitMenuBar()
 
     utilities_menu = main_menu->addMenu(tr("Utilities"));
     utilities_menu->addAction(tr("Audio Player"), this, SLOT(startAudioPlayer()));
+    utilities_menu->addAction(tr("Measuring Receiever"), this, SLOT(startMeasuringReceiever()));
     connect(utilities_menu, SIGNAL(aboutToShow()), this, SLOT(aboutToShowUtilitiesMenu()));
 
     help_menu = main_menu->addMenu(tr("Help"));
@@ -645,8 +647,8 @@ void MainWindow::loadPresetNames()
 void MainWindow::loadPreset(QAction *a)
 {
     centralStack->CurrentWidget()->StopStreaming();
-    session->LoadPreset(a->data().toInt());
 
+    session->LoadPreset(a->data().toInt());
     int newMode = session->sweep_settings->Mode();
 
     ChangeMode((OperationalMode)newMode);
@@ -691,7 +693,7 @@ void MainWindow::modeChanged(QAction *a)
 void MainWindow::ChangeMode(OperationalMode newMode)
 {
     this->removeToolBar(centralStack->CurrentWidget()->GetToolBar());
-    //centralStack->CurrentWidget()->GetToolBar()->hide();
+    centralStack->CurrentWidget()->GetToolBar()->hide();
     if(newMode == MODE_ZERO_SPAN) {
         centralStack->setCurrentWidget(demodCentral);
         sweep_panel->hide();
@@ -740,6 +742,22 @@ void MainWindow::startAudioPlayer()
 
     dlg->exec();
     *session->audio_settings = *dlg->Configuration();
+    delete dlg;
+
+    centralStack->CurrentWidget()->changeMode(temp_mode);
+}
+
+void MainWindow::startMeasuringReceiever()
+{
+    int temp_mode = session->sweep_settings->Mode();
+
+    centralStack->CurrentWidget()->changeMode(MODE_IDLE);
+    // Start the Audio Dialog with the active center frequency
+    session->audio_settings->setCenterFrequency(
+                centralStack->CurrentWidget()->GetCurrentCenterFreq());
+
+    MeasuringReceiver *dlg = new MeasuringReceiver(session->device, 900.0e6, this);
+    dlg->exec();
     delete dlg;
 
     centralStack->CurrentWidget()->changeMode(temp_mode);

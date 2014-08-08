@@ -108,6 +108,7 @@ private slots:
     void modeChanged(QAction *a);
     void zeroSpanPressed();
     void startAudioPlayer();
+    void startMeasuringReceiever();
     void aboutToShowTimebaseMenu();
     void timebaseChanged(QAction *a) { session->device->setTimebase(a->data().toInt()); }
     void showPreferencesDialog();

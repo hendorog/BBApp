@@ -24,10 +24,10 @@ DemodPanel::DemodPanel(const QString &title,
              << tr("20 dB") << tr("30 dB");
     attenEntry->setComboText(atten_sl);
 
-    decimationEntry = new ComboEntry(tr("Decimation"));
+    decimationEntry = new ComboEntry(tr("Sample Rate"));
     QStringList decimation_sl;
-    decimation_sl << tr("None") << tr("2") << tr("4") << tr("8") <<
-                     tr("16") << tr("32") << tr("64") << tr("128");
+    decimation_sl << tr("40 MS/s") << tr("20 MS/s") << tr("10 MS/s") << tr("5 MS/s") <<
+                     tr("2.5 MS/s") << tr("1.25 MS/s") << tr("0.625 MS/s") << tr("0.3125 MS/s");
     decimationEntry->setComboText(decimation_sl);
 
     bandwidthEntry = new FrequencyEntry(tr("IF BW"), 0.0);
