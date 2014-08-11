@@ -58,14 +58,14 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(centralStack);
 
     sweepCentral = new SweepCentral(session);
-    //addToolBar(sweepCentral->GetToolBar());
-    //sweepCentral->GetToolBar()->hide();
+    addToolBar(sweepCentral->GetToolBar());
+    sweepCentral->GetToolBar()->hide();
     connect(sweepCentral, SIGNAL(presetDevice()), this, SLOT(presetDevice()));
     centralStack->AddWidget(sweepCentral);
 
     demodCentral = new DemodCentral(session);
-    //addToolBar(demodCentral->GetToolBar());
-    //demodCentral->GetToolBar()->hide();
+    addToolBar(demodCentral->GetToolBar());
+    demodCentral->GetToolBar()->hide();
     centralStack->AddWidget(demodCentral);
 
     RestoreState();
@@ -82,13 +82,13 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    disconnectDevice();
+    //disconnectDevice();
 
     delete centralStack;
     delete session;
 
-    delete sweep_panel;
-    delete measure_panel;
+    //delete sweep_panel;
+    //delete measure_panel;
 }
 
 void MainWindow::closeEvent(QCloseEvent *e)
@@ -692,7 +692,7 @@ void MainWindow::modeChanged(QAction *a)
 
 void MainWindow::ChangeMode(OperationalMode newMode)
 {
-    this->removeToolBar(centralStack->CurrentWidget()->GetToolBar());
+    //this->removeToolBar(centralStack->CurrentWidget()->GetToolBar());
     centralStack->CurrentWidget()->GetToolBar()->hide();
     if(newMode == MODE_ZERO_SPAN) {
         centralStack->setCurrentWidget(demodCentral);

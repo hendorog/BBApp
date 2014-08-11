@@ -13,10 +13,16 @@ class MeasuringReceiver : public QDialog {
     Q_OBJECT
 
 public:
-    MeasuringReceiver(const Device *devicePtr,
+    MeasuringReceiver(Device *devicePtr,
                       double initialCenter,
                       QWidget *parent = 0);
     ~MeasuringReceiver();
+
+public slots:
+    //virtual void accept();
+
+private slots:
+    void syncPressed();
 
 protected:
 
@@ -24,9 +30,14 @@ private:
     void ProcessThread();
 
     FrequencyEntry *freqEntry;
+    Label *highLabel, *midLabel, *lowLabel;
+    QButtonGroup *ampGroup;
+    Label *centerReadout, *powerReadout;
+    Label *relativeReadout, *averageReadout;
+
     std::thread threadHandle;
     std::atomic<bool> running;
-    const Device *device;
+    Device *device;
 };
 
 #endif // MEASURING_RECEIVER_DIALOG_H

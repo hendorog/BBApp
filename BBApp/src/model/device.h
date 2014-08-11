@@ -39,6 +39,7 @@ public:
     virtual bool Reconfigure(const DemodSettings *s, IQDescriptor *capture) = 0;
     virtual bool GetIQ(IQCapture *iqc) = 0;
     virtual bool GetIQFlush(IQCapture *iqc, bool flush) = 0;
+    virtual bool ConfigureForTRFL(double center, int atten, int gain, IQDescriptor &desc) = 0;
 
     bool IsOpen() const { return open; }
     int Handle() const { return id; }

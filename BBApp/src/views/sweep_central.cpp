@@ -124,13 +124,11 @@ SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
 SweepCentral::~SweepCentral()
 {
     //playback->Stop();
-    //StopStreaming();
+    StopStreaming();
 
     //delete tool_bar;
     delete trace_view;
     delete playback;
-
-    session_ptr->device->CloseDevice();
 }
 
 void SweepCentral::changeMode(int new_state)

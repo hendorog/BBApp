@@ -151,6 +151,54 @@ bool DeviceBB60A::Reconfigure(const SweepSettings *s, Trace *t)
     return true;
 }
 
+bool DeviceBB60A::GetSweep(const SweepSettings *s, Trace *t)
+{
+    // Get new diagnostic info, determine whether to update the
+    //  diagnostic string
+    UpdateDiagnostics();
+
+    // Print new diagnostics only when a value changed
+    if(update_diagnostics_string) {
+        QString diagnostics;
+        diagnostics.sprintf("%.2f C  --  %.2f V", CurrentTemp(), Voltage());
+        MainWindow::GetStatusBar()->SetDiagnostics(diagnostics);
+        update_diagnostics_string = false;
+    }
+
+    if((fabs(current_temp - last_temp) > 2.0) || reconfigure_on_next) {
+        Reconfigure(s, t);
+        reconfigure_on_next = false;
+    }
+
+    // Manually handle some errors, and populate variables in the event of warnings
+    lastStatus = bbFetchTrace_32f(id, t->Length(), t->Min(), t->Max());
+    if(lastStatus == bbDeviceConnectionErr) {
+        // True connection issue, throw signal
+        // emit connectionIssue() throw warning
+        emit connectionIssues();
+        return false;
+    } else if(lastStatus == bbUSBTimeoutErr) {
+        // In the event of a timeout, and the device is in a sweep mode, try one more time
+        if(s->Mode() == BB_SWEEPING) {
+            lastStatus = bbFetchTrace_32f(id, t->Length(), t->Min(), t->Max());
+            if(lastStatus < bbNoError) {
+                // Second error in a row, disconnect device with issues
+                emit connectionIssues();
+                return false;
+            }
+        }
+    }
+
+    // After error checks, do warning checks
+    if(lastStatus == bbADCOverflow) {
+        adc_overflow = true;
+    } else {
+        adc_overflow = false;
+    }
+
+    return true;
+}
+
 bool DeviceBB60A::Reconfigure(const DemodSettings *ds, IQDescriptor *desc)
 {   
     bbAbort(id);
@@ -232,50 +280,39 @@ bool DeviceBB60A::GetIQFlush(IQCapture *iqc, bool flush)
     return true;
 }
 
-bool DeviceBB60A::GetSweep(const SweepSettings *s, Trace *t)
+// Tuned RF Level measurements configuration
+// Requires lowest sample rate, smallest bandwidth streaming
+bool DeviceBB60A::ConfigureForTRFL(double center,
+                                   int atten,
+                                   int gain,
+                                   IQDescriptor &desc)
 {
-    // Get new diagnostic info, determine whether to update the
-    //  diagnostic string
-    UpdateDiagnostics();
+    bbAbort(id);
 
-    // Print new diagnostics only when a value changed
-    if(update_diagnostics_string) {
-        QString diagnostics;
-        diagnostics.sprintf("%.2f C  --  %.2f V", CurrentTemp(), Voltage());
-        MainWindow::GetStatusBar()->SetDiagnostics(diagnostics);
-        update_diagnostics_string = false;
+    int port_one_mask;
+    switch(timebase_reference) {
+    case TIMEBASE_INTERNAL:
+        port_one_mask = 0x0;
+        break;
+    case TIMEBASE_EXT_AC:
+        port_one_mask = BB_PORT1_EXT_REF_IN | BB_PORT1_AC_COUPLED;
+        break;
+    case TIMEBASE_EXT_DC:
+        port_one_mask = BB_PORT1_EXT_REF_IN | BB_PORT1_DC_COUPLED;
+        break;
     }
 
-    if((fabs(current_temp - last_temp) > 2.0) || reconfigure_on_next) {
-        Reconfigure(s, t);
-        reconfigure_on_next = false;
-    }
+    bbConfigureIO(id, port_one_mask, 0x0);
+    bbConfigureCenterSpan(id, center, 20.0e6);
+    bbConfigureIQ(id, 128, 100.0e3);
+    bbConfigureLevel(id, 0.0, atten);
+    bbConfigureGain(id, gain);
 
-    // Manually handle some errors, and populate variables in the event of warnings
-    lastStatus = bbFetchTrace_32f(id, t->Length(), t->Min(), t->Max());
-    if(lastStatus == bbDeviceConnectionErr) {
-        // True connection issue, throw signal
-        // emit connectionIssue() throw warning
-        emit connectionIssues();
-        return false;
-    } else if(lastStatus == bbUSBTimeoutErr) {
-        // In the event of a timeout, and the device is in a sweep mode, try one more time
-        if(s->Mode() == BB_SWEEPING) {
-            lastStatus = bbFetchTrace_32f(id, t->Length(), t->Min(), t->Max());
-            if(lastStatus < bbNoError) {
-                // Second error in a row, disconnect device with issues
-                emit connectionIssues();
-                return false;
-            }
-        }
-    }
+    bbInitiate(id, BB_STREAMING, BB_STREAM_IQ);
+    bbQueryStreamInfo(id, &desc.returnLen, &desc.bandwidth, &desc.sampleRate);
 
-    // After error checks, do warning checks
-    if(lastStatus == bbADCOverflow) {
-        adc_overflow = true;
-    } else {
-        adc_overflow = false;
-    }
+    desc.timeDelta = 1.0 / (double)desc.sampleRate;
+    desc.decimation = 128;
 
     return true;
 }

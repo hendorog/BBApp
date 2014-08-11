@@ -144,6 +144,14 @@ void FrequencyEntry::SetFrequency(Frequency &f)
     entry->SetFrequency(freq);
 }
 
+void FrequencyEntry::resizeEvent(QResizeEvent *)
+{
+    label->move(ENTRY_OFFSET, 0);
+    label->resize(LABEL_W, ENTRY_H);
+    entry->move(LABEL_W + ENTRY_OFFSET, 0);
+    entry->resize(width() - LABEL_W - ENTRY_OFFSET, ENTRY_H);
+}
+
 void FrequencyEntry::editUpdated()
 {
     freq = entry->GetFrequency();

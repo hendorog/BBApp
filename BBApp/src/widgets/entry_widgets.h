@@ -117,6 +117,9 @@ public:
     void SetFrequency(Frequency &f);
     Frequency GetFrequency() const { return freq; }
 
+protected:
+    void resizeEvent(QResizeEvent *);
+
 private:
     Frequency freq; // local copy
     Label *label;

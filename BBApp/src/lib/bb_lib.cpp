@@ -240,6 +240,62 @@ GLuint get_texture_from_file(const QString &file_name)
     return t;
 }
 
+void getPeakCorrelation(const complex_f *src,
+                        int len,
+                        double centerIn,
+                        double &centerOut,
+                        double &peakPower)
+{
+    centerOut = centerIn;
+
+    const int STEPS = 201;
+
+    double stepSize = (1.0 / 312500.0);
+    double startFreq = centerIn - stepSize * (STEPS/2 - 1);
+    double maxPower = -1.0, minPower = 100000.0;
+    double maxCenter = 0.0;
+
+    complex_f *wave = new complex_f[len];
+
+    for(int steps = 0; steps < STEPS; steps++) {
+        double freq = startFreq + (stepSize * steps);
+
+        for(int i = 0; i < len; i++) {
+            complex_f v;
+            v.re = cos(BB_TWO_PI * -freq * i);
+            v.im = sin(BB_TWO_PI * -freq * i);
+
+            wave[i].re = src[i].re * v.re - src[i].im * v.im;
+            wave[i].im = src[i].re * v.im + src[i].im * v.re;
+        }
+
+        complex_f sum;
+        sum.re = 0.0;
+        sum.im = 0.0;
+        for(int i = 0; i < len; i++) {
+            sum.re += wave[i].re;
+            sum.im += wave[i].im;
+        }
+        sum.re /= len;
+        sum.im /= len;
+        double power = sum.re * sum.re + sum.im * sum.im;
+
+        if(power > maxPower) {
+            maxCenter = freq;
+            maxPower = power;
+        }
+        if(power < minPower) {
+            minPower = power;
+        }
+    }
+
+    qDebug() << 10.0*log10(maxPower) - 10.0*log10(minPower);
+    centerOut = maxCenter;
+    peakPower = maxPower;
+
+    delete [] wave;
+}
+
 int bb_lib::cpy_16u(const ushort *src, ushort *dst, int maxCopy)
 {
     int loc = 0;

@@ -290,6 +290,15 @@ inline FloatType averagePower(const FloatType *input, int len)
     return sum / len;
 }
 
+// Correlates the signal in a 10 Hz bandwidth around center in
+//   0.2Hz steps. Returns the center and power where the correlation
+//   was the strongest.
+void getPeakCorrelation(const complex_f *src,
+                        int len,
+                        double centerIn,
+                        double &centerOut,
+                        double &peakPower);
+
 namespace bb_lib {
 
 // Returns true if a new value was retrieved

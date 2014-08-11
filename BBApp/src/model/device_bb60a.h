@@ -21,6 +21,7 @@ public:
     bool Reconfigure(const DemodSettings *s, IQDescriptor *iqc);
     bool GetIQ(IQCapture *iqc);
     bool GetIQFlush(IQCapture *iqc, bool sync);
+    virtual bool ConfigureForTRFL(double center, int atten, int gain, IQDescriptor &desc);
 
     bool IsPowered() const;
 
