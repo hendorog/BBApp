@@ -318,8 +318,22 @@ QRadioButton#SHPrefRadioButton::indicator {
   margin-right: 5px;
 }
 
+QRadioButton#SHPrefRadioButton::indicator:hover {
+  background-color: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
+    stop: 0 rgb(65,65,65), stop: 0.1 rgb(117,117,117),
+    stop: 0.9 rgb(137,137,137), stop: 1 rgb(197,197,197));
+}
+
 QRadioButton#SHPrefRadioButton::indicator:checked {
   image: url(:icons/check_select.png);
+}
+
+QRadioButton#SHPrefRadioButton:disabled {
+  color: gray;
+}
+
+QRadioButton#SHPrefRadioButton::indicator:disabled {
+  background-color: rgb(97,97,97);
 }
 
 /********

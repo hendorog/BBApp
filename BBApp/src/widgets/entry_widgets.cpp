@@ -586,6 +586,7 @@ void ColorEntry::resizeEvent(QResizeEvent *)
 /*
  * Line Entry for check box
  */
+#include <QRadioButton>
 CheckBoxEntry::CheckBoxEntry(const QString &label_text, QWidget *parent)
     : QWidget(parent)
 {
@@ -596,8 +597,10 @@ CheckBoxEntry::CheckBoxEntry(const QString &label_text, QWidget *parent)
     label->move(ENTRY_OFFSET, 0);
     label->resize(100, ENTRY_H);
 
-    check_box = new QCheckBox(this);
-    check_box->setObjectName("SH_CheckBox");
+    //check_box = new QCheckBox(this);
+//    check_box->setObjectName("SH_CheckBox");
+    check_box = new QRadioButton(this);
+    check_box->setObjectName("SHPrefRadioButton");
     check_box->setLayoutDirection(Qt::RightToLeft);
     check_box->move(ENTRY_OFFSET + LABEL_W, 0);
     check_box->resize(ENTRY_WIDTH - LABEL_W - ENTRY_OFFSET, ENTRY_H);

@@ -10,9 +10,11 @@ MeasuringReceiver::MeasuringReceiver(Device *devicePtr,
                                      QWidget *parent) :
     QDialog(parent),
     device(devicePtr),
-    running(true)
+    running(true),
+    reinitialize(true),
+    recalibrate(true)
 {
-    setWindowTitle("Measuring Receiever");
+    setWindowTitle("Measuring Receiver");
     setObjectName("SH_Page");
     setFixedWidth(400);
 
@@ -21,11 +23,11 @@ MeasuringReceiver::MeasuringReceiver(Device *devicePtr,
     Label *title = new Label("Synchronous Level Detector", this);
     title->move(QPoint(5, pos.y()));
     title->resize(width(), WIDGET_HEIGHT);
-    pos += QPoint(0, WIDGET_HEIGHT);
+    pos += QPoint(0, WIDGET_HEIGHT+5);
     freqEntry = new FrequencyEntry("Center Freq", initialCenter, this);
     freqEntry->move(pos);
-    freqEntry->resize(width(), WIDGET_HEIGHT);
-    pos += QPoint(0, WIDGET_HEIGHT);
+    freqEntry->resize(width() * 0.75, WIDGET_HEIGHT);
+    pos += QPoint(0, WIDGET_HEIGHT+5);
 
     Label *ampRangeLabel = new Label("Amplitude Range", this);
     ampRangeLabel->move(QPoint(5, pos.y()));
@@ -41,9 +43,9 @@ MeasuringReceiver::MeasuringReceiver(Device *devicePtr,
     highAmp->resize(width()/2, WIDGET_HEIGHT);
     highAmp->setObjectName("SHPrefRadioButton");
     highAmp->setChecked(true);
-    ampGroup->addButton(highAmp, 0);
+    ampGroup->addButton(highAmp, rangeLevelHigh);
 
-    highLabel = new Label("HighLabel", this);
+    highLabel = new Label("", this);
     highLabel->move(QPoint(width()/2, pos.y()));
     highLabel->resize(width()/2, WIDGET_HEIGHT);
     pos += QPoint(0, WIDGET_HEIGHT);
@@ -51,9 +53,9 @@ MeasuringReceiver::MeasuringReceiver(Device *devicePtr,
     midAmp->move(pos);
     midAmp->resize(width()/2, WIDGET_HEIGHT);
     midAmp->setObjectName("SHPrefRadioButton");
-    ampGroup->addButton(midAmp, 1);
+    ampGroup->addButton(midAmp, rangeLevelMid);
 
-    midLabel = new Label("MidLabel", this);
+    midLabel = new Label("", this);
     midLabel->move(QPoint(width()/2, pos.y()));
     midLabel->resize(width()/2, WIDGET_HEIGHT);
     pos += QPoint(0, WIDGET_HEIGHT);
@@ -61,14 +63,14 @@ MeasuringReceiver::MeasuringReceiver(Device *devicePtr,
     lowAmp->move(pos);
     lowAmp->resize(width()/2, WIDGET_HEIGHT);
     lowAmp->setObjectName("SHPrefRadioButton");
-    ampGroup->addButton(lowAmp, 2);
+    ampGroup->addButton(lowAmp, rangeLevelLow);
 
-    lowLabel = new Label("LowLabel", this);
+    lowLabel = new Label("", this);
     lowLabel->move(QPoint(width()/2, pos.y()));
     lowLabel->resize(width()/2, WIDGET_HEIGHT);
-    pos += QPoint(0, WIDGET_HEIGHT);
+    pos += QPoint(0, WIDGET_HEIGHT+5);
 
-    Label *centerLabel = new Label("RF Sync Center", this);
+    Label *centerLabel = new Label("RF Frequency", this);
     centerLabel->move(QPoint(5, pos.y()));
     centerLabel->resize(width()/2, WIDGET_HEIGHT);
     centerReadout = new Label("915.11002 MHz", this);
@@ -92,7 +94,7 @@ MeasuringReceiver::MeasuringReceiver(Device *devicePtr,
     relativeReadout->resize(width()/2, WIDGET_HEIGHT);
     pos += QPoint(0, WIDGET_HEIGHT);
 
-    Label *averageLabel = new Label("Averaged Power", this);
+    Label *averageLabel = new Label("Average Relative Power", this);
     averageLabel->move(QPoint(5, pos.y()));
     averageLabel->resize(width()/2, WIDGET_HEIGHT);
     averageReadout = new Label("-4.998 dB", this);
@@ -104,16 +106,34 @@ MeasuringReceiver::MeasuringReceiver(Device *devicePtr,
     sync->move(QPoint(5, pos.y()));
     sync->resize(width()/2 - 10, WIDGET_HEIGHT);
     //pos += QPoint(0, WIDGET_HEIGHT);
-    connect(sync, SIGNAL(clicked()), this, SLOT(syncPressed()));
 
     PushButton *done = new PushButton("Done", this);
     done->move(QPoint(width()/2 + 5, pos.y()));
     done->resize(width()/2 - 10, WIDGET_HEIGHT);
     pos += QPoint(0, WIDGET_HEIGHT*2);
-    connect(done, SIGNAL(clicked()), this, SLOT(accept()));
 
     setFixedHeight(pos.y());
     setSizeGripEnabled(false);
+
+    connect(sync, SIGNAL(clicked()), this, SLOT(triggerReinitialize()));
+    connect(done, SIGNAL(clicked()), this, SLOT(accept()));
+
+    connect(freqEntry, SIGNAL(freqViewChanged(Frequency)),
+            this, SLOT(triggerReinitialize()));
+
+    connect(this, SIGNAL(updateLabels(QString,QString,QString,QString)),
+            this, SLOT(setLabels(QString,QString,QString,QString)));
+    connect(this, SIGNAL(updateRangeLevelText(QString, int)),
+            this, SLOT(setRangeLevelText(QString, int)));
+    connect(this, SIGNAL(updateRangeLevelText(int,QString,int)),
+            this, SLOT(setRangeLevelText(int,QString,int)));
+    connect(this, SIGNAL(updateRangeEnabled(int)),
+            this, SLOT(setRangeEnabled(int)));
+    connect(this, SIGNAL(updateEntryEnabled(bool)),
+            this, SLOT(setEntryEnabled(bool)));
+
+    connect(ampGroup, SIGNAL(buttonClicked(int)),
+            this, SLOT(triggerRecalibration()));
 
     threadHandle = std::thread(&MeasuringReceiver::ProcessThread, this);
 }
@@ -124,99 +144,126 @@ MeasuringReceiver::~MeasuringReceiver()
     if(threadHandle.joinable()) {
         threadHandle.join();
     }
-
 }
 
-//void MeasuringReceiver::accept()
-//{
-
-//    QDialog::accept();
-//}
-
-void MeasuringReceiver::syncPressed()
+void MeasuringReceiver::Recalibrate(double &centerOut, double &powerOut, IQCapture &iqc)
 {
-    ampGroup->button(0)->setChecked(true);
-}
+    int atten, gain;
+    RangeLevel level = GetCurrentRange();
 
-static const int PROC_LEN = 1024;
+    switch(level) {
+    case rangeLevelHigh: atten = 30; gain = 1; break;
+    case rangeLevelMid: atten = 30; gain = 3; break;
+    case rangeLevelLow: atten = 0; gain = 3; break;
+    }
+
+    emit updateLabels("", "", "", "");
+    emit updateRangeLevelText("Calibrating", rangeColorGreen);
+    emit updateRangeEnabled(rangeLevelNone);
+    emit updateEntryEnabled(false);
+
+    device->ConfigureForTRFL(freqEntry->GetFrequency(), atten, gain, iqc.desc);
+    iqc.capture.resize(iqc.desc.returnLen);
+    device->GetIQFlush(&iqc, true);
+    centerOut = getSignalFrequency(iqc.capture, 312500.0);
+    centerOut /= 312500.0;
+    for(int i = 0; i < 30; i++) { // Amplitude settles in roughly 30 packets ?
+        if(i % 10 == 0) {
+            QString calStr = "Calibrating";
+            for(int j = 0; j < (i / 10) + 1; j++) calStr += ".";
+            emit updateRangeLevelText(calStr, rangeColorGreen);
+        }
+        device->GetIQFlush(&iqc, true);
+        getPeakCorrelation(&iqc.capture[0], 4096, centerOut, centerOut, powerOut);
+    }
+
+    emit updateRangeLevelText("", rangeColorBlack);
+    emit updateEntryEnabled(true);
+    recalibrate = false;
+}
 
 void MeasuringReceiver::ProcessThread()
 {
-    bool firstPass = true;
     IQCapture capture;
-    double center, power, relative = 100.0;
-    double centerOut;
-    std::vector<double> phase, fm;
+    double center, power, relative, offset;
     std::list<double> average;
-    phase.resize(PROC_LEN);
-    fm.resize(PROC_LEN);
+    std::vector<complex_f> full;
+    full.resize(4096 * 3);
 
     while(running) {
-        if(firstPass) {
-            center = freqEntry->GetFrequency().Val();
+        // Reinitialize to start tuned level measurements over
+        if(reinitialize) {
+            ampGroup->button(0)->setChecked(true); // Select high power
+            emit updateRangeEnabled(rangeLevelNone);
             power = 0.0;
-            device->ConfigureForTRFL(center, BB_AUTO_ATTEN, BB_AUTO_GAIN, capture.desc);
-            capture.capture.resize(capture.desc.returnLen);
+            offset = 0.0;
+            relative = 0.0;
+            reinitialize = false;
+            recalibrate = true;
+        }
+
+        // Recalibrates to a new range
+        // Range must be chosen before entering this block
+        if(recalibrate) {
+            offset += (power - relative);
+            Recalibrate(center, power, capture);
+            relative = power;
         }
 
         device->GetIQFlush(&capture, true);
-        device->GetIQFlush(&capture, true);
-        device->GetIQFlush(&capture, true);
+        simdCopy_32fc(&capture.capture[0], &full[0], 4096);
+        for(int i = 1; i < 3; i++) {
+            device->GetIQ(&capture);
+            simdCopy_32fc(&capture.capture[0], &full[i * 4096], 4096);
+        }
+        getPeakCorrelation(&full[0], 4096*3, center, center, power);
 
-        if(firstPass) {
-            for(int i = 0; i < PROC_LEN; i++) {
-                phase[i] = atan2(capture.capture[i].im, capture.capture[i].re);
+        if(device->ADCOverflow()) {
+            emit updateRangeLevelText("IF Overload", rangeColorRed);
+        } else {
+            if(GetCurrentRange() == rangeLevelHigh) {
+                if(power > -30.0) {
+                    emit updateRangeLevelText("", rangeColorBlack);
+                    emit updateRangeEnabled(rangeLevelNone);
+                } else if(power < -45.0) {
+                    emit updateRangeLevelText(rangeLevelMid, "Passed Mid-Range", rangeColorRed);
+                    emit updateRangeEnabled(rangeLevelNone);
+                } else {
+                    emit updateRangeLevelText(rangeLevelMid, "Recal at new range", rangeColorOrange);
+                    emit updateRangeEnabled(rangeLevelMid);
+                }
+            } else if(GetCurrentRange() == rangeLevelMid) {
+                if(power > -60.0) {
+                    emit updateRangeLevelText("", rangeColorBlack);
+                    emit updateRangeEnabled(rangeLevelNone);
+                } else if(power < -75.0) {
+                    emit updateRangeLevelText(rangeLevelLow, "Passed Low-Range", rangeColorRed);
+                    emit updateRangeEnabled(rangeLevelNone);
+                } else {
+                    emit updateRangeLevelText(rangeLevelLow, "Recal at new range", rangeColorOrange);
+                    emit updateRangeEnabled(rangeLevelLow);
+                }
+            } else {
+                emit updateRangeLevelText("", rangeColorBlack);
+                emit updateRangeEnabled(rangeLevelNone);
             }
-
-            double phaseToFreq = (double)capture.desc.sampleRate / BB_TWO_PI;
-            double lastPhase = phase[0];
-
-            for(int i = 1; i < PROC_LEN; i++) {
-                double delPhase = phase[i] - lastPhase;
-                lastPhase = phase[i];
-
-                if(delPhase > BB_PI)
-                    delPhase -= BB_TWO_PI;
-                else if(delPhase < (-BB_PI))
-                    delPhase += BB_TWO_PI;
-
-                fm[i] = delPhase * phaseToFreq;
-            }
-
-            centerOut = 0.0;
-            for(int i = 1; i < PROC_LEN; i++) {
-                centerOut += fm[i];
-            }
-            centerOut /= PROC_LEN;
-            centerOut /= 312500.0;
-
-            firstPass = false;
         }
 
-        getPeakCorrelation(&capture.capture[0], PROC_LEN*4, centerOut, centerOut, power);
-
-        QString readout;
-
-        readout = Frequency(center + centerOut * 312.5e3).GetFreqString();
-        centerReadout->setText(readout);
-        readout.sprintf("%.2f dBm", 10.0 * log10(power));
-        powerReadout->setText(readout);
-
-        if(relative > 50.0) relative = 10.0 * log10(power);
-        double diff = 10.0 * log10(power) - relative;
+        // Lets update our text
+        double diff = (power - relative) + offset;
         average.push_front(diff);
-        while(average.size() > 20) {
-            average.pop_back();
-        }
+        while(average.size() > 20) average.pop_back();
         double avgPower = 0.0;
         for(double d : average) avgPower += d;
         avgPower /= average.size();
 
-        readout.sprintf("%.2f dB", relative);
-        relativeReadout->setText(readout);
-        readout.sprintf("%.2f dB", avgPower);
-        averageReadout->setText(readout);
+        QString centerStr, powerStr, relativeStr, averageStr;
+        centerStr = Frequency(freqEntry->GetFrequency() + center * 312500.0).GetFreqString();
+        powerStr.sprintf("%.3f dBm", power);
+        relativeStr.sprintf("%.3f dB", diff);
+        averageStr.sprintf("%.3f dB", avgPower);
 
+        emit updateLabels(centerStr, powerStr, relativeStr, averageStr);
     }
 
     device->Abort();

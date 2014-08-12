@@ -244,6 +244,10 @@ QCheckBox#SH_CheckBox::indicator {
   margin-right: 5px;
 }
 
+QCheckBox#SH_CheckBox::indicator:hover {
+  background-color: rgb(194,196,209);
+}
+
 QCheckBox#SH_CheckBox::indicator:checked {
   image: url(:icons/check_select-light.png);
 }
@@ -265,12 +269,24 @@ QRadioButton#SHPrefRadioButton::indicator {
   height: 12px;
   border: 1px inset rgb(37,37,37);
   background-color: rgb(204,206,219);
-  border-radius: 1px;
   margin-right: 5px;
+}
+
+QRadioButton#SHPrefRadioButton::indicator:hover {
+  background-color: rgb(194,196,209);
 }
 
 QRadioButton#SHPrefRadioButton::indicator:checked {
   image: url(:icons/check_select-light.png);
+}
+
+QRadioButton#SHPrefRadioButton:disabled {
+  color: gray;
+}
+
+QRadioButton#SHPrefRadioButton::indicator:disabled {
+  border: 1px inset gray;
+  background-color: white;
 }
 
 /********
@@ -702,7 +718,6 @@ QMenu::item:selected {
 }
 
 QMenu::item:disabled {
-/*  background-color: rgb(204,206,219);*/
   color: rgb(204,206,219);
 }
 

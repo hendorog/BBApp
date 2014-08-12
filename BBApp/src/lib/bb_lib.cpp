@@ -240,6 +240,32 @@ GLuint get_texture_from_file(const QString &file_name)
     return t;
 }
 
+double getSignalFrequency(const std::vector<complex_f> &src, double sampleRate)
+{
+    if(src.size() <= 2) {
+        return 0.0;
+    }
+
+    double phaseToFreq = sampleRate / BB_TWO_PI;
+    double phase = atan2(src[0].im, src[0].re);
+    double lastPhase = phase;
+    double freq = 0.0;
+
+    for(std::vector<complex_f>::size_type i = 1; i < src.size(); i++) {
+        phase = atan2(src[i].im, src[i].re);
+        double delPhase = phase - lastPhase;
+        lastPhase = phase;
+
+        if(delPhase > BB_PI) delPhase -= BB_TWO_PI;
+        if(delPhase < (-BB_PI)) delPhase += BB_TWO_PI;
+
+        freq += delPhase;
+    }
+
+    freq /= src.size();
+    return freq * phaseToFreq;
+}
+
 void getPeakCorrelation(const complex_f *src,
                         int len,
                         double centerIn,
@@ -248,34 +274,27 @@ void getPeakCorrelation(const complex_f *src,
 {
     centerOut = centerIn;
 
-    const int STEPS = 201;
+    const int STEPS = 401;
 
-    double stepSize = (1.0 / 312500.0);
+    double stepSize = (0.5 / 312500.0);
     double startFreq = centerIn - stepSize * (STEPS/2 - 1);
-    double maxPower = -1.0, minPower = 100000.0;
+    double maxPower = -1.0;
     double maxCenter = 0.0;
 
-    complex_f *wave = new complex_f[len];
+    complex_f sum = {0.0, 0.0};
+    complex_f v;
 
     for(int steps = 0; steps < STEPS; steps++) {
         double freq = startFreq + (stepSize * steps);
 
         for(int i = 0; i < len; i++) {
-            complex_f v;
             v.re = cos(BB_TWO_PI * -freq * i);
             v.im = sin(BB_TWO_PI * -freq * i);
 
-            wave[i].re = src[i].re * v.re - src[i].im * v.im;
-            wave[i].im = src[i].re * v.im + src[i].im * v.re;
+            sum.re += src[i].re * v.re - src[i].im * v.im;
+            sum.im += src[i].re * v.im + src[i].im * v.re;
         }
 
-        complex_f sum;
-        sum.re = 0.0;
-        sum.im = 0.0;
-        for(int i = 0; i < len; i++) {
-            sum.re += wave[i].re;
-            sum.im += wave[i].im;
-        }
         sum.re /= len;
         sum.im /= len;
         double power = sum.re * sum.re + sum.im * sum.im;
@@ -284,16 +303,10 @@ void getPeakCorrelation(const complex_f *src,
             maxCenter = freq;
             maxPower = power;
         }
-        if(power < minPower) {
-            minPower = power;
-        }
     }
 
-    qDebug() << 10.0*log10(maxPower) - 10.0*log10(minPower);
     centerOut = maxCenter;
-    peakPower = maxPower;
-
-    delete [] wave;
+    peakPower = 10.0 * log10(maxPower);
 }
 
 int bb_lib::cpy_16u(const ushort *src, ushort *dst, int maxCopy)

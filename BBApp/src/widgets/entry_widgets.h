@@ -8,13 +8,13 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QDialog>
+#include <QLineEdit>
+#include <QRadioButton>
 
 #include "../lib/macros.h"
 #include "../lib/frequency.h"
 #include "../lib/amplitude.h"
 #include "../lib/time_type.h"
-
-#include <QLineEdit>
 
 class FixedSpacer : public QWidget {
 public:
@@ -404,7 +404,8 @@ protected:
 
 private:
     Label *label;
-    QCheckBox *check_box;
+    //QCheckBox *check_box;
+    QRadioButton *check_box;
 
 private slots:
 

@@ -299,6 +299,8 @@ void getPeakCorrelation(const complex_f *src,
                         double &centerOut,
                         double &peakPower);
 
+double getSignalFrequency(const std::vector<complex_f> &src, double sampleRate);
+
 namespace bb_lib {
 
 // Returns true if a new value was retrieved

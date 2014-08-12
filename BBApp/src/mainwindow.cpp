@@ -752,11 +752,8 @@ void MainWindow::startMeasuringReceiever()
     int temp_mode = session->sweep_settings->Mode();
 
     centralStack->CurrentWidget()->changeMode(MODE_IDLE);
-    // Start the Audio Dialog with the active center frequency
-    session->audio_settings->setCenterFrequency(
-                centralStack->CurrentWidget()->GetCurrentCenterFreq());
-
-    MeasuringReceiver *dlg = new MeasuringReceiver(session->device, 900.0e6, this);
+    double center = centralStack->CurrentWidget()->GetCurrentCenterFreq();
+    MeasuringReceiver *dlg = new MeasuringReceiver(session->device, center, this);
     dlg->exec();
     delete dlg;
 
