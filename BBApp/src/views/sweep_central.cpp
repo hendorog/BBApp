@@ -24,9 +24,8 @@ SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
 
     toolBar = new QToolBar();
     toolBar->setObjectName("SweepToolBar");
-    //toolBar->setMovable(false);
-    //toolBar->setFloatable(false);
-    //toolBar->setAllowedAreas(Qt::TopToolBarArea | Qt::BottomToolBarArea);
+    toolBar->setMovable(false);
+    toolBar->setFloatable(false);
     toolBar->layout()->setContentsMargins(0, 0, 0, 0);
     toolBar->layout()->setSpacing(0);
     toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));

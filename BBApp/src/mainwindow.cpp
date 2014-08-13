@@ -93,6 +93,13 @@ MainWindow::~MainWindow()
 
 void MainWindow::closeEvent(QCloseEvent *e)
 {
+    // Hide all toolbars before saving
+    // For now, prevents all toolbars from being shown on startup
+    QList<QToolBar*> toolBars = findChildren<QToolBar*>();
+    for(QToolBar *tb : toolBars) {
+        tb->hide();
+    }
+
     SaveState();
     QMainWindow::closeEvent(e);
 }
@@ -241,10 +248,8 @@ void MainWindow::InitMenuBar()
     setMenuBar(main_menu);
 }
 
-/*
- * Save the application state
- * Called in MainWindow::closeEvent()
- */
+// Save the application state
+// Called in MainWindow::closeEvent()
 void MainWindow::SaveState()
 {
     if(!saveLayoutOnClose) {

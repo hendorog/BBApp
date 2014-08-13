@@ -167,31 +167,6 @@ signals:
     void shift(bool inc); // true for up, false for down
 };
 
-/*
- * Combo entry widget
- */
-class ComboEntry : public QWidget {
-    Q_OBJECT
-
-public:
-    ComboEntry(const QString &label_text, QWidget *parent = 0);
-    ~ComboEntry();
-
-private:
-    Label *label;
-    ComboBox *combo_box;
-
-signals:
-    void comboIndexChanged(int);
-
-public slots:
-    void setComboIndex(int ix);
-    void setComboText(const QStringList &list);
-
-private:
-    DISALLOW_COPY_AND_ASSIGN(ComboEntry)
-};
-
 // Entry widget for non-shift amplitude entry
 // [ label - value_entry - units_combo ]
 class AmpEntry : public QWidget {
@@ -262,19 +237,21 @@ private:
     DISALLOW_COPY_AND_ASSIGN(AmplitudeEntry)
 };
 
-/* Panel Widget for time entry
- * [ label - value_entry - unit_str ]
- */
+// Panel Widget for time entry
+// [ label - value_entry - unit_str ]
 class TimeEntry : public QWidget {
     Q_OBJECT
 
 public:
     TimeEntry(const QString &label_text, Time t,
               TimeUnit tu, QWidget *parent = 0);
-    ~TimeEntry();
+    ~TimeEntry() {}
 
     Time GetTime() const { return time; }
     void SetTime(Time t);
+
+protected:
+    void resizeEvent(QResizeEvent *);
 
 private:
     Time time;
@@ -294,18 +271,16 @@ private:
     DISALLOW_COPY_AND_ASSIGN(TimeEntry)
 };
 
-/*
- * Generic numeric entry widget
- * Optional units label
- * [ title_label - numeric_entry - (optional)unit_str ]
- */
+// Generic numeric entry widget
+// Optional units label
+// [ title_label - numeric_entry - (optional)unit_str ]
 class NumericEntry : public QWidget {
     Q_OBJECT
 
 public:
     NumericEntry(const QString &label_text, double starting_value,
                  const QString &units_text, QWidget *parent = 0);
-    ~NumericEntry();
+    ~NumericEntry() {}
 
     double GetValue() const { return value; }
     void SetValue(double v) { value = v; entry->SetValue(v); }
@@ -329,10 +304,34 @@ private:
     DISALLOW_COPY_AND_ASSIGN(NumericEntry)
 };
 
-/*
- * Color button widget, standalone button, not
- *  part of a larger entry line widget
- */
+// Combo entry widget
+class ComboEntry : public QWidget {
+    Q_OBJECT
+
+public:
+    ComboEntry(const QString &label_text, QWidget *parent = 0);
+    ~ComboEntry() {}
+
+protected:
+    void resizeEvent(QResizeEvent *);
+
+private:
+    Label *label;
+    ComboBox *combo_box;
+
+signals:
+    void comboIndexChanged(int);
+
+public slots:
+    void setComboIndex(int ix);
+    void setComboText(const QStringList &list);
+
+private:
+    DISALLOW_COPY_AND_ASSIGN(ComboEntry)
+};
+
+// Color button widget, standalone button, not
+//  part of a larger entry line widget
 class ColorButton : public QPushButton {
     Q_OBJECT
 
@@ -356,15 +355,13 @@ private:
     DISALLOW_COPY_AND_ASSIGN(ColorButton)
 };
 
-/*
- * Line Entry Widget for Color Button
- */
+// Line Entry Widget for Color Button
 class ColorEntry : public QWidget {
     Q_OBJECT
 
 public:
     ColorEntry(const QString &label_text, QWidget *parent = 0);
-    ~ColorEntry();
+    ~ColorEntry() {}
 
     void SetColor(QColor c) { color_button->SetColor(c); }
     QColor GetColor() const { return color_button->GetColor(); }
@@ -383,17 +380,15 @@ private:
     DISALLOW_COPY_AND_ASSIGN(ColorEntry)
 };
 
-/*
- * Check box for DockPages
- * Use Label and empty text check box for simple layout
- * Clicking the whole area should change the value
- */
+// Check box for DockPages
+// Use Label and empty text check box for simple layout
+// Clicking the whole area should change the value
 class CheckBoxEntry : public QWidget {
     Q_OBJECT
 
 public:
     CheckBoxEntry(const QString &label_text, QWidget *parent = 0);
-    ~CheckBoxEntry();
+    ~CheckBoxEntry() {}
 
     bool IsChecked() const { return check_box->isChecked(); }
     void SetChecked(bool checked) { check_box->setChecked(checked); }
@@ -404,10 +399,7 @@ protected:
 
 private:
     Label *label;
-    //QCheckBox *check_box;
     QRadioButton *check_box;
-
-private slots:
 
 signals:
     void clicked(bool);
@@ -416,16 +408,14 @@ private:
     DISALLOW_COPY_AND_ASSIGN(CheckBoxEntry)
 };
 
-/*
- * Line Entry for side by side check boxes
- */
+// Line Entry for side by side check boxes
 class DualCheckBox : public QWidget {
     Q_OBJECT
 
 public:
     DualCheckBox(const QString &left_text, const QString &right_text,
                  QWidget *parent = 0);
-    ~DualCheckBox();
+    ~DualCheckBox() {}
 
     bool IsLeftChecked() const { return left->IsChecked(); }
     bool IsRightChecked() const { return right->IsChecked(); }
@@ -433,9 +423,10 @@ public:
     void SetLeftChecked(bool checked) { left->SetChecked(checked); }
     void SetRightChecked(bool checked) { right->SetChecked(checked); }
 
+protected:
+    void resizeEvent(QResizeEvent *);
+
 private:
-    //Label *left_label, *right_label;
-    //QCheckBox *left, *right;
     CheckBoxEntry *left, *right;
 
 signals:
@@ -446,9 +437,22 @@ private:
     DISALLOW_COPY_AND_ASSIGN(DualCheckBox)
 };
 
-/*
- * Dual-Button Line Entry
- */
+// Single Button
+class PushButton : public QPushButton {
+    Q_OBJECT
+
+public:
+    PushButton(const QString &title, QWidget *parent = 0) :
+        QPushButton(title, parent)
+    {
+        setObjectName("BBPushButton");
+    }
+
+private:
+    DISALLOW_COPY_AND_ASSIGN(PushButton)
+};
+
+// Dual-Button Line Entry
 class DualButtonEntry : public QWidget {
     Q_OBJECT
 
@@ -456,10 +460,13 @@ public:
     DualButtonEntry(const QString &left_button_title,
                     const QString &right_button_title,
                     QWidget *parent = 0);
-    ~DualButtonEntry();
+    ~DualButtonEntry() {}
+
+protected:
+    void resizeEvent(QResizeEvent *);
 
 private:
-    QPushButton *left_button, *right_button;
+    PushButton *left_button, *right_button;
 
 signals:
     void leftPressed();
@@ -469,32 +476,20 @@ private:
     DISALLOW_COPY_AND_ASSIGN(DualButtonEntry)
 };
 
-class PushButton : public QPushButton {
-    Q_OBJECT
-
-public:
-    PushButton(const QString &title,
-               QWidget *parent = 0)
-        : QPushButton(title, parent)
-    {
-        setObjectName("BBPushButton");
-    }
-};
-
-/*
- * Toggle button, on/off button
- */
+// Toggle button, on/off button
 class ToggleButton : public QPushButton {
     Q_OBJECT
 
 public:
-    ToggleButton(const QString &title,
-                 QWidget *parent = 0)
-        : QPushButton(title, parent)
+    ToggleButton(const QString &title, QWidget *parent = 0) :
+        QPushButton(title, parent)
     {
         setObjectName("BBPushButton");
         setCheckable(true);
     }
+
+private:
+    DISALLOW_COPY_AND_ASSIGN(ToggleButton)
 };
 
 #endif // ENTRYWIDGETS_H

@@ -25,6 +25,9 @@ public:
     void RestoreState(const QSettings &);
 
 protected:
+    void resizeEvent(QResizeEvent*) {
+        tabsChanged();
+    }
 
 private:
     QScrollArea *scrollArea;

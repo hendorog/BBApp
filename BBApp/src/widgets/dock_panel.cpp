@@ -7,8 +7,10 @@ DockPanel::DockPanel(const QString &title,
     // Minimal features, no floating
     setFeatures(QDockWidget::DockWidgetMovable);
 
-    setMaximumWidth(DOCK_WIDTH + 20);
-    //setMinimumWidth(50);
+    //setMaximumWidth(DOCK_WIDTH + 20);
+
+    setMaximumWidth(400);
+    setMinimumWidth(226);
     //setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Maximum);
 
     QString objectName = title + "Panel";
@@ -67,16 +69,20 @@ void DockPanel::tabsChanged()
     int height = 10;
     int pageHeight = 0;
 
+    int viewportWidth = scrollArea->viewport()->width();
+
     for(int i = 0; i < tabs.size(); i++) {
         if(tabs[i]->TabIsOpen()) {
             pageHeight = tabs[i]->GetTotalHeight();
         } else {
             pageHeight = tabs[i]->TabHeight();
         }
-        tabs[i]->resize(DOCK_WIDTH, pageHeight);
+        tabs[i]->resize(viewportWidth, pageHeight);
+        //tabs[i]->resize(DOCK_WIDTH, pageHeight);
         tabs[i]->move(0, height);
         height += pageHeight + 1;
     }
 
-    scrollWidget->resize(DOCK_WIDTH, height);
+    //scrollWidget->resize(DOCK_WIDTH, height);
+    scrollWidget->resize(viewportWidth, height);
 }

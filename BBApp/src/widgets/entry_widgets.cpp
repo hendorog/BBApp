@@ -6,6 +6,9 @@
 #include <QColorDialog>
 #include <QFileDialog>
 
+static const int MIN_ENTRY_SIZE = 120;
+static const int MAX_ENTRY_SIZE = 200;
+
 LineEntry::LineEntry(EntryType type, QWidget *parent)
     : entry_type(type), QLineEdit(parent)
 {
@@ -303,112 +306,6 @@ void AmplitudeEntry::unitsUpdated(int)
 }
 
 /*
- * Time Entry Line Widget
- */
-TimeEntry::TimeEntry(const QString &label_text, Time t,
-                     TimeUnit tu, QWidget *parent)
-    : QWidget(parent)
-{
-    time = t;
-    units = tu;
-
-    move(0, 0);
-    resize(ENTRY_WIDTH, ENTRY_H);
-
-    label = new Label(label_text, this);
-    label->move(ENTRY_OFFSET, 0);
-    label->resize(LABEL_W, ENTRY_H);
-
-    entry = new LineEntry(VALUE_ENTRY, this);
-    entry->move(ENTRY_OFFSET + label->width(), 0);
-    entry->resize(ENTRY_WIDTH - LABEL_W - ENTRY_OFFSET - 30, ENTRY_H);
-
-    units_label = new Label(g_time_unit_map[(int)tu].unit_str, this);
-    units_label->move(ENTRY_OFFSET + label->width() + entry->width() + 3, 0);
-    units_label->resize(30, ENTRY_H);
-
-    connect(entry, SIGNAL(entryUpdated()),
-            this, SLOT(entryChanged()));
-}
-
-TimeEntry::~TimeEntry()
-{
-
-}
-
-void TimeEntry::SetTime(Time t)
-{
-    time = t;
-    entry->SetValue(time.ChangeUnit(units));
-}
-
-void TimeEntry::entryChanged()
-{
-    time = Time(entry->GetValue(), units);
-    emit timeChanged(time);
-}
-
-///
-// Generic entry widget
-//
-NumericEntry::NumericEntry(const QString &label_text,
-                           double starting_value,
-                           const QString &units_text,
-                           QWidget *parent) :
-    QWidget(parent)
-
-{
-    value = starting_value;
-
-    move(0, 0);
-    resize(ENTRY_WIDTH, ENTRY_H);
-
-    label = new Label(label_text, this);
-    label->move(ENTRY_OFFSET, 0);
-    label->resize(LABEL_W, ENTRY_H);
-
-    entry = new LineEntry(VALUE_ENTRY, this);
-    entry->move(ENTRY_OFFSET + label->width(), 0);
-    entry->resize(ENTRY_WIDTH - LABEL_W - ENTRY_OFFSET - 30, ENTRY_H);
-
-    units_label = new Label(units_text, this);
-    if(units_text.length() == 0) {
-        units_label->resize(0, ENTRY_H);
-    } else {
-        units_label->resize(30, ENTRY_H);
-    }
-    units_label->move(ENTRY_OFFSET + label->width() + entry->width() + 3, 0);
-    units_label->setAlignment(Qt::AlignCenter);
-
-    entry->SetValue(value);
-
-    connect(entry, SIGNAL(entryUpdated()),
-            this, SLOT(entryChanged()));
-}
-
-NumericEntry::~NumericEntry()
-{
-
-}
-
-void NumericEntry::resizeEvent(QResizeEvent *)
-{
-    // Units label does not resize just moves
-
-    units_label->move(width() - 30, 0);
-
-
-    entry->move(width() - units_label->width() - 180, 0);
-    label->resize(entry->x(), ENTRY_H);
-}
-
-void NumericEntry::entryChanged()
-{
-    value = entry->GetValue();
-    emit valueChanged(value);
-}
-
-/*
  * Frequency Shift Entry Widget
  */
 FreqShiftEntry::FreqShiftEntry(const QString &label_text,
@@ -473,9 +370,104 @@ void FreqShiftEntry::editUpdated()
     emit freqViewChanged(freq);
 }
 
-/*
- * Combo entry
- */
+// Time Entry Line Widget
+TimeEntry::TimeEntry(const QString &label_text, Time t, TimeUnit tu, QWidget *parent) :
+    QWidget(parent)
+{
+    time = t;
+    units = tu;
+
+    move(0, 0);
+    resize(ENTRY_WIDTH, ENTRY_H);
+
+    label = new Label(label_text, this);
+    entry = new LineEntry(VALUE_ENTRY, this);
+
+    units_label = new Label(g_time_unit_map[(int)tu].unit_str, this);
+    units_label->resize(30, ENTRY_H);
+    units_label->setAlignment(Qt::AlignCenter);
+
+    connect(entry, SIGNAL(entryUpdated()), this, SLOT(entryChanged()));
+}
+
+void TimeEntry::SetTime(Time t)
+{
+    time = t;
+    entry->SetValue(time.ChangeUnit(units));
+}
+
+void TimeEntry::resizeEvent(QResizeEvent *)
+{
+    int entryWidth = (width() < 200) ? 120 : qMin(width() - 80, 210);
+    int lblWidth = qMax(200, width()) - entryWidth;
+
+    // Units label does not resize just moves
+    units_label->move(width() - units_label->width(), 0);
+
+    label->move(ENTRY_OFFSET, 0);
+    label->resize(lblWidth - ENTRY_OFFSET, ENTRY_H);
+
+    entry->move(lblWidth, 0);
+    entry->resize(entryWidth - units_label->width(), ENTRY_H);
+}
+
+void TimeEntry::entryChanged()
+{
+    time = Time(entry->GetValue(), units);
+    emit timeChanged(time);
+}
+
+// Numeric entry widget
+NumericEntry::NumericEntry(const QString &label_text,
+                           double starting_value,
+                           const QString &units_text,
+                           QWidget *parent) :
+    QWidget(parent)
+{
+    value = starting_value;
+
+    move(0, 0);
+    resize(ENTRY_WIDTH, ENTRY_H);
+
+    label = new Label(label_text, this);
+    entry = new LineEntry(VALUE_ENTRY, this);
+
+    units_label = new Label(units_text, this);
+    if(units_text.length() == 0) {
+        units_label->resize(0, ENTRY_H);
+    } else {
+        units_label->resize(30, ENTRY_H);
+    }
+    units_label->setAlignment(Qt::AlignCenter);
+
+    entry->SetValue(value);
+
+    connect(entry, SIGNAL(entryUpdated()), this, SLOT(entryChanged()));
+}
+
+void NumericEntry::resizeEvent(QResizeEvent *)
+{
+    int entryWidth = (width() < 200) ? 120 : qMin(width() - 80, 210);
+    int lblWidth = qMax(200, width()) - entryWidth;
+
+    // Units label does not resize just moves
+    units_label->move(width() - units_label->width(), 0);
+
+    label->move(ENTRY_OFFSET, 0);
+    label->resize(lblWidth - ENTRY_OFFSET, ENTRY_H);
+
+    entry->move(lblWidth, 0);
+    entry->resize(entryWidth - units_label->width(), ENTRY_H);
+}
+
+void NumericEntry::entryChanged()
+{
+    value = entry->GetValue();
+    emit valueChanged(value);
+}
+
+
+// Combo entry
 ComboEntry::ComboEntry(const QString &label_text, QWidget *parent)
     : QWidget(parent)
 {
@@ -483,21 +475,9 @@ ComboEntry::ComboEntry(const QString &label_text, QWidget *parent)
     resize(ENTRY_WIDTH, ENTRY_H);
 
     label = new Label(label_text, this);
-    label->move(ENTRY_OFFSET, 0);
-    label->resize(LABEL_W, ENTRY_H);
-
     combo_box = new ComboBox(this);
-    combo_box->move(ENTRY_OFFSET + LABEL_W, 0);
-    combo_box->resize(ENTRY_WIDTH - LABEL_W - ENTRY_OFFSET, ENTRY_H);
 
-    connect(combo_box, SIGNAL(activated(int)),
-            this, SIGNAL(comboIndexChanged(int)));
-}
-
-ComboEntry::~ComboEntry()
-{
-    delete label;
-    delete combo_box;
+    connect(combo_box, SIGNAL(activated(int)), this, SIGNAL(comboIndexChanged(int)));
 }
 
 void ComboEntry::setComboIndex(int ix)
@@ -511,17 +491,25 @@ void ComboEntry::setComboText(const QStringList &list)
     combo_box->insertItems(0, list);
 }
 
-/*
- * Standalone color button
- */
+void ComboEntry::resizeEvent(QResizeEvent *)
+{
+    int comboWidth = (width() < 200) ? 120 : qMin(width() - 80, 210);
+    int lblWidth = qMax(200, width()) - comboWidth;
+
+    label->move(ENTRY_OFFSET, 0);
+    label->resize(lblWidth - ENTRY_OFFSET, ENTRY_H);
+    combo_box->move(lblWidth, 0);
+    combo_box->resize(comboWidth, ENTRY_H);
+}
+
+// Standalone color button
 ColorButton::ColorButton(QWidget *parent)
     : QPushButton(parent)
 {
     setObjectName("SH_ColorButton");
     color = QColor(0, 0, 0);
 
-    connect(this, SIGNAL(clicked(bool)),
-            this, SLOT(onClick(bool)));
+    connect(this, SIGNAL(clicked(bool)), this, SLOT(onClick(bool)));
 }
 
 void ColorButton::SetColor(QColor c)
@@ -546,9 +534,7 @@ void ColorButton::onClick(bool)
     emit colorChanged(color);
 }
 
-/*
- * Line Entry widget for Color Button
- */
+// Line Entry widget for Color Button
 ColorEntry::ColorEntry(const QString &label_text, QWidget *parent)
     : QWidget(parent)
 {
@@ -556,37 +542,24 @@ ColorEntry::ColorEntry(const QString &label_text, QWidget *parent)
     resize(ENTRY_WIDTH, ENTRY_H);
 
     label = new Label(label_text, this);
-    label->move(ENTRY_OFFSET, 0);
-    label->resize(LABEL_W, ENTRY_H);
-
     color_button = new ColorButton(this);
-    color_button->move(ENTRY_OFFSET + LABEL_W, 0);
-    color_button->resize(ENTRY_WIDTH - LABEL_W - ENTRY_OFFSET, ENTRY_H);
 
     connect(color_button, SIGNAL(colorChanged(QColor&)),
             this, SIGNAL(colorChanged(QColor&)));
 }
 
-ColorEntry::~ColorEntry()
-{
-    delete label;
-    delete color_button;
-}
-
 void ColorEntry::resizeEvent(QResizeEvent *)
 {
-    // Entry widget moves to end of length
-    // Label resizes to fill space up to widget
-    int minY = LABEL_W + ENTRY_OFFSET;
+    int btnWidth = (width() < 200) ? 120 : qMin(width() - 80, 210);
+    int lblWidth = qMax(200, width()) - btnWidth;
 
-    color_button->move(qMax<int>(minY, width() - 210), 0);
-    label->resize(width() - (color_button->width() + ENTRY_OFFSET), ENTRY_H);
+    label->move(ENTRY_OFFSET, 0);
+    label->resize(lblWidth - ENTRY_OFFSET, ENTRY_H);
+    color_button->move(lblWidth, 0);
+    color_button->resize(btnWidth, ENTRY_H);
 }
 
-/*
- * Line Entry for check box
- */
-#include <QRadioButton>
+// Line Entry for check box
 CheckBoxEntry::CheckBoxEntry(const QString &label_text, QWidget *parent)
     : QWidget(parent)
 {
@@ -597,31 +570,20 @@ CheckBoxEntry::CheckBoxEntry(const QString &label_text, QWidget *parent)
     label->move(ENTRY_OFFSET, 0);
     label->resize(100, ENTRY_H);
 
-    //check_box = new QCheckBox(this);
-//    check_box->setObjectName("SH_CheckBox");
     check_box = new QRadioButton(this);
     check_box->setObjectName("SHPrefRadioButton");
     check_box->setLayoutDirection(Qt::RightToLeft);
-    check_box->move(ENTRY_OFFSET + LABEL_W, 0);
-    check_box->resize(ENTRY_WIDTH - LABEL_W - ENTRY_OFFSET, ENTRY_H);
+    check_box->move(0, 0);
 
-    connect(check_box, SIGNAL(clicked(bool)),
-            this, SIGNAL(clicked(bool)));
-}
-
-CheckBoxEntry::~CheckBoxEntry()
-{
-    delete check_box;
+    connect(check_box, SIGNAL(clicked(bool)), this, SIGNAL(clicked(bool)));
 }
 
 void CheckBoxEntry::resizeEvent(QResizeEvent *)
 {
-    check_box->resize(width() - LABEL_W - ENTRY_OFFSET, ENTRY_H);
+    check_box->resize(width(), ENTRY_H);
 }
 
-/*
- * Dual side-by-side check boxes
- */
+// Dual side-by-side check boxes
 DualCheckBox::DualCheckBox(const QString &left_text,
                            const QString &right_text,
                            QWidget *parent) :
@@ -632,63 +594,42 @@ DualCheckBox::DualCheckBox(const QString &left_text,
     move(0, 0);
     resize(ENTRY_WIDTH, ENTRY_H);
 
-    left->move(0, 0);
-    left->resize(ENTRY_WIDTH / 2, ENTRY_H);
-    right->move(ENTRY_WIDTH / 2, 0);
-    right->resize(ENTRY_WIDTH / 2, ENTRY_H);
-
-//    left = new QCheckBox(left_text, this);
-//    left->setObjectName("SH_CheckBox");
-//    left->move(ENTRY_OFFSET, 0);
-//    left->resize((ENTRY_WIDTH - ENTRY_OFFSET)/2, ENTRY_H);
-
-//    right = new QCheckBox(right_text, this);
-//    right->setObjectName("SH_CheckBox");
-//    right->move(ENTRY_OFFSET + (ENTRY_WIDTH - ENTRY_OFFSET)/2, 0);
-//    right->resize((ENTRY_WIDTH - ENTRY_OFFSET)/2, ENTRY_H);
-
-    connect(left, SIGNAL(clicked(bool)),
-            this, SIGNAL(leftClicked(bool)));
-    connect(right, SIGNAL(clicked(bool)),
-            this, SIGNAL(rightClicked(bool)));
+    connect(left, SIGNAL(clicked(bool)), this, SIGNAL(leftClicked(bool)));
+    connect(right, SIGNAL(clicked(bool)), this, SIGNAL(rightClicked(bool)));
 }
 
-DualCheckBox::~DualCheckBox()
+void DualCheckBox::resizeEvent(QResizeEvent *)
 {
-    delete left;
-    delete right;
+    int boxWidth = width() / 2;
+
+    left->move(0, 0);
+    left->resize(boxWidth, ENTRY_H);
+    right->move(boxWidth, 0);
+    right->resize(boxWidth, ENTRY_H);
 }
 
-/*
- * Dual Button Line Entry
- */
+// Dual Button Line Entry
 DualButtonEntry::DualButtonEntry(const QString &left_button_title,
                                  const QString &right_button_title,
-                                 QWidget *parent)
-    : QWidget(parent)
+                                 QWidget *parent) :
+    QWidget(parent)
 {
     move(0, 0);
     resize(ENTRY_WIDTH, ENTRY_H);
 
-    left_button = new QPushButton(left_button_title, this);
-    left_button->setObjectName("BBPushButton");
-    left_button->move(ENTRY_OFFSET, 0);
-    left_button->resize((ENTRY_WIDTH - ENTRY_OFFSET)/2, ENTRY_H);
+    left_button = new PushButton(left_button_title, this);
+    right_button = new PushButton(right_button_title, this);
 
-    right_button = new QPushButton(right_button_title, this);
-    right_button->setObjectName("BBPushButton");
-    right_button->move(ENTRY_OFFSET + (ENTRY_WIDTH - ENTRY_OFFSET)/2, 0);
-    right_button->resize((ENTRY_WIDTH - ENTRY_OFFSET)/2, ENTRY_H);
-
-    connect(left_button, SIGNAL(clicked()),
-            this, SIGNAL(leftPressed()));
-    connect(right_button, SIGNAL(clicked()),
-            this, SIGNAL(rightPressed()));
+    connect(left_button, SIGNAL(clicked()), this, SIGNAL(leftPressed()));
+    connect(right_button, SIGNAL(clicked()), this, SIGNAL(rightPressed()));
 }
 
-DualButtonEntry::~DualButtonEntry()
+void DualButtonEntry::resizeEvent(QResizeEvent *)
 {
-    delete left_button;
-    delete right_button;
-}
+    int btnWidth = (width() - ENTRY_OFFSET)/2;
 
+    left_button->move(ENTRY_OFFSET, 0);
+    left_button->resize(btnWidth, ENTRY_H);
+    right_button->move(ENTRY_OFFSET + btnWidth, 0);
+    right_button->resize(btnWidth, ENTRY_H);
+}

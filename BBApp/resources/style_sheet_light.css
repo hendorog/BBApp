@@ -267,13 +267,15 @@ QRadioButton#SHPrefRadioButton {
 QRadioButton#SHPrefRadioButton::indicator {
   width: 12px;
   height: 12px;
-  border: 1px inset rgb(37,37,37);
-  background-color: rgb(204,206,219);
+  border: 1px solid rgb(219,221,230);
+  border-radius: 1px;
+  background-color: white;
   margin-right: 5px;
 }
 
 QRadioButton#SHPrefRadioButton::indicator:hover {
-  background-color: rgb(194,196,209);
+  border: 1px solid rgb(184,186,199);
+  border-radius: 1px;
 }
 
 QRadioButton#SHPrefRadioButton::indicator:checked {
