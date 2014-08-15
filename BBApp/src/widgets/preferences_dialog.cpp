@@ -269,16 +269,15 @@ PreferenceDialog::PreferenceDialog(Session *session,
     QDialog(parent),
     session_ptr(session)
 {
-    resize(DOCK_WIDTH * 2 + 100, 400);
     setObjectName("SH_Panel");
 
     setWindowTitle(tr("Preferences"));
-    setFixedSize(PREF_RADIO_WIDTH + PREF_PAGE_WIDTH, PREF_DLG_HEIGHT);
+    setFixedSize(PREF_RADIO_WIDTH + MAX_DOCK_WIDTH + 125, PREF_DLG_HEIGHT);
 
     groupBox = new QGroupBox(tr("Category"), this);
     groupBox->setObjectName("SH_PrefGroupBox");
     groupBox->move(0, 0);
-    groupBox->resize(DOCK_WIDTH, 360);
+    groupBox->resize(MAX_DOCK_WIDTH, 360);
 
     radioGroup = new QButtonGroup(this);
 
@@ -306,8 +305,8 @@ PreferenceDialog::PreferenceDialog(Session *session,
     // Resize and populate panels
     for(PreferencePanel *panel : panels) {
         panel->hide();
-        panel->move(DOCK_WIDTH, 5);
-        panel->resize(DOCK_WIDTH + 95, 350);
+        panel->move(MAX_DOCK_WIDTH, 5);
+        panel->resize(MAX_DOCK_WIDTH + 95, 350);
         panel->Populate(session_ptr);
     }
 

@@ -83,6 +83,20 @@ void DemodIQTimePlot::paintEvent(QPaintEvent *)
     glEnable(GL_DEPTH_TEST);
     glEnableClientState(GL_VERTEX_ARRAY);
 
+    if(grat_sz.x() >= 600) {
+        textFont = GLFont(14);
+    } else if(grat_sz.x() <= 350) {
+        textFont = GLFont(8);
+    } else {
+        int mod = (600 - grat_sz.x()) / 50;
+        textFont = GLFont(13 - mod);
+    }
+
+    int textHeight = textFont.GetTextHeight() + 2;
+    grat_ll.setY(textHeight * 2);
+    grat_ul.setY(height() - (textHeight*2));
+    grat_sz.setY(height() - (textHeight*4));
+
     glViewport(0, 0, width(), height());
 
     // Model view for graticule
@@ -217,6 +231,9 @@ void DemodIQTimePlot::DrawTrace(const GLVector &v)
 
 void DemodIQTimePlot::DrawPlotText()
 {
+    int ascent = textFont.FontMetrics().ascent();
+    int textHeight = textFont.GetTextHeight();
+
     glPushAttrib(GL_VIEWPORT_BIT);
     glViewport(0, 0, width(), height());
 
@@ -233,27 +250,31 @@ void DemodIQTimePlot::DrawPlotText()
 
     glColor3f(1.0, 0.0, 0.0);
     glBegin(GL_QUADS);
-    glVertex2i(grat_ul.x() + 5, grat_ul.y() + 10); glVertex2i(grat_ul.x() + 20, grat_ul.y() + 10);
-    glVertex2i(grat_ul.x() + 20, grat_ul.y() + 25); glVertex2i(grat_ul.x() + 5, grat_ul.y() + 25);
-    glVertex2i(grat_ul.x() + 5, grat_ul.y() + 10);
+    glVertex2i(grat_ul.x() + 5, grat_ul.y() + 2);
+    glVertex2i(grat_ul.x() + 5 + ascent, grat_ul.y() + 2);
+    glVertex2i(grat_ul.x() + 5 + ascent, grat_ul.y() + 2 + ascent);
+    glVertex2i(grat_ul.x() + 5, grat_ul.y() + 2 + ascent);
+    glVertex2i(grat_ul.x() + 5, grat_ul.y() + 2);
     glEnd();
 
     glColor3f(0.0, 1.0, 0.0);
     glBegin(GL_QUADS);
-    glVertex2i(grat_ul.x() + 45, grat_ul.y() + 10); glVertex2i(grat_ul.x() + 60, grat_ul.y() + 10);
-    glVertex2i(grat_ul.x() + 60, grat_ul.y() + 25); glVertex2i(grat_ul.x() + 45, grat_ul.y() + 25);
-    glVertex2i(grat_ul.x() + 45, grat_ul.y() + 10);
+    glVertex2i(grat_ul.x() + 45, grat_ul.y() + 2);
+    glVertex2i(grat_ul.x() + 45 + ascent, grat_ul.y() + 2);
+    glVertex2i(grat_ul.x() + 45 + ascent, grat_ul.y() + 2 + ascent);
+    glVertex2i(grat_ul.x() + 45, grat_ul.y() + 2 + ascent);
+    glVertex2i(grat_ul.x() + 45, grat_ul.y() + 2);
     glEnd();
 
     glQColor(GetSession()->colors.text);
 
-    DrawString("I", textFont, QPoint(grat_ul.x() + 25, grat_ul.y() + 10), LEFT_ALIGNED);
-    DrawString("Q", textFont, QPoint(grat_ul.x() + 65, grat_ul.y() + 10), LEFT_ALIGNED);
+    DrawString("I", textFont, QPoint(grat_ul.x() + 25, grat_ul.y() + 2), LEFT_ALIGNED);
+    DrawString("Q", textFont, QPoint(grat_ul.x() + 65, grat_ul.y() + 2), LEFT_ALIGNED);
 
     str = "IF Bandwidth " + ds->Bandwidth().GetFreqString();
-    DrawString(str, textFont, QPoint(grat_ll.x() + 5, grat_ll.y() - 22), LEFT_ALIGNED);
+    DrawString(str, textFont, QPoint(grat_ll.x() + 5, grat_ll.y() - textHeight), LEFT_ALIGNED);
     str = "Capture Len " + ds->SweepTime().GetString();
-    DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - 22), RIGHT_ALIGNED);
+    DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - textHeight), RIGHT_ALIGNED);
     str = "Sample Rate " + QVariant(40.0 / (1 << ds->DecimationFactor())).toString() + " MS/s";
     DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ul.y() + 2), RIGHT_ALIGNED);
 

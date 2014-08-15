@@ -1,20 +1,16 @@
 #include "dock_panel.h"
 
 DockPanel::DockPanel(const QString &title,
-                     QWidget *parent)
-    : QDockWidget(title, parent, Qt::Widget)
+                     QWidget *parent) :
+    QDockWidget(title, parent, Qt::Widget)
 {
     // Minimal features, no floating
     setFeatures(QDockWidget::DockWidgetMovable);
 
-    //setMaximumWidth(DOCK_WIDTH + 20);
-
-    setMaximumWidth(400);
-    setMinimumWidth(226);
-    //setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Maximum);
+    setMaximumWidth(MAX_DOCK_WIDTH);
+    setMinimumWidth(MIN_DOCK_WIDTH);
 
     QString objectName = title + "Panel";
-    //setObjectName(objectName);
 
     scrollArea = new QScrollArea();
     scrollArea->move(0, 0);
@@ -25,7 +21,6 @@ DockPanel::DockPanel(const QString &title,
     scrollWidget->setObjectName("SH_Panel");
     scrollArea->setWidget(scrollWidget);
 
-    //scrollArea->setWidgetResizable(true);
     scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     setAllowedAreas(Qt::RightDockWidgetArea |
@@ -78,11 +73,9 @@ void DockPanel::tabsChanged()
             pageHeight = tabs[i]->TabHeight();
         }
         tabs[i]->resize(viewportWidth, pageHeight);
-        //tabs[i]->resize(DOCK_WIDTH, pageHeight);
         tabs[i]->move(0, height);
         height += pageHeight + 1;
     }
 
-    //scrollWidget->resize(DOCK_WIDTH, height);
     scrollWidget->resize(viewportWidth, height);
 }

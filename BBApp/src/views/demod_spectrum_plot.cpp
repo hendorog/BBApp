@@ -85,6 +85,20 @@ void DemodSpectrumPlot::paintEvent(QPaintEvent *)
     glEnable(GL_DEPTH_TEST);
     glEnableClientState(GL_VERTEX_ARRAY);
 
+    if(grat_sz.x() >= 600) {
+        textFont = GLFont(14);
+    } else if(grat_sz.x() <= 350) {
+        textFont = GLFont(8);
+    } else {
+        int mod = (600 - grat_sz.x()) / 50;
+        textFont = GLFont(13 - mod);
+    }
+
+    int textHeight = textFont.GetTextHeight() + 2;
+    grat_ll.setY(textHeight * 2);
+    grat_ul.setY(height() - (textHeight*2));
+    grat_sz.setY(height() - (textHeight*4));
+
     glViewport(0, 0, width(), height());
 
     // Model view for graticule
@@ -243,6 +257,8 @@ void DemodSpectrumPlot::DrawTrace(const GLVector &v)
 
 void DemodSpectrumPlot::DrawPlotText()
 {
+    int textHeight = textFont.GetTextHeight();
+
     glPushAttrib(GL_VIEWPORT_BIT);
     glViewport(0, 0, width(), height());
 
@@ -259,14 +275,12 @@ void DemodSpectrumPlot::DrawPlotText()
 
     glQColor(GetSession()->colors.text);
 
-    str = "Center Freq " + ds->CenterFreq().GetFreqString();
-    DrawString(str, textFont, QPoint(grat_ll.x() + 5, grat_ll.y() - 22), LEFT_ALIGNED);
+    str = "Center " + ds->CenterFreq().GetFreqString();
+    DrawString(str, textFont, QPoint(grat_ll.x() + 5, grat_ll.y() - textHeight), LEFT_ALIGNED);
     str = "Span " + Frequency(ds->SampleRate()).GetFreqString(3, true);
-    DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - 22), RIGHT_ALIGNED);
+    DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - textHeight), RIGHT_ALIGNED);
     str = "FFT Size " + QVariant(fft->Length()).toString() + " pts";
     DrawString(str, textFont, grat_ul.x() + grat_sz.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
-    DrawString("Ref " + ds->InputPower().GetString(), textFont,
-               QPoint(grat_ul.x() + 5, grat_ul.y() + 22), LEFT_ALIGNED);
     DrawString("Div 10 dB", textFont, QPoint(grat_ul.x() + 5, grat_ul.y() + 2), LEFT_ALIGNED);
 
     double botVal, step;
@@ -279,7 +293,7 @@ void DemodSpectrumPlot::DrawPlotText()
         step = ds->InputPower() / 10.0;
     }
 
-    for(int i = 0; i <= 8; i += 2) {
+    for(int i = 0; i <= 10; i += 2) {
         int x_pos = grat_ul.x() - 2, y_pos = (grat_sz.y() / 10) * i + grat_ll.y() - 5;
         str.sprintf("%.2f", botVal + step * i);
         DrawString(str, divFont, x_pos, y_pos, RIGHT_ALIGNED);

@@ -63,7 +63,7 @@ AudioDialog::AudioDialog(const Device *device_ptr,
     bandwidth_page->AddWidget(deemphasis);
 
     frequency_page->move(0, 0);
-    bandwidth_page->move(DOCK_WIDTH, 0);
+    bandwidth_page->move(MAX_DOCK_WIDTH, 0);
 
     smallInc = new PushButton("+20 Hz", this);
     smallInc->move(100, 75);
@@ -94,7 +94,7 @@ AudioDialog::AudioDialog(const Device *device_ptr,
     largeInc->setAutoRepeatInterval(100);
     largeInc->setShortcut(QKeySequence(Qt::Key_Right));
 
-    setFixedSize(DOCK_WIDTH * 2, bandwidth_page->GetTotalHeight() + 30);
+    setFixedSize(MAX_DOCK_WIDTH * 2, bandwidth_page->GetTotalHeight() + 30);
 
     okBtn = new PushButton(tr("OK"), this);
     okBtn->resize(90, 30);

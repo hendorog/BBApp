@@ -10,9 +10,7 @@ class SweepPanel : public DockPanel {
     Q_OBJECT
 
 public:
-    SweepPanel(const QString &title,
-               QWidget *parent,
-               const SweepSettings *settings);
+    SweepPanel(const QString &title, QWidget *parent, const SweepSettings *settings);
     ~SweepPanel();
 
 private:
@@ -31,7 +29,8 @@ private:
     CheckBoxEntry *native_rbw;
     FreqShiftEntry *rbw;
     FreqShiftEntry *vbw;
-    DualCheckBox *auto_bw;
+    CheckBoxEntry *auto_rbw;
+    CheckBoxEntry *auto_vbw;
 
     ComboEntry *video_units;
     ComboEntry *detector;

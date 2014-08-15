@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
       progressDialog(this),
       saveLayoutOnClose(true)
 {
-    setWindowTitle(tr("Broadband Spectrum Analyzer"));
+    setWindowTitle(tr("Signal Hound Spectrum Analyzer"));
     move(200, 0);
     resize(1820, 1080);
 

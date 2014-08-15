@@ -10,7 +10,8 @@ static const int MIN_ENTRY_SIZE = 120;
 static const int MAX_ENTRY_SIZE = 200;
 
 LineEntry::LineEntry(EntryType type, QWidget *parent)
-    : entry_type(type), QLineEdit(parent)
+    : entry_type(type),
+      QLineEdit(parent)
 {
     setObjectName("SH_LineEntry");
     setAlignment(Qt::AlignRight);
@@ -23,18 +24,11 @@ LineEntry::LineEntry(EntryType type, QWidget *parent)
             this, SLOT(editChanged()));
 }
 
-LineEntry::~LineEntry()
-{
-
-}
-
-/*
- * Set the text and update the class variable
- *  Do nothing if the values did not change
- *   Much faster to compare variables than to update the
- *    widget.
- * Returns false if the frequency is not updated
- */
+// Set the text and update the class variable
+//  Do nothing if the values did not change
+//   Much faster to compare variables than to update the
+//    widget.
+// Returns false if the frequency is not updated
 bool LineEntry::SetFrequency(Frequency freq)
 {
     frequency = freq;
@@ -106,35 +100,22 @@ void LineEntry::editChanged()
     }
 }
 
+// Frequency entry widget
 FrequencyEntry::FrequencyEntry(const QString &label_text,
                                Frequency f,
                                QWidget *parent)
-    : QWidget(parent), freq(f)
+    : QWidget(parent),
+      freq(f)
 {
     move(0, 0);
     resize(ENTRY_WIDTH, ENTRY_H);
 
-    freq = f;
-
     label = new Label(label_text, this);
-    label->move(ENTRY_OFFSET, 0);
-    label->resize(QSize(LABEL_W, ENTRY_H));
-
     entry = new LineEntry(FREQ_ENTRY, this);
-    entry->move(QPoint(ENTRY_OFFSET + LABEL_W, 0));
-    entry->resize(QSize(ENTRY_WIDTH - LABEL_W - ENTRY_OFFSET, ENTRY_H));
+
     entry->SetFrequency(freq);
 
-//    connect(entry, SIGNAL(editingFinished()),
-//            SLOT(editUpdated()));
-    connect(entry, SIGNAL(entryUpdated()),
-            this, SLOT(editUpdated()));
-}
-
-FrequencyEntry::~FrequencyEntry()
-{
-    delete label;
-    delete entry;
+    connect(entry, SIGNAL(entryUpdated()), this, SLOT(editUpdated()));
 }
 
 void FrequencyEntry::SetFrequency(Frequency &f)
@@ -149,10 +130,13 @@ void FrequencyEntry::SetFrequency(Frequency &f)
 
 void FrequencyEntry::resizeEvent(QResizeEvent *)
 {
+    int entryWidth = (width() < 200) ? 120 : qMin(width() - 80, 210);
+    int lblWidth = qMax(200, width()) - entryWidth;
+
     label->move(ENTRY_OFFSET, 0);
-    label->resize(LABEL_W, ENTRY_H);
-    entry->move(LABEL_W + ENTRY_OFFSET, 0);
-    entry->resize(width() - LABEL_W - ENTRY_OFFSET, ENTRY_H);
+    label->resize(lblWidth - ENTRY_OFFSET, ENTRY_H);
+    entry->move(lblWidth, 0);
+    entry->resize(entryWidth, ENTRY_H);
 }
 
 void FrequencyEntry::editUpdated()
@@ -161,157 +145,11 @@ void FrequencyEntry::editUpdated()
     emit freqViewChanged(freq);
 }
 
-/*
- * Amplitude Panel Entry widget, no shifts
- */
-AmpEntry::AmpEntry(const QString &label_text,
-                   Amplitude a, QWidget *parent)
-    : QWidget(parent)
-{
-    move(0, 0);
-    resize(ENTRY_WIDTH, ENTRY_H);
-
-    amplitude = a;
-
-    label = new Label(label_text, this);
-    label->move(ENTRY_OFFSET, 0);
-    label->resize(LABEL_W, ENTRY_H);
-
-    entry = new LineEntry(VALUE_ENTRY, this);
-    entry->move(ENTRY_OFFSET + LABEL_W, 0);
-    entry->resize(ENTRY_WIDTH - LABEL_W - ENTRY_OFFSET - 60, ENTRY_H);
-
-    units = new ComboBox(this);
-    units->move(ENTRY_OFFSET + label->width() + entry->width(), 0);
-    units->resize(60, ENTRY_H);
-
-    QStringList unit_list;
-    unit_list << "dBm" << "dBmV" << "dBuV" << "mV";
-    units->insertItems(0, unit_list);
-    last_unit_index = 0;
-
-    SetAmplitude(amplitude);
-
-    connect(entry, SIGNAL(entryUpdated()), this, SLOT(editUpdated()));
-    connect(units, SIGNAL(activated(int)), this, SLOT(unitsUpdated(int)));
-}
-
-AmpEntry::~AmpEntry()
-{
-
-}
-
-void AmpEntry::SetAmplitude(Amplitude a)
-{
-    amplitude = a;
-    entry->SetValue(amplitude.Val());
-    units->setCurrentIndex(amplitude.Units());
-}
-
-void AmpEntry::editUpdated()
-{
-    emit amplitudeChanged(Amplitude(entry->GetValue(), (AmpUnits)units->currentIndex()));
-}
-
-/*
- * When the units change, update the associated value to
- *   the new unit type
- */
-void AmpEntry::unitsUpdated(int)
-{
-    if(units->currentIndex() != last_unit_index) {
-        entry->SetValue(unit_convert(entry->GetValue(), (AmpUnits)last_unit_index,
-                                     (AmpUnits)units->currentIndex()));
-        last_unit_index = units->currentIndex();
-    }
-    emit amplitudeChanged(Amplitude(entry->GetValue(), (AmpUnits)units->currentIndex()));
-}
-
-/*
- * Amplitude Panel Entry widget
- */
-AmplitudeEntry::AmplitudeEntry(const QString &label_text,
-                               Amplitude a, QWidget *parent)
-    : QWidget(parent)
-{
-    move(0, 0);
-    resize(ENTRY_WIDTH, ENTRY_H);
-
-    amplitude = a;
-
-    label = new Label(label_text, this);
-    label->move(ENTRY_OFFSET, 0);
-    label->resize(LABEL_W, ENTRY_H);
-
-    up_btn = new QPushButton(this); //QIcon(":icons/plus.png"), "", this);
-    up_btn->move(ENTRY_OFFSET + LABEL_W, 0);
-    up_btn->resize(25, ENTRY_H);
-    up_btn->setObjectName("Increment");
-
-    down_btn = new QPushButton(this); //QIcon(":icons/minus.png"), "", this);
-    down_btn->move(ENTRY_OFFSET + LABEL_W + 25, 0);
-    down_btn->resize(25, ENTRY_H);
-    down_btn->setObjectName("Decrement");
-
-    entry = new LineEntry(VALUE_ENTRY, this);
-    entry->move(ENTRY_OFFSET + LABEL_W + 50, 0);
-    entry->resize(ENTRY_WIDTH - LABEL_W - ENTRY_OFFSET - 60 - 50, ENTRY_H);
-
-    units = new ComboBox(this);
-    units->move(ENTRY_OFFSET + label->width() + entry->width() + 50, 0);
-    units->resize(60, ENTRY_H);
-
-    QStringList unit_list;
-    unit_list << "dBm" << "dBmV" << "dBuV" << "mV";
-    units->insertItems(0, unit_list);
-    last_unit_index = 0;
-
-    SetAmplitude(amplitude);
-
-    connect(up_btn, SIGNAL(clicked()), this, SLOT(clickedUp()));
-    connect(down_btn, SIGNAL(clicked()), this, SLOT(clickedDown()));
-    connect(entry, SIGNAL(entryUpdated()), this, SLOT(editUpdated()));
-    connect(units, SIGNAL(activated(int)), this, SLOT(unitsUpdated(int)));
-}
-
-AmplitudeEntry::~AmplitudeEntry()
-{
-
-}
-
-void AmplitudeEntry::SetAmplitude(Amplitude a)
-{
-    amplitude = a;
-    entry->SetValue(amplitude.Val());
-    units->setCurrentIndex(amplitude.Units());
-}
-
-void AmplitudeEntry::editUpdated()
-{
-    emit amplitudeChanged(Amplitude(entry->GetValue(), (AmpUnits)units->currentIndex()));
-}
-
-/*
- * When the units change, update the associated value to
- *   the new unit type
- */
-void AmplitudeEntry::unitsUpdated(int)
-{
-    if(units->currentIndex() != last_unit_index) {
-        entry->SetValue(unit_convert(entry->GetValue(), (AmpUnits)last_unit_index,
-                                     (AmpUnits)units->currentIndex()));
-        last_unit_index = units->currentIndex();
-    }
-    emit amplitudeChanged(Amplitude(entry->GetValue(), (AmpUnits)units->currentIndex()));
-}
-
-/*
- * Frequency Shift Entry Widget
- */
+// Frequency Shift Entry Widget
 FreqShiftEntry::FreqShiftEntry(const QString &label_text,
                                Frequency f,
-                               QWidget *parent)
-    : QWidget(parent)
+                               QWidget *parent) :
+    QWidget(parent)
 {
     move(0, 0);
     resize(ENTRY_WIDTH, ENTRY_H);
@@ -319,39 +157,22 @@ FreqShiftEntry::FreqShiftEntry(const QString &label_text,
     freq = f;
 
     label = new Label(label_text, this);
-    label->move(ENTRY_OFFSET, 0);
-    label->resize(LABEL_W, ENTRY_H);
 
     up_btn = new QPushButton(this); //QIcon(":icons/plus.png"), "", this);
-    up_btn->move(ENTRY_OFFSET + LABEL_W, 0);
-    up_btn->resize(25, ENTRY_H);
     up_btn->setObjectName("Increment");
+    up_btn->resize(25, ENTRY_H);
 
     down_btn = new QPushButton(this); //QIcon(":icons/minus.png"), "", this);
-    down_btn->move(ENTRY_OFFSET + LABEL_W + 25, 0);
-    down_btn->resize(25, ENTRY_H);
     down_btn->setObjectName("Decrement");
+    down_btn->resize(25, ENTRY_H);
 
     entry = new LineEntry(FREQ_ENTRY, this);
-    entry->move(ENTRY_OFFSET + LABEL_W + 50, 0);
-    entry->resize(ENTRY_WIDTH - LABEL_W - 50 - ENTRY_OFFSET, ENTRY_H);
     entry->SetFrequency(freq);
 
     connect(up_btn, SIGNAL(clicked()), this, SLOT(clickedUp()));
     connect(down_btn, SIGNAL(clicked()), this, SLOT(clickedDown()));
-    //connect(entry, SIGNAL(editingFinished()),
-    //        this, SLOT(editUpdated()));
-    connect(entry, SIGNAL(entryUpdated()),
-            this, SLOT(editUpdated()));
+    connect(entry, SIGNAL(entryUpdated()),  this, SLOT(editUpdated()));
 
-}
-
-FreqShiftEntry::~FreqShiftEntry()
-{
-    delete label;
-    delete up_btn;
-    delete down_btn;
-    delete entry;
 }
 
 void FreqShiftEntry::SetFrequency(Frequency f)
@@ -364,10 +185,162 @@ void FreqShiftEntry::SetFrequency(Frequency f)
     entry->SetFrequency(freq);
 }
 
+void FreqShiftEntry::resizeEvent(QResizeEvent *)
+{
+    int entryWidth = (width() < 200) ? 120 : qMin(width() - 80, 210);
+    int lblWidth = qMax(200, width()) - entryWidth;
+
+    label->move(ENTRY_OFFSET, 0);
+    label->resize(lblWidth - ENTRY_OFFSET, ENTRY_H);
+    up_btn->move(lblWidth, 0);
+    down_btn->move(lblWidth + 25, 0);
+    entry->move(lblWidth + 50, 0);
+    entry->resize(entryWidth - 50, ENTRY_H);
+}
+
 void FreqShiftEntry::editUpdated()
 {
     freq = entry->GetFrequency();
     emit freqViewChanged(freq);
+}
+
+// Amplitude Panel Entry widget, no shifts
+AmpEntry::AmpEntry(const QString &label_text,
+                   Amplitude a,
+                   QWidget *parent) :
+    QWidget(parent)
+{
+    move(0, 0);
+    resize(ENTRY_WIDTH, ENTRY_H);
+
+    amplitude = a;
+
+    label = new Label(label_text, this);
+    entry = new LineEntry(VALUE_ENTRY, this);
+    units = new ComboBox(this);
+    units->resize(60, ENTRY_H);
+
+    QStringList unit_list;
+    unit_list << "dBm" << "dBmV" << "dBuV" << "mV";
+    units->insertItems(0, unit_list);
+    last_unit_index = 0;
+
+    SetAmplitude(amplitude);
+
+    connect(entry, SIGNAL(entryUpdated()), this, SLOT(editUpdated()));
+    connect(units, SIGNAL(activated(int)), this, SLOT(unitsUpdated(int)));
+}
+
+void AmpEntry::SetAmplitude(Amplitude a)
+{
+    amplitude = a;
+    entry->SetValue(amplitude.Val());
+    units->setCurrentIndex(amplitude.Units());
+}
+
+void AmpEntry::resizeEvent(QResizeEvent *)
+{
+    int entryWidth = (width() < 200) ? 120 : qMin(width() - 80, 210);
+    int lblWidth = qMax(200, width()) - entryWidth;
+
+    label->move(ENTRY_OFFSET, 0);
+    label->resize(lblWidth - ENTRY_OFFSET, ENTRY_H);
+    entry->move(lblWidth, 0);
+    entry->resize(entryWidth - 60, ENTRY_H);
+    units->move(width() - units->width(), 0);
+}
+
+void AmpEntry::editUpdated()
+{
+    emit amplitudeChanged(Amplitude(entry->GetValue(), (AmpUnits)units->currentIndex()));
+}
+
+// When the units change, update the associated value to
+//   the new unit type
+void AmpEntry::unitsUpdated(int)
+{
+    if(units->currentIndex() != last_unit_index) {
+        entry->SetValue(unit_convert(entry->GetValue(), (AmpUnits)last_unit_index,
+                                     (AmpUnits)units->currentIndex()));
+        last_unit_index = units->currentIndex();
+    }
+    emit amplitudeChanged(Amplitude(entry->GetValue(), (AmpUnits)units->currentIndex()));
+}
+
+// Amplitude Panel Entry widget
+AmplitudeEntry::AmplitudeEntry(const QString &label_text,
+                               Amplitude a, QWidget *parent) :
+    QWidget(parent)
+{
+    move(0, 0);
+    resize(ENTRY_WIDTH, ENTRY_H);
+
+    amplitude = a;
+
+    label = new Label(label_text, this);
+
+    up_btn = new QPushButton(this);
+    up_btn->setObjectName("Increment");
+    up_btn->resize(25, ENTRY_H);
+
+    down_btn = new QPushButton(this);
+    down_btn->setObjectName("Decrement");
+    down_btn->resize(25, ENTRY_H);
+
+    entry = new LineEntry(VALUE_ENTRY, this);
+
+    units = new ComboBox(this);
+    units->resize(60, ENTRY_H);
+
+    QStringList unit_list;
+    unit_list << "dBm" << "dBmV" << "dBuV" << "mV";
+    units->insertItems(0, unit_list);
+    last_unit_index = 0;
+
+    SetAmplitude(amplitude);
+
+    connect(up_btn, SIGNAL(clicked()), this, SLOT(clickedUp()));
+    connect(down_btn, SIGNAL(clicked()), this, SLOT(clickedDown()));
+    connect(entry, SIGNAL(entryUpdated()), this, SLOT(editUpdated()));
+    connect(units, SIGNAL(activated(int)), this, SLOT(unitsUpdated(int)));
+}
+
+void AmplitudeEntry::SetAmplitude(Amplitude a)
+{
+    amplitude = a;
+    entry->SetValue(amplitude.Val());
+    units->setCurrentIndex(amplitude.Units());
+}
+
+void AmplitudeEntry::resizeEvent(QResizeEvent *)
+{
+    int entryWidth = (width() < 200) ? 120 : qMin(width() - 80, 210);
+    int lblWidth = qMax(200, width()) - entryWidth;
+
+    label->move(ENTRY_OFFSET, 0);
+    label->resize(lblWidth - ENTRY_OFFSET, ENTRY_H);
+    up_btn->move(lblWidth, 0);
+    down_btn->move(lblWidth + 25, 0);
+    entry->move(lblWidth + 50, 0);
+    entry->resize(entryWidth - 110, ENTRY_H);
+    units->move(width() - units->width(), 0);
+}
+
+void AmplitudeEntry::editUpdated()
+{
+    emit amplitudeChanged(Amplitude(entry->GetValue(), (AmpUnits)units->currentIndex()));
+}
+
+// When the units change, update the associated value to
+//   the new unit type
+void AmplitudeEntry::unitsUpdated(int)
+{
+    if(units->currentIndex() != last_unit_index) {
+        entry->SetValue(unit_convert(entry->GetValue(), (AmpUnits)last_unit_index,
+                                     (AmpUnits)units->currentIndex()));
+        last_unit_index = units->currentIndex();
+    }
+    emit amplitudeChanged(Amplitude(entry->GetValue(), (AmpUnits)units->currentIndex()));
 }
 
 // Time Entry Line Widget
@@ -572,7 +545,7 @@ CheckBoxEntry::CheckBoxEntry(const QString &label_text, QWidget *parent)
 
     check_box = new QRadioButton(this);
     check_box->setObjectName("SHPrefRadioButton");
-    check_box->setLayoutDirection(Qt::RightToLeft);
+    //check_box->setLayoutDirection(Qt::RightToLeft);
     check_box->move(0, 0);
 
     connect(check_box, SIGNAL(clicked(bool)), this, SIGNAL(clicked(bool)));
@@ -580,7 +553,14 @@ CheckBoxEntry::CheckBoxEntry(const QString &label_text, QWidget *parent)
 
 void CheckBoxEntry::resizeEvent(QResizeEvent *)
 {
-    check_box->resize(width(), ENTRY_H);
+    int btnWidth = (width() < 200) ? 120 : qMin(width() - 80, 210);
+    int lblWidth = qMax(200, width()) - btnWidth;
+
+    label->resize(lblWidth - ENTRY_OFFSET, ENTRY_H);
+    check_box->move(lblWidth - 10, 0);
+    check_box->resize(width() - lblWidth, ENTRY_H);
+
+//    check_box->resize(width(), ENTRY_H);
 }
 
 // Dual side-by-side check boxes

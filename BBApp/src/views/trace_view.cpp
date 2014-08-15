@@ -215,12 +215,6 @@ bool TraceView::InitPersistFBO()
 
 void TraceView::resizeEvent(QResizeEvent *)
 {
-//    grat_ll = QPoint(60, 50);
-//    grat_ul = QPoint(60, size().height() - 50);
-
-//    grat_sz = QPoint(size().width() - 80,
-//                     size().height() - 100);
-
     grat_ll.setX(60);
     grat_ul.setX(60);
     grat_sz.setX(width() - 80);

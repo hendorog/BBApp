@@ -13,7 +13,7 @@ DockPage::DockPage(const QString &name, QWidget *parent)
     tab = new PageTab(name, this);
     tab->setIconSize(QSize(20, 20));
     tab->move(0, 0);
-    tab->resize(DOCK_WIDTH, TAB_HEIGHT);
+    tab->resize(MAX_DOCK_WIDTH, TAB_HEIGHT);
 
     connect(tab, SIGNAL(toggled(bool)), this, SLOT(tabToggled(bool)));
 

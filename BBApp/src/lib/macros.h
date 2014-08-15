@@ -6,11 +6,12 @@
 #define TRACE_COUNT (6)
 #define PRESET_COUNT (9)
 
-#define DOCK_WIDTH (300) // Width of whole dock panel
+#define MAX_DOCK_WIDTH (326) // Width of whole dock panel
+#define MIN_DOCK_WIDTH (226)
 
 #define ENTRY_WIDTH (290) // Width of panel entry
 #define ENTRY_OFFSET (5) // panel entry initial offset
-#define LABEL_W (75) // panel entry label width
+//#define LABEL_W (75) // panel entry label width
 #define ENTRY_H (25) // panel entry height
 
 // Button alignments

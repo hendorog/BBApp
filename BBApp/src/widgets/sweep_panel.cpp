@@ -36,8 +36,8 @@ SweepPanel::SweepPanel(const QString &title,
     native_rbw = new CheckBoxEntry("Native RBW");
     rbw = new FreqShiftEntry(tr("RBW"), 0.0);
     vbw = new FreqShiftEntry(tr("VBW"), 0.0);
-    auto_bw = new DualCheckBox(tr("Auto RBW"),
-                               tr("Auto VBW"));
+    auto_rbw = new CheckBoxEntry(tr("Auto RBW"));
+    auto_vbw = new CheckBoxEntry(tr("Auto VBW"));
 
     video_units = new ComboEntry(tr("Video Units"));
     QStringList video_sl;
@@ -67,7 +67,8 @@ SweepPanel::SweepPanel(const QString &title,
     bandwidth_page->AddWidget(native_rbw);
     bandwidth_page->AddWidget(rbw);
     bandwidth_page->AddWidget(vbw);
-    bandwidth_page->AddWidget(auto_bw);
+    bandwidth_page->AddWidget(auto_rbw);
+    bandwidth_page->AddWidget(auto_vbw);
 
     acquisition_page->AddWidget(video_units);
     acquisition_page->AddWidget(detector);
@@ -124,10 +125,8 @@ SweepPanel::SweepPanel(const QString &title,
             settings, SLOT(setVBW(Frequency)));
     connect(vbw, SIGNAL(shift(bool)),
             settings, SLOT(vbwIncrease(bool)));
-    connect(auto_bw, SIGNAL(leftClicked(bool)),
-            settings, SLOT(setAutoRbw(bool)));
-    connect(auto_bw, SIGNAL(rightClicked(bool)),
-            settings, SLOT(setAutoVbw(bool)));
+    connect(auto_rbw, SIGNAL(clicked(bool)), settings, SLOT(setAutoRbw(bool)));
+    connect(auto_vbw, SIGNAL(clicked(bool)), settings, SLOT(setAutoVbw(bool)));
 
     connect(video_units, SIGNAL(comboIndexChanged(int)),
             settings, SLOT(setProcUnits(int)));
@@ -158,8 +157,8 @@ void SweepPanel::updatePanel(const SweepSettings *settings)
     native_rbw->SetChecked(settings->NativeRBW());
     rbw->SetFrequency(settings->RBW());
     vbw->SetFrequency(settings->VBW());
-    auto_bw->SetLeftChecked(settings->AutoRBW());
-    auto_bw->SetRightChecked(settings->AutoVBW());
+    auto_rbw->SetChecked(settings->AutoRBW());
+    auto_vbw->SetChecked(settings->AutoVBW());
 
     video_units->setComboIndex(settings->ProcessingUnits());
     detector->setComboIndex(settings->Detector());

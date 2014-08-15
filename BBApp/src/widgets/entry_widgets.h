@@ -16,6 +16,8 @@
 #include "../lib/amplitude.h"
 #include "../lib/time_type.h"
 
+// Spacer for toolbars
+// Fixed width for positioning
 class FixedSpacer : public QWidget {
 public:
     FixedSpacer(QSize size, QWidget *parent = 0) : QWidget(parent) {
@@ -35,7 +37,7 @@ class LineEntry : public QLineEdit {
 
 public:
     LineEntry(EntryType type, QWidget *parent = 0);
-    ~LineEntry();
+    ~LineEntry() {}
 
     bool SetFrequency(Frequency freq);
     bool SetAmplitude(Amplitude amp);
@@ -67,9 +69,7 @@ signals:
     void entryUpdated();
 };
 
-/*
- * Custom label for style_sheet convenience
- */
+// Custom label for style_sheet convenience
 class Label : public QLabel {
     Q_OBJECT
 
@@ -86,9 +86,7 @@ public:
     }
 };
 
-/*
- * Custom combo_box for style_sheet convenience
- */
+// Custom combo_box for style_sheet convenience
 class ComboBox : public QComboBox {
     Q_OBJECT
 
@@ -101,10 +99,39 @@ public:
     }
 };
 
-/*
- * Simple frequency entry
- * [label - lineedit]
- */
+// Single Button
+class PushButton : public QPushButton {
+    Q_OBJECT
+
+public:
+    PushButton(const QString &title, QWidget *parent = 0) :
+        QPushButton(title, parent)
+    {
+        setObjectName("BBPushButton");
+    }
+
+private:
+    DISALLOW_COPY_AND_ASSIGN(PushButton)
+};
+
+// Toggle button, on/off button
+class ToggleButton : public QPushButton {
+    Q_OBJECT
+
+public:
+    ToggleButton(const QString &title, QWidget *parent = 0) :
+        QPushButton(title, parent)
+    {
+        setObjectName("BBPushButton");
+        setCheckable(true);
+    }
+
+private:
+    DISALLOW_COPY_AND_ASSIGN(ToggleButton)
+};
+
+// Simple frequency entry
+// [label - lineedit]
 class FrequencyEntry : public QWidget {
     Q_OBJECT
 
@@ -112,7 +139,7 @@ public:
     FrequencyEntry(const QString &label_text,
                    Frequency f,
                    QWidget *parent = 0);
-    ~FrequencyEntry();
+    ~FrequencyEntry() {}
 
     void SetFrequency(Frequency &f);
     Frequency GetFrequency() const { return freq; }
@@ -135,10 +162,8 @@ private:
     DISALLOW_COPY_AND_ASSIGN(FrequencyEntry)
 };
 
-/*
- * Shift frequency entry
- * [ label - up_btn - down_btn - line_entry ]
- */
+// Shift frequency entry
+// [ label - up_btn - down_btn - line_entry ]
 class FreqShiftEntry : public QWidget {
     Q_OBJECT
 
@@ -146,10 +171,13 @@ public:
     FreqShiftEntry(const QString &label_text,
                    Frequency f,
                    QWidget *parent = 0);
-    ~FreqShiftEntry();
+    ~FreqShiftEntry() {}
 
     void SetFrequency(Frequency f);
     Frequency GetFrequency() const { return freq; }
+
+protected:
+    void resizeEvent(QResizeEvent *);
 
 private:
     Frequency freq; // local copy
@@ -176,10 +204,13 @@ public:
     AmpEntry(const QString &label_text,
                    Amplitude a,
                    QWidget *parent = 0);
-    ~AmpEntry();
+    ~AmpEntry() {}
 
     Amplitude GetAmplitude() const { return amplitude; }
     void SetAmplitude(Amplitude a);
+
+protected:
+    void resizeEvent(QResizeEvent *);
 
 private:
     Amplitude amplitude;
@@ -199,10 +230,8 @@ private:
     DISALLOW_COPY_AND_ASSIGN(AmpEntry)
 };
 
-/*
- * Panel Widget for amplitude entry
- * [ label - shift up/down - value_entry - units_combo_box ]
- */
+// Panel Widget for amplitude entry
+// [ label - shift up/down - value_entry - units_combo_box ]
 class AmplitudeEntry : public QWidget {
     Q_OBJECT
 
@@ -210,10 +239,13 @@ public:
     AmplitudeEntry(const QString &label_text,
                    Amplitude a,
                    QWidget *parent = 0);
-    ~AmplitudeEntry();
+    ~AmplitudeEntry() {}
 
     Amplitude GetAmplitude() const { return amplitude; }
     void SetAmplitude(Amplitude a);
+
+protected:
+    void resizeEvent(QResizeEvent *);
 
 private:
     Amplitude amplitude;
@@ -437,21 +469,6 @@ private:
     DISALLOW_COPY_AND_ASSIGN(DualCheckBox)
 };
 
-// Single Button
-class PushButton : public QPushButton {
-    Q_OBJECT
-
-public:
-    PushButton(const QString &title, QWidget *parent = 0) :
-        QPushButton(title, parent)
-    {
-        setObjectName("BBPushButton");
-    }
-
-private:
-    DISALLOW_COPY_AND_ASSIGN(PushButton)
-};
-
 // Dual-Button Line Entry
 class DualButtonEntry : public QWidget {
     Q_OBJECT
@@ -474,22 +491,6 @@ signals:
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DualButtonEntry)
-};
-
-// Toggle button, on/off button
-class ToggleButton : public QPushButton {
-    Q_OBJECT
-
-public:
-    ToggleButton(const QString &title, QWidget *parent = 0) :
-        QPushButton(title, parent)
-    {
-        setObjectName("BBPushButton");
-        setCheckable(true);
-    }
-
-private:
-    DISALLOW_COPY_AND_ASSIGN(ToggleButton)
 };
 
 #endif // ENTRYWIDGETS_H

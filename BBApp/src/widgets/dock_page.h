@@ -7,7 +7,6 @@
 
 #include "../lib/macros.h"
 
-///
 // Modified QCheckBox to change the clickable
 //   area to the full size of the widget
 //
@@ -24,14 +23,13 @@ public:
     virtual bool hitButton(const QPoint &) const { return true; }
 };
 
-/*
- * Page
- * Represents one collapsible tab on a given Panel
- * Manages the button responsible for collapsing the tab
- * Manages the state of a given tab
- *  1) Dimensions
- *  2) Open/Closed
- */
+// Page
+// Represents one collapsible tab on a given Panel
+// Manages the button responsible for collapsing the tab
+// Manages the state of a given tab
+//  1) Dimensions
+//  2) Open/Closed
+//
 class DockPage : public QWidget {
     Q_OBJECT
 

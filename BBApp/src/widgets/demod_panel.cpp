@@ -44,7 +44,7 @@ DemodPanel::DemodPanel(const QString &title,
     triggerEdge_sl << tr("Rising Edge") << tr("Falling Edge");
     triggerEdgeEntry->setComboText(triggerEdge_sl);
 
-    triggerAmplitudeEntry = new AmpEntry(tr("Video Trigger Level"), 0.0);
+    triggerAmplitudeEntry = new AmpEntry(tr("Trigger Level"), 0.0);
 
     maEnabledEntry = new CheckBoxEntry(tr("Enabled"));
     maLowPass = new FrequencyEntry(tr("Low Pass"), 0.0);
