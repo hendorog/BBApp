@@ -41,9 +41,9 @@ public:
         list.at(0)->move(0, 0);
         list.at(0)->resize(width(), height() / 2);
         list.at(1)->move(0, height() / 2);
-        list.at(1)->resize(width() / 2, height() / 2);
+        list.at(1)->resize(width() / 2, height() / 2 + (height() % 2));
         list.at(2)->move(width() / 2, height() / 2);
-        list.at(2)->resize(width() / 2, height() / 2);
+        list.at(2)->resize(width() / 2 + (width() % 2), height() / 2 + (height() % 2));
     }
 
     std::mutex viewLock;
@@ -87,12 +87,13 @@ private:
     void Reconfigure(DemodSettings *ds, IQCapture *iqc, IQSweep &iqSweep);
     void GetCapture(const DemodSettings *ds, IQCapture &iqc,
                     IQSweep &iq, Device *device);
+    void RecordIQCapture(const IQSweep &sweep, IQCapture &capture, Device *device);
     void StreamThread();
     void UpdateView();
 
     Session *sessionPtr; // Copy, does not own
 
-    //QToolBar *toolBar;
+    QToolBar *recordToolBar;
     MdiArea *demodArea;
 
     DemodSettings lastConfig;
@@ -101,6 +102,13 @@ private:
     bool streaming;
     bool reconfigure;
 
+    Label *currentRecordDirLabel;
+    LineEntry *recordLenEntry;
+    QString currentRecordDir;
+    double recordLength; // Record length in time
+    bool recordBinary;
+    std::atomic<bool> recordNext;
+
 public slots:
     void changeMode(int newState);
     void updateSettings(const DemodSettings *ds);
@@ -108,6 +116,11 @@ public slots:
 private slots:
     void singlePressed();
     void autoPressed();
+    void saveAsType(int type) { recordBinary = (type == 0); }
+    void recordPressed();
+
+    void changeRecordDirectory();
+    void recordLengthChanged();
 
 signals:
     void updateViews();

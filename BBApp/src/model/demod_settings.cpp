@@ -345,9 +345,10 @@ void IQSweep::Demod()
     fmWaveform.clear();
     pmWaveform.clear();
 
-    for(complex_f cplx : iq) {
-        amWaveform.push_back(cplx.re * cplx.re + cplx.im * cplx.im);
-        pmWaveform.push_back(atan2(cplx.im, cplx.re));
+    //for(complex_f cplx : iq) {
+    for(auto i = 0; i < sweepLen; i++) {
+        amWaveform.push_back(iq[i].re * iq[i].re + iq[i].im * iq[i].im);
+        pmWaveform.push_back(atan2(iq[i].im, iq[i].re));
     }
 
     double phaseToFreq = settings.SampleRate() / BB_TWO_PI;

@@ -394,6 +394,18 @@ inline double next_multiple_of(double factor, double start)
     return m * factor;
 }
 
+// start will be rounded up to the next
+inline int next_multiple_of(int factor, int start)
+{
+    int r = start % factor;
+
+    if(r > 0) {
+        return start + (factor - r);
+    }
+
+    return start;
+}
+
 // Return value [0.0, 1.0], represent fraction of
 //   f between [start, stop]
 inline double frac_between(double start, double stop, double f) {
@@ -463,6 +475,10 @@ double get_best_rbw(double span, bool native_rbw);
 
 QString get_my_documents_path();
 
+// Get user selected directory through dialog
+// path param is initial directory
+QString getUserDirectory(const QString &path);
+
 // n/a for now, shaders are static text strings
 char* get_gl_shader_source(const char *file_name);
 
@@ -476,9 +492,14 @@ inline QDateTime get_date_time(qint64 ms_since_epoch) {
 // File name for sweep recordings, no milliseconds
 inline QString get_recording_filename()
 {
-    //return "funfun.sweep";
     return QDateTime::currentDateTime().toString(
                 "yyyy-MM-dd hh'h'mm'm'ss's'") + ".bbr";
+}
+
+inline QString get_iq_filename()
+{
+    return QDateTime::currentDateTime().toString(
+                "MM-dd-yy hh'h'mm'm'ss's'");
 }
 
 // Text string for widget display purposes, with milliseconds

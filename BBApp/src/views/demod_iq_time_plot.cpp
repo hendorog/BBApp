@@ -154,13 +154,14 @@ void DemodIQTimePlot::DrawIQLines()
     traces[0].clear();
     traces[1].clear();
 
-    const std::vector<complex_f> &iq = GetSession()->iq_capture.iq;
+    const IQSweep &sweep = GetSession()->iq_capture;
+    const std::vector<complex_f> &iq = sweep.iq;
 
-    if(iq.size() <= 0) return;
+    if(sweep.iq.size() <= 0) return;
 
     glColor3f(1.0, 0.0, 0.0);
 
-    for(int i = 0; i < iq.size(); i++) {
+    for(int i = 0; i < sweep.sweepLen; i++) {
         traces[0].push_back(i);
         traces[0].push_back(iq[i].re);
         traces[1].push_back(i);
@@ -168,7 +169,7 @@ void DemodIQTimePlot::DrawIQLines()
     }
 
     float max = 0.0;
-    for(int i = 0; i < iq.size(); i++) {
+    for(int i = 0; i < sweep.sweepLen; i++) {
         max = bb_lib::max2(max, iq[i].re);
         max = bb_lib::max2(max, iq[i].im);
     }
@@ -184,7 +185,7 @@ void DemodIQTimePlot::DrawIQLines()
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, iq.size() - 1, -yScale, yScale, -1, 1);
+    glOrtho(0, sweep.sweepLen - 1, -yScale, yScale, -1, 1);
 
     // Nice lines
     glEnable(GL_BLEND);

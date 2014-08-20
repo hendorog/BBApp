@@ -171,7 +171,7 @@ void DemodSpectrumPlot::DrawSpectrum()
     }
 
     // May need to resize the fft if it goes below MAX_FFT_SIZE
-    int fftSize = bb_lib::min2(MAX_FFT_SIZE, (int)sweep.iq.size());
+    int fftSize = bb_lib::min2(MAX_FFT_SIZE, sweep.sweepLen);
     fftSize = bb_lib::round_down_power_two(fftSize);
 
     if(fftSize != fft->Length()) {

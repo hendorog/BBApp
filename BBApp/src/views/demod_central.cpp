@@ -4,11 +4,18 @@
 #include "demod_spectrum_plot.h"
 #include "demod_sweep_plot.h"
 
+#include <QMessageBox>
+#include <QXmlStreamWriter>
+
 DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     CentralWidget(parent, f),
     sessionPtr(sPtr),
-    reconfigure(false)
+    reconfigure(false),
+    recordBinary(true)
 {
+    currentRecordDir = bb_lib::get_my_documents_path();
+    recordLength = 1.0;
+
     toolBar = new QToolBar();
     toolBar->setObjectName("DemodToolBar");
     toolBar->setMovable(false);
@@ -45,13 +52,11 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
 
     QPushButton *singleSweep, *autoSweep, *presetBtn;
 
-    singleSweep = new QPushButton("Single", toolBar);
-    singleSweep->setObjectName("BBPushButton");
+    singleSweep = new PushButton("Single", toolBar);
     singleSweep->setFixedSize(120, TOOLBAR_HEIGHT - 4);
     connect(singleSweep, SIGNAL(clicked()), this, SLOT(singlePressed()));
 
-    autoSweep = new QPushButton("Auto", toolBar);
-    autoSweep->setObjectName("BBPushButton");
+    autoSweep = new PushButton("Auto", toolBar);
     autoSweep->setFixedSize(120, TOOLBAR_HEIGHT - 4);
     connect(autoSweep, SIGNAL(clicked()), this, SLOT(autoPressed()));
 
@@ -67,6 +72,65 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
     toolBar->addWidget(presetBtn);
     toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+
+    recordToolBar = new QToolBar(this);
+    recordToolBar->setMovable(false);
+    recordToolBar->setFloatable(false);
+    recordToolBar->layout()->setContentsMargins(0, 0, 0, 0);
+    recordToolBar->layout()->setSpacing(0);
+
+    Label *recordDirLabel = new Label("Record Directory");
+    recordDirLabel->setFixedSize(100, 30);
+    recordDirLabel->setAlignment(Qt::AlignCenter);
+    PushButton *browseDirButton = new PushButton("Browse");
+    browseDirButton->setFixedSize(80, 26);
+    currentRecordDirLabel = new Label(currentRecordDir);
+    currentRecordDirLabel->setAlignment(Qt::AlignCenter);
+    currentRecordDirLabel->setFixedHeight(30);
+    currentRecordDirLabel->setFixedWidth(
+                currentRecordDirLabel->fontMetrics().width(currentRecordDirLabel->text()) + 40);
+    Label *recordLenLabel = new Label("Record Length(ms)");
+    recordLenLabel->setFixedSize(120, 30);
+    recordLenLabel->setAlignment(Qt::AlignCenter);
+    recordLenEntry = new LineEntry(VALUE_ENTRY);
+    recordLenEntry->SetValue(recordLength);
+    recordLenEntry->setFixedSize(80, 26);
+    Label *recordSaveAs = new Label("Save as");
+    recordSaveAs->setFixedSize(60, 30);
+    recordSaveAs->setAlignment(Qt::AlignCenter);
+    ComboBox *saveAsSelect = new ComboBox();
+    QStringList saveAsComboString;
+    saveAsComboString << "Binary" << "Text (csv)";
+    saveAsSelect->insertItems(0, saveAsComboString);
+    saveAsSelect->setFixedSize(80, 26);
+    connect(saveAsSelect, SIGNAL(activated(int)), this, SLOT(saveAsType(int)));
+    PushButton *recordButton = new PushButton("Record");
+    recordButton->setFixedSize(120, 26);
+
+    recordToolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+    recordToolBar->addWidget(recordDirLabel);
+    recordToolBar->addWidget(browseDirButton);
+    recordToolBar->addWidget(currentRecordDirLabel);
+    recordToolBar->addSeparator();
+    recordToolBar->addWidget(recordLenLabel);
+    recordToolBar->addWidget(recordLenEntry);
+    recordToolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+    recordToolBar->addSeparator();
+    recordToolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+    recordToolBar->addWidget(recordSaveAs);
+    recordToolBar->addWidget(saveAsSelect);
+    recordToolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+    recordToolBar->addSeparator();
+    recordToolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+    recordToolBar->addWidget(recordButton);
+
+    connect(browseDirButton, SIGNAL(clicked()), this, SLOT(changeRecordDirectory()));
+    connect(recordLenEntry, SIGNAL(entryUpdated()), this, SLOT(recordLengthChanged()));
+    connect(recordButton, SIGNAL(clicked()), this, SLOT(recordPressed()));
+
+    spacer = new QWidget();
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    recordToolBar->addWidget(spacer);
 
     demodArea = new MdiArea(this);
     demodArea->move(0, 0);
@@ -140,8 +204,10 @@ void DemodCentral::GetViewImage(QImage &image)
 
 void DemodCentral::resizeEvent(QResizeEvent *)
 {
-    demodArea->resize(width(), height());
+    demodArea->resize(width(), height() - 30);
     demodArea->retile();
+    recordToolBar->resize(width(), 30);
+    recordToolBar->move(0, height() - 30);
 }
 
 void DemodCentral::changeMode(int newState)
@@ -168,10 +234,10 @@ void DemodCentral::Reconfigure(DemodSettings *ds, IQCapture *iqc, IQSweep &iqs)
     iqc->capture.resize(iqc->desc.returnLen);
 
     int sweepLen = ds->SweepTime().Val() / iqc->desc.timeDelta;
+    int fullLen = bb_lib::next_multiple_of(iqc->desc.returnLen, sweepLen + iqc->desc.returnLen);
 
-//    sessionPtr->iq_capture.iq.resize(sweepLen);
-//    sessionPtr->iq_capture.settings = *ds;
-    iqs.iq.resize(sweepLen);
+    iqs.iq.resize(fullLen);
+    iqs.sweepLen = sweepLen;
     iqs.settings = *ds;
 
     reconfigure = false;
@@ -179,7 +245,7 @@ void DemodCentral::Reconfigure(DemodSettings *ds, IQCapture *iqc, IQSweep &iqs)
 
 void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &iqs, Device *device)
 {
-    int retrieved = 0, toRetrieve = iqs.iq.size();
+    int retrieved = 0, toRetrieve = iqs.sweepLen;
     int firstIx = 0; // Start index in first capture
     bool flush = iqs.triggered; // Clear the API buffer?
     iqs.triggered = false;
@@ -224,7 +290,7 @@ void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &
     // Retrieve the rest of the capture after the trigger, or retrieve the
     //   entire capture if there is no trigger
     while(toRetrieve > 0) {
-        int toCopy = bb_lib::min2(toRetrieve, iqc.desc.returnLen - firstIx);
+        int toCopy = bb_lib::min2(iqc.desc.returnLen, iqc.desc.returnLen - firstIx);
         simdCopy_32fc(&iqc.capture[firstIx], &iqs.iq[retrieved], toCopy);
         firstIx = 0;
         toRetrieve -= toCopy;
@@ -233,12 +299,85 @@ void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &
             device->GetIQ(&iqc);
         }
     }
+
+    // Store how many total samples we have access to
+    iqs.dataLen = retrieved;
+}
+
+void DemodCentral::RecordIQCapture(const IQSweep &sweep, IQCapture &capture, Device *device)
+{
+    QString fileName = bb_lib::get_iq_filename();
+    QFile xmlFile(currentRecordDir + fileName + ".xml");
+    QFile iqFile(currentRecordDir + fileName + (recordBinary ? ".bin" : ".csv"));
+
+    if(!xmlFile.open(QIODevice::WriteOnly) || !iqFile.open(QIODevice::WriteOnly)) {
+        QMessageBox::warning(this, "Warning", "Unable to create recording files, recording cancelled.");
+        recordNext = false;
+        return;
+    }
+
+    int totalLen = (this->recordLength / 1000.0) / capture.desc.timeDelta;
+    int fromSweep = qMin(totalLen, sweep.dataLen);
+    int toGet = totalLen - sweep.dataLen;
+    int capturesLeft = (toGet <= 0) ? 0 : ((toGet / capture.desc.returnLen) + 1);
+
+    std::vector<complex_f> rest;
+    rest.resize(capturesLeft * capture.desc.returnLen);
+
+    int fetches = 0, retrieved = toGet;
+    while(retrieved > 0) {
+        device->GetIQ(&capture);
+        simdCopy_32fc(&capture.capture[0], &rest[fetches * capture.desc.returnLen], capture.desc.returnLen);
+        fetches++;
+        retrieved -= capture.desc.returnLen;
+    }
+
+    QXmlStreamWriter xmlWriter;
+    xmlWriter.setAutoFormatting(true);
+    xmlWriter.setDevice(&xmlFile);
+    xmlWriter.writeStartDocument();
+    xmlWriter.writeStartElement("Stream Description");
+    xmlWriter.writeStartElement("Sample Rate");
+    xmlWriter.writeCharacters(QVariant(capture.desc.sampleRate).toString());
+    xmlWriter.writeEndElement();
+    xmlWriter.writeStartElement("Date");
+    xmlWriter.writeCharacters(QDateTime::currentDateTime().toString());
+    xmlWriter.writeEndElement();
+    xmlWriter.writeStartElement("Center Frequency");
+    xmlWriter.writeCharacters(QVariant(sweep.settings.CenterFreq().Val()).toString());
+    xmlWriter.writeEndElement();
+    xmlWriter.writeStartElement("Samples");
+    xmlWriter.writeCharacters(QVariant(totalLen).toString());
+    xmlWriter.writeEndElement();
+
+    xmlWriter.writeEndElement();
+    xmlWriter.writeEndDocument();
+
+    if(recordBinary) {
+        iqFile.write(reinterpret_cast<const char*>(&sweep.iq[0]),
+                fromSweep * sizeof(complex_f));
+        if(toGet > 0) {
+            iqFile.write(reinterpret_cast<const char*>(&rest[0]),
+                    toGet * sizeof(complex_f));
+        }
+    } else {
+        QTextStream out(&iqFile);
+        for(auto i = 0; i < fromSweep; i++) {
+            out << sweep.iq[i].re << ", " << sweep.iq[i].im << "\r\n";
+        }
+        if(toGet > 0) {
+            for(auto i = 0; i < toGet; i++) {
+                out << rest[i].re << ", " << rest[i].im << "\r\n";
+            }
+        }
+    }
+
+    recordNext = false;
 }
 
 void DemodCentral::StreamThread()
 {
     IQCapture iqc;
-    //IQSweep &iqs = sessionPtr->iq_capture;
     IQSweep sweep;
 
     Reconfigure(sessionPtr->demod_settings, &iqc, sweep);
@@ -252,6 +391,9 @@ void DemodCentral::StreamThread()
             qint64 start = bb_lib::get_ms_since_epoch();
 
             GetCapture(sessionPtr->demod_settings, iqc, sweep, sessionPtr->device);
+            if(recordNext) {
+                RecordIQCapture(sweep, iqc, sessionPtr->device);
+            }
 
             if(demodArea->viewLock.try_lock()) {
                 sweep.Demod();
@@ -296,6 +438,35 @@ void DemodCentral::singlePressed()
 void DemodCentral::autoPressed()
 {
     captureCount = -1;
+}
+
+void DemodCentral::recordPressed()
+{
+    if(captureCount == 0) {
+        captureCount = 1;
+    }
+    recordNext = true;
+}
+
+void DemodCentral::changeRecordDirectory()
+{
+    QString dir = bb_lib::getUserDirectory(currentRecordDir);
+    if(dir.isNull()) dir = currentRecordDir;
+    int w = currentRecordDirLabel->fontMetrics().width(dir);
+    currentRecordDirLabel->setFixedWidth(w + 10);
+    currentRecordDirLabel->setText(dir);
+    currentRecordDir = dir;
+}
+
+// Clamp and update the record time/length
+void DemodCentral::recordLengthChanged()
+{
+    double val = recordLenEntry->GetValue();
+    if(val < 1.0) val = 1.0;
+    if(val > 1000.0) val = 1000.0;
+
+    recordLength = val;
+    recordLenEntry->SetValue(recordLength);
 }
 
 void DemodCentral::UpdateView()

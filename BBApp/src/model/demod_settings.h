@@ -125,9 +125,8 @@ struct IQCapture {
     int triggers[70];
 };
 
-struct ReceiverStats {
-    ReceiverStats()
-    {
+struct ModAnalysisReport {
+    ModAnalysisReport() {
         rfCenter = 0.0;
         fmRMS = amRMS = 0.0;
         fmPeakPlus = fmPeakMinus = 0.0;
@@ -146,14 +145,17 @@ struct ReceiverStats {
     double amSINAD, amTHD;
 };
 
-// One full sweep
+// Represents a full IQ sweep and all data needed to update all views
 typedef struct IQSweep {
     DemodSettings settings;
-    std::vector<complex_f> iq; // Full IQ capture
-    std::vector<float> amWaveform; // (i*i + q*q) over time
+    std::vector<complex_f> iq;     // Stores an even number of IQ captures
+    int sweepLen;                  // The requested length of the sweep
+    int dataLen;                   // Number of actual samples in buffer
+                                   // May be longer than sweepLen
+    std::vector<float> amWaveform; // (i*i + q*q)
     std::vector<float> fmWaveform; // Frequency over time
     std::vector<float> pmWaveform; // Phase over time
-    ReceiverStats stats;
+    ModAnalysisReport stats;
     bool triggered;
 
     // Convert IQ to AM/FM/PM waveforms

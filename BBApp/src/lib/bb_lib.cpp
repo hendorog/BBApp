@@ -8,6 +8,7 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QImage>
+#include <QFileDialog>
 
 char *persist_vs =
         //"#version 110 \n"
@@ -480,6 +481,11 @@ char* bb_lib::get_gl_shader_source(const char *file_name)
     source[len] = '\0';
     fclose(f);
     return source;
+}
+
+QString bb_lib::getUserDirectory(const QString &path)
+{
+    return QFileDialog::getExistingDirectory(0, "FFF", path);
 }
 
 // Normalize frequency domain trace

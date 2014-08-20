@@ -36,7 +36,7 @@ private:
     void DrawTrace(const GLVector &v);
     void DrawMarker(int x, int y, int num);
     void DrawDeltaMarker(int x, int y, int num);
-    void DrawMeasuringReceiverStats();
+    void DrawModAnalysisReport();
 
     QPoint grat_sz, grat_ul, grat_ll;
     GLVector grat, gratBorder;

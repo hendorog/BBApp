@@ -179,8 +179,8 @@ void DemodSweepPlot::paintEvent(QPaintEvent *)
 void DemodSweepPlot::DemodAndDraw()
 {
     const DemodSettings *ds = GetSession()->demod_settings;
-    const IQSweep &iq = GetSession()->iq_capture;
-    if(iq.iq.size() <= 1) return;
+    const IQSweep &sweep = GetSession()->iq_capture;
+    if(sweep.iq.size() <= 1) return;
 
     trace.clear();
 
@@ -190,16 +190,16 @@ void DemodSweepPlot::DemodAndDraw()
         if(ds->InputPower().IsLogScale()) {
             ref = ds->InputPower().ConvertToUnits(DBM);
             botRef = ref - 100.0;
-            for(int i = 0; i < iq.amWaveform.size(); i++) {
+            for(int i = 0; i < sweep.amWaveform.size(); i++) {
                 trace.push_back(i);
-                trace.push_back(10.0 * log10(iq.amWaveform[i]));
+                trace.push_back(10.0 * log10(sweep.amWaveform[i]));
             }
         } else {
             ref = ds->InputPower();
             botRef = 0.0;
-            for(int i = 0; i < iq.amWaveform.size(); i++) {
+            for(int i = 0; i < sweep.amWaveform.size(); i++) {
                 trace.push_back(i);
-                trace.push_back(sqrt((double)iq.amWaveform[i] * 50000.0));
+                trace.push_back(sqrt((double)sweep.amWaveform[i] * 50000.0));
             }
         }
 
@@ -207,18 +207,18 @@ void DemodSweepPlot::DemodAndDraw()
         ref = 40.0e6 / (0x1 << ds->DecimationFactor()) / 2.0;
         botRef = -ref;
 
-        for(int i = 0; i < iq.fmWaveform.size(); i++) {
+        for(int i = 0; i < sweep.fmWaveform.size(); i++) {
             trace.push_back(i);
-            trace.push_back(iq.fmWaveform[i]);
+            trace.push_back(sweep.fmWaveform[i]);
         }
 
     } else if(demodType == DemodTypePM) {
         ref = BB_PI;
         botRef = -BB_PI;
 
-        for(int i = 0; i < iq.pmWaveform.size(); i++) {
+        for(int i = 0; i < sweep.pmWaveform.size(); i++) {
             trace.push_back(i);
-            trace.push_back(iq.pmWaveform[i]);
+            trace.push_back(sweep.pmWaveform[i]);
         }
     }
 
@@ -276,7 +276,7 @@ void DemodSweepPlot::DrawPlotText()
                grat_ul.x() + grat_sz.x()/2, grat_ll.y() - textHeight, CENTER_ALIGNED);
     str.sprintf("%f ms per div", ds->SweepTime() * 100.0);
     DrawString(str, textFont, grat_ll.x() + grat_sz.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
-    str.sprintf("%d pts", GetSession()->iq_capture.iq.size());
+    str.sprintf("%d pts", GetSession()->iq_capture.sweepLen);
     DrawString(str, textFont, grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - textHeight, RIGHT_ALIGNED);
 
     if(demodType == DemodTypeAM) {
@@ -350,7 +350,7 @@ void DemodSweepPlot::DrawPlotText()
 
     if(GetSession()->demod_settings->MAEnabled()) {
         glQColor(GetSession()->colors.text);
-        DrawMeasuringReceiverStats();
+        DrawModAnalysisReport();
     }
 
     glMatrixMode(GL_MODELVIEW);
@@ -530,9 +530,9 @@ void DemodSweepPlot::DrawDeltaMarker(int x, int y, int num)
                QPoint(x, y+11), CENTER_ALIGNED);
 }
 
-void DemodSweepPlot::DrawMeasuringReceiverStats()
+void DemodSweepPlot::DrawModAnalysisReport()
 {
-    const ReceiverStats stats = GetSession()->iq_capture.stats;
+    const ModAnalysisReport stats = GetSession()->iq_capture.stats;
 
     QPoint textHeight(0, textFont.GetTextHeight());
 
