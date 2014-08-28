@@ -4,17 +4,22 @@
 #include "demod_spectrum_plot.h"
 #include "demod_sweep_plot.h"
 
-#include <QMessageBox>
 #include <QXmlStreamWriter>
 
 DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     CentralWidget(parent, f),
     sessionPtr(sPtr),
     reconfigure(false),
-    recordBinary(true)
+    recordBinary(true),
+    recordDialog(this)
 {
     currentRecordDir = bb_lib::get_my_documents_path();
     recordLength = 1.0;
+
+    recordDialog.setModal(true);
+    recordDialog.setText("Recording may take many seconds. Please wait.");
+    recordDialog.setStandardButtons(QMessageBox::NoButton);
+    recordDialog.setDefaultButton(QMessageBox::NoButton);
 
     toolBar = new QToolBar();
     toolBar->setObjectName("DemodToolBar");
@@ -151,6 +156,7 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     demodArea->addSubWindow(iqPlot);
 
     connect(this, SIGNAL(updateViews()), demodArea, SLOT(updateViews()));
+    connect(this, SIGNAL(showRecordingDialog(bool)), this, SLOT(updateRecordingDialog(bool)));
 
     for(QMdiSubWindow *window : demodArea->subWindowList()) {
         window->setWindowFlags(Qt::FramelessWindowHint);
@@ -306,6 +312,8 @@ void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &
 
 void DemodCentral::RecordIQCapture(const IQSweep &sweep, IQCapture &capture, Device *device)
 {
+    emit showRecordingDialog(true);
+
     QString fileName = bb_lib::get_iq_filename();
     QFile xmlFile(currentRecordDir + fileName + ".xml");
     QFile iqFile(currentRecordDir + fileName + (recordBinary ? ".bin" : ".csv"));
@@ -337,6 +345,7 @@ void DemodCentral::RecordIQCapture(const IQSweep &sweep, IQCapture &capture, Dev
     xmlWriter.setDevice(&xmlFile);
     xmlWriter.writeStartDocument();
     xmlWriter.writeStartElement("Stream Description");
+
     xmlWriter.writeStartElement("Sample Rate");
     xmlWriter.writeCharacters(QVariant(capture.desc.sampleRate).toString());
     xmlWriter.writeEndElement();
@@ -349,8 +358,14 @@ void DemodCentral::RecordIQCapture(const IQSweep &sweep, IQCapture &capture, Dev
     xmlWriter.writeStartElement("Samples");
     xmlWriter.writeCharacters(QVariant(totalLen).toString());
     xmlWriter.writeEndElement();
-
+    xmlWriter.writeStartElement("Data Type");
+    xmlWriter.writeCharacters("32-bit complex");
     xmlWriter.writeEndElement();
+    xmlWriter.writeStartElement("Capture Duration");
+    xmlWriter.writeCharacters(Time(recordLength / 1000.0).GetString());
+    xmlWriter.writeEndElement();
+
+    xmlWriter.writeEndElement(); // End "Stream Description"
     xmlWriter.writeEndDocument();
 
     if(recordBinary) {
@@ -372,6 +387,8 @@ void DemodCentral::RecordIQCapture(const IQSweep &sweep, IQCapture &capture, Dev
         }
     }
 
+    emit showRecordingDialog(false);
+
     recordNext = false;
 }
 
@@ -391,7 +408,7 @@ void DemodCentral::StreamThread()
             qint64 start = bb_lib::get_ms_since_epoch();
 
             GetCapture(sessionPtr->demod_settings, iqc, sweep, sessionPtr->device);
-            if(recordNext) {
+            if(recordNext && sweep.triggered) {
                 RecordIQCapture(sweep, iqc, sessionPtr->device);
             }
 
@@ -446,6 +463,15 @@ void DemodCentral::recordPressed()
         captureCount = 1;
     }
     recordNext = true;
+}
+
+void DemodCentral::updateRecordingDialog(bool show)
+{
+    if(show) {
+        recordDialog.show();
+    } else {
+        recordDialog.hide();
+    }
 }
 
 void DemodCentral::changeRecordDirectory()

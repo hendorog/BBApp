@@ -38,6 +38,10 @@ private:
 
 public slots:
     void updatePanel(const SweepSettings *settings);
+    void enableManualGainAtten(bool enable) {
+        gain->setEnabled(enable);
+        atten->setEnabled(enable);
+    }
 
 signals:
     void zeroSpanPressed();

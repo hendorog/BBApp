@@ -66,13 +66,10 @@ MainWindow::MainWindow(QWidget *parent)
     demodCentral = new DemodCentral(session);
     addToolBar(demodCentral->GetToolBar());
     demodCentral->GetToolBar()->hide();
+    connect(demodCentral, SIGNAL(presetDevice()), this, SLOT(presetDevice()));
     centralStack->AddWidget(demodCentral);
 
     RestoreState();
-
-    //sweep_panel->show();
-    //measure_panel->show();
-    //demodPanel->hide();
     ChangeMode(MODE_SWEEPING);
 
     connect(session->device, SIGNAL(connectionIssues()), this, SLOT(forceDisconnectDevice()));
@@ -82,18 +79,13 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    //disconnectDevice();
-
     delete centralStack;
     delete session;
-
-    //delete sweep_panel;
-    //delete measure_panel;
 }
 
 void MainWindow::closeEvent(QCloseEvent *e)
 {
-    // Hide all toolbars before saving
+    // Hide all toolbars before saving window state
     // For now, prevents all toolbars from being shown on startup
     QList<QToolBar*> toolBars = findChildren<QToolBar*>();
     for(QToolBar *tb : toolBars) {
@@ -202,6 +194,10 @@ void MainWindow::InitMenuBar()
     QAction *sr_action = settings_menu->addAction(tr("Spur Reject"));
     sr_action->setCheckable(true);
     connect(sr_action, SIGNAL(triggered(bool)), session->sweep_settings, SLOT(setRejection(bool)));
+    QAction *manual_gain = settings_menu->addAction(tr("Enable Manual Gain/Atten"));
+    manual_gain->setCheckable(true);
+    connect(manual_gain, SIGNAL(toggled(bool)), sweep_panel, SLOT(enableManualGainAtten(bool)));
+    connect(manual_gain, SIGNAL(toggled(bool)), demodPanel, SLOT(enableManualGainAtten(bool)));
     connect(settings_menu, SIGNAL(aboutToShow()), this, SLOT(aboutToShowSettingsMenu()));
 
     // Mode Select Menu
@@ -657,17 +653,6 @@ void MainWindow::loadPreset(QAction *a)
     int newMode = session->sweep_settings->Mode();
 
     ChangeMode((OperationalMode)newMode);
-//    if(newMode == MODE_ZERO_SPAN) {
-//        centralStack->setCurrentWidget(demodCentral);
-//        sweep_panel->hide();
-//        measure_panel->hide();
-//        demodPanel->show();
-//    } else {
-//        demodPanel->hide();
-//        sweep_panel->show();
-//        measure_panel->show();
-//        centralStack->setCurrentWidget(sweepCentral);
-//    }
 
     centralStack->CurrentWidget()->changeMode(newMode);
 }
@@ -678,19 +663,6 @@ void MainWindow::modeChanged(QAction *a)
 
     int newMode = a->data().toInt();
     ChangeMode((OperationalMode)newMode);
-
-//    if(newMode == MODE_ZERO_SPAN) {
-//        centralStack->setCurrentWidget(demodCentral);
-//        sweep_panel->hide();
-//        measure_panel->hide();
-//        demodPanel->show();
-//    } else {
-//        demodPanel->hide();
-//        sweep_panel->show();
-//        measure_panel->show();
-//        centralStack->setCurrentWidget(sweepCentral);
-//        addToolBar(centralStack->CurrentWidget()->GetToolBar());
-//    }
 
     centralStack->CurrentWidget()->changeMode(newMode);
 }
@@ -710,7 +682,7 @@ void MainWindow::ChangeMode(OperationalMode newMode)
         sweep_panel->show();
         measure_panel->show();
     }
-    this->addToolBar(centralStack->CurrentWidget()->GetToolBar());
+    //this->addToolBar(centralStack->CurrentWidget()->GetToolBar());
     centralStack->CurrentWidget()->GetToolBar()->show();
 }
 

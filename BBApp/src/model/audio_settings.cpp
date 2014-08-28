@@ -75,10 +75,8 @@ bool AudioSettings::Save(QSettings &s) const
     return true;
 }
 
-/*
- * Modes between 0x0 and 0x4
- *  values match audio modes in api header
- */
+// Modes between 0x0 and 0x4
+//  values match audio modes in api header
 void AudioSettings::setMode(int new_mode)
 {
     bb_lib::clamp(new_mode, 0x0, 0x4);
@@ -102,7 +100,7 @@ void AudioSettings::setCenterFrequency(Frequency new_center_freq)
 void AudioSettings::setIFBandwidth(Frequency new_if_bandwidth)
 {
     bb_lib::clamp(new_if_bandwidth,
-                  Frequency(3.0e3),
+                  Frequency(500.0),
                   Frequency(200.0e3));
 
     if_bandwidth = new_if_bandwidth;

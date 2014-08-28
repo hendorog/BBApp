@@ -169,6 +169,11 @@ void DemodSweepPlot::paintEvent(QPaintEvent *)
     glLineWidth(1.0);
 
     DemodAndDraw();
+
+    glDisable(GL_DEPTH_TEST);
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
     DrawPlotText();
     DrawMarkers();
 

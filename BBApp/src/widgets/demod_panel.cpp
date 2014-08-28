@@ -17,12 +17,14 @@ DemodPanel::DemodPanel(const QString &title,
     gain_sl << tr("Auto Gain") << tr("Gain 0") << tr("Gain 1") <<
                tr("Gain 2") << tr("Gain 3");
     gainEntry->setComboText(gain_sl);
+    gainEntry->setEnabled(false);
 
     attenEntry = new ComboEntry(tr("Atten"));
     QStringList atten_sl;
     atten_sl << tr("Auto Atten") << tr("0 dB") << tr("10 dB")
              << tr("20 dB") << tr("30 dB");
     attenEntry->setComboText(atten_sl);
+    attenEntry->setEnabled(false);
 
     decimationEntry = new ComboEntry(tr("Sample Rate"));
     QStringList decimation_sl;

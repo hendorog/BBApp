@@ -34,6 +34,10 @@ private:
 
 public slots:
     void updatePanel(const DemodSettings *ds);
+    void enableManualGainAtten(bool enable) {
+        gainEntry->setEnabled(enable);
+        attenEntry->setEnabled(enable);
+    }
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DemodPanel)

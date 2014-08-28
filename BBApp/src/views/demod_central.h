@@ -6,6 +6,7 @@
 #include <QMdiArea>
 #include <QMdiSubWindow>
 #include <QPaintEvent>
+#include <QMessageBox>
 
 #include <mutex>
 
@@ -108,6 +109,7 @@ private:
     double recordLength; // Record length in time
     bool recordBinary;
     std::atomic<bool> recordNext;
+    QMessageBox recordDialog;
 
 public slots:
     void changeMode(int newState);
@@ -118,6 +120,7 @@ private slots:
     void autoPressed();
     void saveAsType(int type) { recordBinary = (type == 0); }
     void recordPressed();
+    void updateRecordingDialog(bool show);
 
     void changeRecordDirectory();
     void recordLengthChanged();
@@ -125,6 +128,7 @@ private slots:
 signals:
     void updateViews();
     void presetDevice();
+    void showRecordingDialog(bool);
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DemodCentral)

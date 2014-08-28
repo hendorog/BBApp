@@ -32,7 +32,7 @@
 #define BB_SAMPLERATE            80000000
 
 // BB60A/C
-#define BB60_MIN_FREQ            9.0e3
+#define BB60_MIN_FREQ            9.0e3    
 #define BB60_MAX_FREQ            6.4e9
 #define BB60_MAX_SPAN            (BB60_MAX_FREQ - BB60_MIN_FREQ)
 
@@ -41,12 +41,12 @@
 #define BB124_MAX_FREQ           12.4e9
 #define BB124_MAX_SPAN           (BB124_MAX_FREQ - BB124_MIN_FREQ)
 
-#define BB_MIN_SPAN              20.0 // 20 Hz
+#define BB_MIN_SPAN              20.0 // 20 Hz        
 #define BB_MIN_BW                0.602006912
 #define BB_MAX_BW                10100000.0
 #define BB_MAX_SWEEP_TIME        0.1 // 100ms
-#define BB_MIN_RT_RBW            2465.0
-#define BB_MAX_RT_RBW            631250.0
+#define BB_MIN_RT_RBW            2465.0      
+#define BB_MAX_RT_RBW            631250.0 
 #define BB_MIN_RT_SPAN           200.0e3
 #define BB60A_MAX_RT_SPAN        20.0e6
 #define BB60C_MAX_RT_SPAN        27.0e6
@@ -71,7 +71,7 @@
 
 #define BB_IDLE                 -1
 #define BB_SWEEPING              0x0
-#define BB_REAL_TIME             0x1
+#define BB_REAL_TIME             0x1      
 #define BB_ZERO_SPAN             0x2
 #define BB_TIME_GATE             0x3
 #define BB_STREAMING             0x4
@@ -80,9 +80,9 @@
 #define BB_RAW_SWEEP_LOOP        0x6
 #define BB_AUDIO_DEMOD           0x7
 
-#define BB_NO_SPUR_REJECT        0x0
-#define BB_SPUR_REJECT           0x1
-#define BB_BYPASS_RF             0x2
+#define BB_NO_SPUR_REJECT        0x0     
+#define BB_SPUR_REJECT           0x1     
+#define BB_BYPASS_RF             0x2 
 
 #define BB_LOG_SCALE             0x0
 #define BB_LIN_SCALE             0x1
@@ -90,30 +90,30 @@
 #define BB_LIN_FULL_SCALE        0x3
 
 #define BB_NATIVE_RBW            0x0
-#define BB_NON_NATIVE_RBW        0x1
+#define BB_NON_NATIVE_RBW        0x1      
 #define BB_6DB_RBW               0x2 // n/a
 
-#define BB_MIN_AND_MAX           0x0
+#define BB_MIN_AND_MAX           0x0  
 #define BB_AVERAGE               0x1
 #define BB_QUASI_PEAK            0x2 // n/a
 
-#define BB_LOG                   0x0
+#define BB_LOG                   0x0 
 #define BB_VOLTAGE               0x1
 #define BB_POWER                 0x2
 #define BB_SAMPLE                0x3
 
 #define BB_NUTALL                0x0
-#define BB_BLACKMAN              0x1
+#define BB_BLACKMAN              0x1  
 #define BB_HAMMING               0x2
 #define BB_FLAT_TOP              0x3
 #define BB_FLAT_TOP_EMC_9KHZ     0x4
 #define BB_FLAT_TOP_EMC_120KHZ   0x5
 
 #define BB_DEMOD_AM              0x0
-#define BB_DEMOD_FM              0x1
-#define BB_DEMOD_USB             0x2
-#define BB_DEMOD_LSB             0x3
-#define BB_DEMOD_CW              0x4
+#define BB_DEMOD_FM              0x1  
+#define BB_DEMOD_USB             0x2  
+#define BB_DEMOD_LSB             0x3  
+#define BB_DEMOD_CW              0x4  
 
 // Streaming flags
 #define BB_STREAM_IQ             0x0
@@ -121,8 +121,8 @@
 #define BB_DIRECT_RF             0x2 // BB60C only
 #define BB_TIME_STAMP            0x10
 
-#define BB_NO_TRIGGER            0x0
-#define BB_VIDEO_TRIGGER         0x1
+#define BB_NO_TRIGGER            0x0      
+#define BB_VIDEO_TRIGGER         0x1      
 #define BB_EXTERNAL_TRIGGER      0x2
 
 #define BB_TRIGGER_RISING        0x0
@@ -149,7 +149,7 @@
 // Status Codes
 // Errors are negative and suffixed with 'Err'
 // Errors stop the flow of execution, warnings do not
-enum bbStatus
+enum bbStatus 
 {
     // Configuration Errors
     bbInvalidModeErr             = -112,
@@ -195,26 +195,23 @@ enum bbStatus
     bbUncalibratedDevice         = 6
 };
 
-#ifdef __cplusplus
-extern "C" {
+#ifdef __cplusplus 
+extern "C" { 
 #endif
 
 BB_API bbStatus bbOpenDevice(int *device); // Open the first device found
-BB_API bbStatus bbCloseDevice(int device);
+BB_API bbStatus bbCloseDevice(int device);	
 
-BB_API bbStatus bbConfigureAcquisition(int device, unsigned int detector, unsigned int scale);
+BB_API bbStatus bbConfigureAcquisition(int device, unsigned int detector, unsigned int scale);    
 BB_API bbStatus bbConfigureCenterSpan(int device, double center, double span);
 BB_API bbStatus bbConfigureLevel(int device, double ref, double atten);
 BB_API bbStatus bbConfigureGain(int device, int gain);
-BB_API bbStatus bbConfigureSweepCoupling(int device, double rbw, double vbw, double sweepTime,
-                                         unsigned int rbwType, unsigned int rejection);
+BB_API bbStatus bbConfigureSweepCoupling(int device, double rbw, double vbw, double sweepTime, 
+                                         unsigned int rbwType, unsigned int rejection); 
 BB_API bbStatus bbConfigureWindow(int device, unsigned int window);
-BB_API bbStatus bbConfigureProcUnits(int device, unsigned int units);
-BB_API bbStatus bbConfigureTrigger(int device, unsigned int type, unsigned int edge, double level, double timeout);
-BB_API bbStatus bbConfigureTimeGate(int device, double delay, double length, double timeout);
-BB_API bbStatus bbConfigureRawSweep(int device, int start, int ppf, int steps, int stepsize);
+BB_API bbStatus bbConfigureProcUnits(int device, unsigned int units); 
 BB_API bbStatus bbConfigureIO(int device, unsigned int port1, unsigned int port2);
-BB_API bbStatus bbConfigureDemod(int device, int modulationType, double freq, float IFBW,
+BB_API bbStatus bbConfigureDemod(int device, int modulationType, double freq, float IFBW, 
                                  float audioLowPassFreq, float audioHighPassFreq, float FMDeemphasis);
 BB_API bbStatus bbConfigureIQ(int device, int downsampleFactor, double bandwidth);
 
@@ -224,8 +221,6 @@ BB_API bbStatus bbFetchTrace_32f(int device, int arraySize, float *min, float *m
 BB_API bbStatus bbFetchTrace(int device, int arraySize, double *min, double *max);
 BB_API bbStatus bbFetchAudio(int device, float *audio);
 BB_API bbStatus bbFetchRaw(int device, float *buffer, int triggers[64]);
-BB_API bbStatus bbFetchRawSweep(int device, short *buffer);
-BB_API bbStatus bbStartRawSweepLoop(int device, void(*sweep_callback)(short *buffer, int len));
 
 BB_API bbStatus bbQueryTraceInfo(int device, unsigned int *traceLen, double *binSize, double *start);
 BB_API bbStatus bbQueryTimestamp(int device, unsigned int *seconds, unsigned int *nanoseconds);
@@ -250,14 +245,27 @@ BB_API void bbConvert_32f16s(const float *src, short *dst, int scaleFactor, int 
 // dst[i] = (float)(src[i] * 2^scaleFactor)
 BB_API void bbConvert_16s32f(const short *src, float *dst, int scaleFactor, int len);
 
-BB_DEPRECATED("is deprecated and is no longer applicable for streaming, please see the API manual for the changes to I/Q streaming")
-BB_API bbStatus bbFetchRaw_s(int device, short *buffer, int *triggers);
-BB_DEPRECATED("is deprecated and will be removed in future verions, use bbGetDeviceDiagnostics() instead")
-BB_API bbStatus bbQueryDiagnostics(int device, float *temperature, float *voltage1_8, float *voltage1_2, float *voltageUSB, float *currentUSB);
-BB_DEPRECATED("is deprecated and no longer needed for streaming, please see the API manual for the changes to I/Q streaming")
-BB_API bbStatus bbFetchRawCorrections(int device, float *corrections, int *index, double *startFreq);
-BB_DEPRECATED("is deprecated and no longer needed for streaming, please see the API manual for the changes to I/Q streaming")
-BB_API bbStatus bbQueryStreamingCenter(int device, double *center);
+BB_DEPRECATED("Zero-Span functionality is deprecated and set to be removed from the API. "
+              "Contact Signal Hound if this change negatively affects you. "
+              "Consider using IQ streaming to accomplish similar functionality")
+BB_API bbStatus bbConfigureTrigger(int device, unsigned int type, unsigned int edge, double level, double timeout);
+BB_DEPRECATED("Time-Gate functionality is deprecated and set to be removed from the API. "
+              "Contact Signal Hound if this change negatively affects you. "
+              "Consider using IQ streaming to accomplish similar functionality")
+BB_API bbStatus bbConfigureTimeGate(int device, double delay, double length, double timeout);
+BB_DEPRECATED("Raw-Sweep functionality is deprecated and set to be removed from the API. "
+              "Contact Signal Hound if this change negatively affects you. "
+              "Consider using IQ streaming to accomplish similar functionality")
+BB_API bbStatus bbConfigureRawSweep(int device, int start, int ppf, int steps, int stepsize);
+
+BB_DEPRECATED("Raw-Sweep functionality is deprecated and set to be removed from the API. "
+              "Contact Signal Hound if this change negatively affects you. "
+              "Consider using IQ streaming to accomplish similar functionality")
+BB_API bbStatus bbFetchRawSweep(int device, short *buffer);
+BB_DEPRECATED("Raw-Sweep functionality is deprecated and set to be removed from the API. "
+              "Contact Signal Hound if this change negatively affects you. "
+              "Consider using IQ streaming to accomplish similar functionality")
+BB_API bbStatus bbStartRawSweepLoop(int device, void(*sweep_callback)(short *buffer, int len));
 
 #ifdef __cplusplus
 } // extern "C"

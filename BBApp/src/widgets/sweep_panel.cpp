@@ -26,12 +26,14 @@ SweepPanel::SweepPanel(const QString &title,
     gain_sl << tr("Auto Gain") << tr("Gain 0") << tr("Gain 1") <<
                tr("Gain 2") << tr("Gain 3");
     gain->setComboText(gain_sl);
+    gain->setEnabled(false);
 
     atten = new ComboEntry(tr("Atten"));
     QStringList atten_sl;
     atten_sl << tr("Auto Atten") << tr("0 dB") << tr("10 dB")
              << tr("20 dB") << tr("30 dB");
     atten->setComboText(atten_sl);
+    atten->setEnabled(false);
 
     native_rbw = new CheckBoxEntry("Native RBW");
     rbw = new FreqShiftEntry(tr("RBW"), 0.0);

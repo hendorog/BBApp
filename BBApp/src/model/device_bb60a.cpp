@@ -253,7 +253,7 @@ bool DeviceBB60A::GetIQ(IQCapture *iqc)
 {
     lastStatus = bbFetchRaw(id, (float*)(&iqc->capture[0]), iqc->triggers);
     // Handle connection issues
-    if(lastStatus == bbDeviceConnectionErr || lastStatus == bbUSBTimeoutErr) {
+    if(lastStatus == bbDeviceConnectionErr || lastStatus == bbUSBTimeoutErr || lastStatus == bbPacketFramingErr) {
         emit connectionIssues();
         return false;
     }
