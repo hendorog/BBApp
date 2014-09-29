@@ -10,6 +10,8 @@ Session::Session()
     demod_settings = new DemodSettings();
     audio_settings = new AudioSettings();
 
+    isInPlaybackMode = false;
+
     connect(trace_manager, SIGNAL(changeCenterFrequency(Frequency)),
             sweep_settings, SLOT(setCenter(Frequency)));
     connect(trace_manager, SIGNAL(changeReferenceLevel(Amplitude)),

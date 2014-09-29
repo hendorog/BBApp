@@ -96,7 +96,8 @@ HEADERS += src/mainwindow.h \
 OTHER_FILES += \
     style_sheet.css \
     todo.txt \
-    bb_app.rc
+    bb_app.rc \
+    bb_icon.ico
 
 LIBS += \
     -Ldebug -lbb_api

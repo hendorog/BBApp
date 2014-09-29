@@ -373,12 +373,13 @@ void TraceView::Paint()
 
     RenderGraticule(); // Graticule always shown
 
-    if(!GetSession()->device->IsOpen()) {
+    if(!GetSession()->device->IsOpen() && !GetSession()->isInPlaybackMode) {
         glQColor(GetSession()->colors.text);
         DrawString(tr("No Device Connected"), textFont,
                    QPoint(grat_ul.x(), grat_ul.y() + 2), LEFT_ALIGNED);
 
-    } else if(GetSession()->sweep_settings->Mode() == BB_IDLE) {
+    } else if(GetSession()->sweep_settings->Mode() == BB_IDLE &&
+              !GetSession()->isInPlaybackMode) {
         glQColor(GetSession()->colors.text);
         DrawString(tr("Device Idle"), textFont,
                    QPoint(grat_ul.x(), grat_ul.y() + 2), LEFT_ALIGNED);
@@ -524,27 +525,29 @@ void TraceView::RenderGratText()
                    (grat_ul.x() + grat_sz.x()) / 2.0, grat_ul.y() - 22, CENTER_ALIGNED);
     }
 
-    // Uncal text strings
-    bool uncal = false;
-    int uncal_x = grat_ul.x() + 5, uncal_y = grat_ul.y() - textHeight;
-    glColor3f(1.0, 0.0, 0.0);
-    if(!GetSession()->device->IsPowered()) {
-        uncal = true;
-        DrawString("Low Voltage", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
-        uncal_y -= textHeight;
-    }
-    if(GetSession()->device->ADCOverflow()) {
-        uncal = true;
-        DrawString("IF Overload", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
-        uncal_y -= textHeight;
-    }
-    if(GetSession()->device->NeedsTempCal()) {
-        uncal = true;
-        DrawString("Device Temp", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
-        uncal_y -= textHeight;
-    }
-    if(uncal) {
-        DrawString("Uncal", textFont, grat_ul.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
+    if(GetSession()->device->IsOpen()) {
+        // Uncal text strings
+        bool uncal = false;
+        int uncal_x = grat_ul.x() + 5, uncal_y = grat_ul.y() - textHeight;
+        glColor3f(1.0, 0.0, 0.0);
+        if(!GetSession()->device->IsPowered()) {
+            uncal = true;
+            DrawString("Low Voltage", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+            uncal_y -= textHeight;
+        }
+        if(GetSession()->device->ADCOverflow()) {
+            uncal = true;
+            DrawString("IF Overload", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+            uncal_y -= textHeight;
+        }
+        if(GetSession()->device->NeedsTempCal()) {
+            uncal = true;
+            DrawString("Device Temp", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+            uncal_y -= textHeight;
+        }
+        if(uncal) {
+            DrawString("Uncal", textFont, grat_ul.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
+        }
     }
 
     glMatrixMode(GL_MODELVIEW);

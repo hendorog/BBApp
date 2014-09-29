@@ -39,6 +39,8 @@ public:
     // Preferences/General Settings
     ColorPrefs colors;
     Preferences prefs;
+
+    bool isInPlaybackMode;
 };
 
 #endif // SESSION_H

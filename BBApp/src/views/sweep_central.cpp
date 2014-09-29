@@ -122,7 +122,7 @@ SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
 
 SweepCentral::~SweepCentral()
 {
-    //playback->Stop();
+    playback->Stop();
     StopStreaming();
 
     //delete tool_bar;
@@ -328,8 +328,13 @@ void SweepCentral::playFromFile(bool play)
 
     if(play) {
         sweeping = true;
+        session_ptr->isInPlaybackMode = true;
         thread_handle = std::thread(&SweepCentral::PlaybackThread, this);
     } else {
-        StartStreaming();
+        session_ptr->isInPlaybackMode = false;
+        emit updateView();
+        if(session_ptr->device->IsOpen()) {
+            StartStreaming();
+        }
     }
 }
