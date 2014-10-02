@@ -4,7 +4,8 @@ QString Session::title;
 
 Session::Session()
 {
-    device = new DeviceBB60A(&prefs);
+    //device = new DeviceBB60A(&prefs);
+    device = new DeviceSA(&prefs);
     sweep_settings = new SweepSettings();
     trace_manager = new TraceManager();
     demod_settings = new DemodSettings();

@@ -45,7 +45,8 @@ SOURCES += src/main.cpp \
     src/kiss_fft/kiss_fft.c \
     src/views/demod_spectrum_plot.cpp \
     src/views/demod_sweep_plot.cpp \
-    src/widgets/measuring_receiver_dialog.cpp
+    src/widgets/measuring_receiver_dialog.cpp \
+    src/model/device_sa.cpp
 
 HEADERS += src/mainwindow.h \
     src/lib/frequency.h \
@@ -91,7 +92,9 @@ HEADERS += src/mainwindow.h \
     src/kiss_fft/kissfft.hh \
     src/views/demod_spectrum_plot.h \
     src/views/demod_sweep_plot.h \
-    src/widgets/measuring_receiver_dialog.h
+    src/widgets/measuring_receiver_dialog.h \
+    src/model/device_sa.h \
+    src/lib/sa_api.h
 
 OTHER_FILES += \
     style_sheet.css \
@@ -100,7 +103,8 @@ OTHER_FILES += \
     bb_icon.ico
 
 LIBS += \
-    -Ldebug -lbb_api
+    -Ldebug -lbb_api \
+    -Ldebug -lsa_api
 
 INCLUDEPATH += src external_libraries
 

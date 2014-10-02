@@ -480,9 +480,8 @@ void MainWindow::deviceConnected(bool success)
     QString device_string;
 
     if(success) {
-        device_string.sprintf("Serial - %d    Firmware Ver. - %d",
-                              session->device->SerialNumber(),
-                              session->device->FirmwareVer());
+        device_string = "Serial - " + session->device->SerialString() +
+                "    Firmware " + session->device->FirmwareString();
 
         status_bar->SetDeviceType(session->device->GetDeviceString());
         status_bar->UpdateDeviceInfo(device_string);

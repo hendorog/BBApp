@@ -207,10 +207,10 @@ void SweepCentral::Reconfigure()
         last_config = *session_ptr->sweep_settings;
     }
 
-    QString diagnostics;
-    diagnostics.sprintf("%.2f C  --  %.2f V", session_ptr->device->CurrentTemp(),
-                        session_ptr->device->Voltage());
-    MainWindow::GetStatusBar()->SetDiagnostics(diagnostics);
+//    QString diagnostics;
+//    diagnostics.sprintf("%.2f C  --  %.2f V", session_ptr->device->CurrentTemp(),
+//                        session_ptr->device->Voltage());
+//    MainWindow::GetStatusBar()->SetDiagnostics(diagnostics);
 
     reconfigure = false;
 }

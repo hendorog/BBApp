@@ -186,7 +186,7 @@ QToolBar {
  * Title bar for DockWidgets
  ********/
 
-/*QDockWidget {
+QDockWidget {
   color: white;
 }
 
@@ -196,7 +196,7 @@ QDockWidget::title {
   padding-top: 3px;
   border: 1px solid white;
   color: white;
-}*/
+}
 
 /********
  * Check Box

@@ -12,6 +12,8 @@ DockPanel::DockPanel(const QString &title,
 
     QString objectName = title + "Panel";
 
+    //setTi
+
     scrollArea = new QScrollArea();
     scrollArea->move(0, 0);
     scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);

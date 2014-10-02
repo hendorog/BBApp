@@ -25,7 +25,6 @@ DeviceBB60A::DeviceBB60A(const Preferences *preferences) :
     id = -1;
     open = false;
     serial_number = 0;
-    firmware_ver = 0;
     lastStatus = bbNoError;
 
     timebase_reference = TIMEBASE_INTERNAL;
@@ -45,8 +44,11 @@ bool DeviceBB60A::OpenDevice()
 
     STATUS_CHECK(bbOpenDevice(&id));
 
-    bbGetSerialNumber(id, &serial_number);
-    bbGetFirmwareVersion(id, &firmware_ver);
+    bbGetSerialNumber(id, (unsigned int*)(&serial_number));
+    serial_string.sprintf("%d", serial_number);
+    int fv;
+    bbGetFirmwareVersion(id, &fv);
+    firmware_string.sprintf("%d", fv);
     bbGetDeviceType(id, &device_type);
 
     open = true;
@@ -66,7 +68,6 @@ bool DeviceBB60A::CloseDevice()
     open = false;
     device_type = BB_DEVICE_NONE;
     serial_number = 0;
-    firmware_ver = 0;
 
     return true;
 }
@@ -315,6 +316,27 @@ bool DeviceBB60A::ConfigureForTRFL(double center,
     desc.decimation = 128;
 
     return true;
+}
+
+void DeviceBB60A::UpdateDiagnostics()
+{
+    float temp_now, voltage_now, current_now;
+    bbGetDeviceDiagnostics(id, &temp_now, &voltage_now, &current_now);
+
+    if((temp_now != current_temp) || (voltage_now != voltage) || (current_now != current)) {
+        update_diagnostics_string = true;
+    }
+
+    current_temp = temp_now;
+    voltage = voltage_now;
+    current = current_now;
+}
+
+QString DeviceBB60A::GetDeviceString() const {
+    if(device_type == BB_DEVICE_NONE) return "No Device Open";
+    if(device_type == BB_DEVICE_BB60A) return "BB60A";
+    if(device_type == BB_DEVICE_BB60C) return "BB60C";
+    return "No Device Open";
 }
 
 bool DeviceBB60A::IsPowered() const

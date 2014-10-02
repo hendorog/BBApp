@@ -86,13 +86,19 @@ void SweepSettings::LoadDefaults()
 {
     mode = MODE_SWEEPING;
 
-    start = 11.0e6;
-    stop = 6.0e9;
+    //start = 11.0e6;
+    //stop = 6.0e9;
+    start = .8e9;
+    stop = 1.1e9;
+
     span = (stop - start);
     center = (start + stop) / 2.0;
     step = 20.0e6;
-    rbw = 300.0e3;
-    vbw = 300.0e3;
+
+    //rbw = 300.0e3;
+    //vbw = 300.0e3;
+    rbw = 100.0e3;
+    vbw = 50.0e3;
 
     auto_rbw = true;
     auto_vbw = true;

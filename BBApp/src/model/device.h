@@ -15,8 +15,6 @@ const int TIMEBASE_INTERNAL = 0;
 const int TIMEBASE_EXT_AC = 1;
 const int TIMEBASE_EXT_DC = 2;
 
-const char* device_type_to_string(int type);
-
 class Preferences;
 
 class Device : public QObject {
@@ -26,7 +24,12 @@ protected:
     const Preferences *prefs;
 
 public:
-    Device(const Preferences *preferences) : prefs(preferences) {}
+    Device(const Preferences *preferences) : prefs(preferences)
+    {
+        current_temp = 0.0;
+        voltage = 0.0;
+        current = 0.0;
+    }
     virtual ~Device() = 0;
 
     virtual bool OpenDevice() = 0;
@@ -44,22 +47,17 @@ public:
     bool IsOpen() const { return open; }
     int Handle() const { return id; }
 
-    QString GetDeviceString() const {
-        if(device_type == BB_DEVICE_NONE) return "No Device Open";
-        if(device_type == BB_DEVICE_BB60A) return "BB60A";
-        if(device_type == BB_DEVICE_BB60C) return "BB60C";
-        return "No Device Open";
-    }
-
-    void UpdateDiagnostics();
+    virtual QString GetDeviceString() const = 0;
+    virtual void UpdateDiagnostics() = 0;
 
     const char* GetLastStatusString() const { return bbGetErrorString(lastStatus); }
     bbStatus GetLastStatus() const { return lastStatus; }
     const char* GetStatusString(bbStatus status) const { return bbGetErrorString(status); }
 
-    int SerialNumber() const { return serial_number; }
-    int FirmwareVer() const { return firmware_ver; }
     int DeviceType() const { return device_type; }
+    int SerialNumber() const { return serial_number; }
+    QString SerialString() const { return serial_string; }
+    QString FirmwareString() const { return firmware_string; }
 
     float LastConfiguredTemp() const { return last_temp; }
     float CurrentTemp() const { return current_temp; }
@@ -82,9 +80,10 @@ protected:
     //
     bool update_diagnostics_string;
 
-    unsigned int serial_number;
-    int firmware_ver;
     int device_type;
+    int serial_number;
+    QString serial_string;
+    QString firmware_string;
 
     int timebase_reference; // Internal/Ext(AC/DC)
     bool reconfigure_on_next; // set true to reconfigure on next sweep

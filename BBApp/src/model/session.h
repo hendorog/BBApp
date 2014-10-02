@@ -2,6 +2,7 @@
 #define SESSION_H
 
 #include "device_bb60a.h"
+#include "device_sa.h"
 
 #include "sweep_settings.h"
 #include "demod_settings.h"
