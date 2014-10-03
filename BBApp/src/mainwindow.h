@@ -99,6 +99,7 @@ private slots:
     void saveAsDefaultColorScheme();
     void loadStyleLight() { session->prefs.SetProgramStyle(LIGHT_STYLE_SHEET); }
     void loadStyleDark() { session->prefs.SetProgramStyle(DARK_STYLE_SHEET); }
+    void loadStyleBlue() { session->prefs.SetProgramStyle(BLUE_STYLE_SHEET); }
 
     void loadDefaultSettings();
     void loadPreset(QAction *a);

@@ -31,7 +31,7 @@ public:
         QSettings s(QSettings::IniFormat, QSettings::UserScope,
                     "SignalHound", "Preferences");
 
-        int style = s.value("ProgramStyle", LIGHT_STYLE_SHEET).toInt();
+        int style = s.value("ProgramStyle", BLUE_STYLE_SHEET).toInt();
         SetProgramStyle(style);
 
         playbackDelay = s.value("PlaybackPrefs/Delay", 64).toInt();
@@ -72,8 +72,11 @@ public:
             styleSheet.setFileName(":/style_sheet_dark.css");
             break;
         case LIGHT_STYLE_SHEET:
-        default:
             styleSheet.setFileName(":/style_sheet_light.css");
+            break;
+        case BLUE_STYLE_SHEET:
+        default:
+            styleSheet.setFileName(":/style_sheet_blue.css");
             break;
         }
 

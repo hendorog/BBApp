@@ -69,11 +69,10 @@ bool DeviceSA::Reconfigure(const SweepSettings *s, Trace *t)
     saConfigSweepCoupling(id, s->RBW(), s->VBW(), s->Rejection());
     //saConfigProcUnits(id, SA_LOG_UNITS);
 
-    if(s->Mode() == BB_REAL_TIME) {
-        saInitiate(id, SA_REAL_TIME, 0);
-    } else {
-        saInitiate(id, SA_SWEEPING, 0);
-    }
+    int init_mode = SA_SWEEPING;
+    if(s->Mode() == BB_REAL_TIME) init_mode = SA_REAL_TIME;
+
+    saInitiate(id, init_mode, 0);
 
     int traceLength = 0;
     double startFreq = 0.0, binSize = 0.0;
@@ -88,6 +87,8 @@ bool DeviceSA::Reconfigure(const SweepSettings *s, Trace *t)
 
 bool DeviceSA::GetSweep(const SweepSettings *s, Trace *t)
 {
+    saStatus status = saNoError;
+
 //    UpdateDiagnostics();
 
 //    if(update_diagnostics_string) {
@@ -98,7 +99,9 @@ bool DeviceSA::GetSweep(const SweepSettings *s, Trace *t)
     int startIx, stopIx;
     double *min = new double[t->Length()];
     double *max = new double[t->Length()];
-    saFetchPartialData_64f(id, min, max, &startIx, &stopIx);
+    status = saFetchPartialData_64f(id, min, max, &startIx, &stopIx);
+
+    adc_overflow = false;
 
     for(int i = 0; i < t->Length(); i++) {
         t->Min()[i] = min[i];
@@ -145,4 +148,9 @@ void DeviceSA::UpdateDiagnostics()
 bool DeviceSA::IsPowered() const
 {
     return true;
+}
+
+bool DeviceSA::NeedsTempCal() const
+{
+    return false;
 }

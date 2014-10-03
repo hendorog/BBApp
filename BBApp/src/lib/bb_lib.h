@@ -41,7 +41,7 @@ extern span_to_bandwidth auto_bw_lut[];
 
 // Must correspond to combo-box indices
 enum WaterfallState { WaterfallOFF = 0, Waterfall2D = 1, Waterfall3D = 2 };
-enum BBStyleSheet { LIGHT_STYLE_SHEET = 0, DARK_STYLE_SHEET = 1 };
+enum BBStyleSheet { LIGHT_STYLE_SHEET = 0, DARK_STYLE_SHEET = 1, BLUE_STYLE_SHEET = 2 };
 
 // GLSL shaders
 extern char *persist_vs;

@@ -26,6 +26,7 @@ public:
     QString GetDeviceString() const;
     void UpdateDiagnostics();
     bool IsPowered() const;
+    bool NeedsTempCal() const { return fabs(last_temp - current_temp) > 2; }
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DeviceBB60A)

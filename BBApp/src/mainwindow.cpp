@@ -138,6 +138,7 @@ void MainWindow::InitMenuBar()
     QMenu *style_menu = edit_menu->addMenu("Program Style");
     style_menu->addAction(tr("Light"), this, SLOT(loadStyleLight()));
     style_menu->addAction(tr("Dark"), this, SLOT(loadStyleDark()));
+    style_menu->addAction(tr("Blue"), this, SLOT(loadStyleBlue()));
 
     edit_menu->addSeparator();
     edit_menu->addAction(tr("Preferences"), this, SLOT(showPreferencesDialog()));

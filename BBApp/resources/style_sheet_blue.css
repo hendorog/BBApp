@@ -174,7 +174,8 @@ QWidget#SH_ScrollViewport {
  * Toolbar for central widgets
  ********/
 QToolBar {
-  background: rgb(231,232,236);
+  background: rgb(207,214,229);
+/*  background: rgb(41,57,85);*/
   border-style: outset;
   border-radius: 0px;
 
@@ -512,13 +513,13 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
  * MainWindow/DockWidgets Separator
  ********/
 QMainWindow::separator {
-  background: rgb(231,232,236);
+  background: rgb(207,214,229);
   width: 3px;
   height: 1px;
 }
 
 QMainWindow::separator:hover {
-  background: rgb(204,206,219);
+  background: rgb(187,194,209);
 }
 
 /********
@@ -680,7 +681,7 @@ QStatusBar QLabel#SH_Label {
 * Menu Bar
 ********/
 QMenu {
-  background: rgb(231,232,236);
+  background: rgb(214,219,233);
   font-size: 12px;
   font-family: arial-black;
   color: black;
@@ -696,7 +697,7 @@ QMenu::item:disabled {
 }
 
 QMenuBar {
-  background-color: rgb(231,232,236);
+  background-color: rgb(214,219,233);
   font-size: 12px;
   font-family: arial-black;
   color: rgb(255,255,255);
@@ -704,7 +705,7 @@ QMenuBar {
 }
 
 QMenuBar::item {
-  background-color: rgb(231,232,236);
+  background-color: rgb(214,219,233);
   font-size: 12px;
   font-family: arial-black;
   color: black;

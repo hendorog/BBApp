@@ -66,7 +66,7 @@ public:
     bool ADCOverflow() const { return adc_overflow; }
 
     int TimebaseReference() const { return timebase_reference; }
-    bool NeedsTempCal() const { return fabs(last_temp - current_temp) > 2; }
+    virtual bool NeedsTempCal() const = 0;
 
 protected:
     bool open;

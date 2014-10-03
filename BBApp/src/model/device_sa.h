@@ -27,6 +27,7 @@ public:
     void UpdateDiagnostics();
 
     bool IsPowered() const;
+    bool NeedsTempCal() const;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DeviceSA)
