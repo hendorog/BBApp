@@ -162,8 +162,9 @@ void MeasuringReceiver::Recalibrate(double &centerOut, double &powerOut, IQCaptu
     emit updateRangeEnabled(rangeLevelNone);
     emit updateEntryEnabled(false);
 
-    device->ConfigureForTRFL(freqEntry->GetFrequency(), atten, gain, iqc.desc);
-    iqc.capture.resize(iqc.desc.returnLen);
+    IQDescriptor descriptor;
+    device->ConfigureForTRFL(freqEntry->GetFrequency(), atten, gain, descriptor);
+    iqc.capture.resize(descriptor.returnLen);
     device->GetIQFlush(&iqc, true);
     centerOut = getSignalFrequency(iqc.capture, 312500.0);
     centerOut /= 312500.0;

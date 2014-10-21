@@ -212,6 +212,9 @@ void SweepCentral::Reconfigure()
 //                        session_ptr->device->Voltage());
 //    MainWindow::GetStatusBar()->SetDiagnostics(diagnostics);
 
+    if(sweep_count == 0) {
+        sweep_count = 1;
+    }
     reconfigure = false;
 }
 
@@ -231,12 +234,15 @@ void SweepCentral::SweepThread()
                 MainWindow::GetStatusBar()->SetMessage(session_ptr->device->GetLastStatusString());
             }
 
-            playback->PutTrace(&trace);
+            if(trace.IsFullSweep()) {
+                playback->PutTrace(&trace);
+            }
+
             session_ptr->trace_manager->UpdateTraces(&trace);
             emit updateView();
 
             // Non-negative sweep count means we only collect 'n' more sweeps
-            if(sweep_count > 0) {
+            if(sweep_count > 0 && trace.IsFullSweep()) {
                 sweep_count--;
             }
 
@@ -304,10 +310,8 @@ void SweepCentral::settingsChanged(const SweepSettings *ss)
 
 void SweepCentral::singleSweepPressed()
 {
-    if(sweep_count < 0) {
+    if(sweep_count <= 0) {
         sweep_count = 1;
-    } else {
-        sweep_count++;
     }
 }
 

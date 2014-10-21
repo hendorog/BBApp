@@ -13,6 +13,7 @@
 #include <QtPrintSupport>
 #include <QMessageBox>
 
+// Static status bar
 BBStatusBar *MainWindow::status_bar;
 
 MainWindow::MainWindow(QWidget *parent)

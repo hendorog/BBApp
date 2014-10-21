@@ -276,13 +276,15 @@ void DemodSpectrumPlot::DrawPlotText()
     glOrtho(0, width(), 0, height(), -1, 1);
 
     const DemodSettings *ds = GetSession()->demod_settings;
+    const IQSweep &sweep = GetSession()->iq_capture;
+
     QString str;
 
     glQColor(GetSession()->colors.text);
 
     str = "Center " + ds->CenterFreq().GetFreqString();
     DrawString(str, textFont, QPoint(grat_ll.x() + 5, grat_ll.y() - textHeight), LEFT_ALIGNED);
-    str = "Span " + Frequency(ds->SampleRate()).GetFreqString(3, true);
+    str = "Span " + Frequency(sweep.descriptor.sampleRate).GetFreqString(3, true);
     DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - textHeight), RIGHT_ALIGNED);
     str = "FFT Size " + QVariant(fft->Length()).toString() + " pts";
     DrawString(str, textFont, grat_ul.x() + grat_sz.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);

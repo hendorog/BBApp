@@ -300,6 +300,7 @@ void getPeakCorrelation(const complex_f *src,
                         double &peakPower);
 
 double getSignalFrequency(const std::vector<complex_f> &src, double sampleRate);
+QString getSampleRateString(int sampleRate);
 
 namespace bb_lib {
 

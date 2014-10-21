@@ -120,7 +120,6 @@ struct IQCapture {
     }
     ~IQCapture() {}
 
-    IQDescriptor desc;
     std::vector<complex_f> capture;
     int triggers[70];
 };
@@ -148,6 +147,7 @@ struct ModAnalysisReport {
 // Represents a full IQ sweep and all data needed to update all views
 typedef struct IQSweep {
     DemodSettings settings;
+    IQDescriptor descriptor;
     std::vector<complex_f> iq;     // Stores an even number of IQ captures
     int sweepLen;                  // The requested length of the sweep
     int dataLen;                   // Number of actual samples in buffer

@@ -230,17 +230,18 @@ void DemodCentral::changeMode(int newState)
 
 void DemodCentral::Reconfigure(DemodSettings *ds, IQCapture *iqc, IQSweep &iqs)
 {
-    if(!sessionPtr->device->Reconfigure(ds, &iqc->desc)) {
+    if(!sessionPtr->device->Reconfigure(ds, &iqs.descriptor)) {
         *ds = lastConfig;
     } else {
         lastConfig = *ds;
     }
 
     // Resize single capture size and full sweep
-    iqc->capture.resize(iqc->desc.returnLen);
+    iqc->capture.resize(iqs.descriptor.returnLen);
 
-    int sweepLen = ds->SweepTime().Val() / iqc->desc.timeDelta;
-    int fullLen = bb_lib::next_multiple_of(iqc->desc.returnLen, sweepLen + iqc->desc.returnLen);
+    int sweepLen = ds->SweepTime().Val() / iqs.descriptor.timeDelta;
+    int fullLen = bb_lib::next_multiple_of(iqs.descriptor.returnLen,
+                                           sweepLen + iqs.descriptor.returnLen);
 
     iqs.iq.resize(fullLen);
     iqs.sweepLen = sweepLen;
@@ -296,7 +297,8 @@ void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &
     // Retrieve the rest of the capture after the trigger, or retrieve the
     //   entire capture if there is no trigger
     while(toRetrieve > 0) {
-        int toCopy = bb_lib::min2(iqc.desc.returnLen, iqc.desc.returnLen - firstIx);
+        int toCopy = bb_lib::min2(iqs.descriptor.returnLen,
+                                  iqs.descriptor.returnLen - firstIx);
         simdCopy_32fc(&iqc.capture[firstIx], &iqs.iq[retrieved], toCopy);
         firstIx = 0;
         toRetrieve -= toCopy;
@@ -324,20 +326,22 @@ void DemodCentral::RecordIQCapture(const IQSweep &sweep, IQCapture &capture, Dev
         return;
     }
 
-    int totalLen = (this->recordLength / 1000.0) / capture.desc.timeDelta;
+    int totalLen = (this->recordLength / 1000.0) / sweep.descriptor.timeDelta;
     int fromSweep = qMin(totalLen, sweep.dataLen);
     int toGet = totalLen - sweep.dataLen;
-    int capturesLeft = (toGet <= 0) ? 0 : ((toGet / capture.desc.returnLen) + 1);
+    int capturesLeft = (toGet <= 0) ? 0 : ((toGet / sweep.descriptor.returnLen) + 1);
 
     std::vector<complex_f> rest;
-    rest.resize(capturesLeft * capture.desc.returnLen);
+    rest.resize(capturesLeft * sweep.descriptor.returnLen);
 
     int fetches = 0, retrieved = toGet;
     while(retrieved > 0) {
         device->GetIQ(&capture);
-        simdCopy_32fc(&capture.capture[0], &rest[fetches * capture.desc.returnLen], capture.desc.returnLen);
+        simdCopy_32fc(&capture.capture[0],
+                &rest[fetches * sweep.descriptor.returnLen],
+                sweep.descriptor.returnLen);
         fetches++;
-        retrieved -= capture.desc.returnLen;
+        retrieved -= sweep.descriptor.returnLen;
     }
 
     QXmlStreamWriter xmlWriter;
@@ -347,7 +351,7 @@ void DemodCentral::RecordIQCapture(const IQSweep &sweep, IQCapture &capture, Dev
     xmlWriter.writeStartElement("Stream Description");
 
     xmlWriter.writeStartElement("Sample Rate");
-    xmlWriter.writeCharacters(QVariant(capture.desc.sampleRate).toString());
+    xmlWriter.writeCharacters(QVariant(sweep.descriptor.sampleRate).toString());
     xmlWriter.writeEndElement();
     xmlWriter.writeStartElement("Date");
     xmlWriter.writeCharacters(QDateTime::currentDateTime().toString());
@@ -400,7 +404,6 @@ void DemodCentral::StreamThread()
     Reconfigure(sessionPtr->demod_settings, &iqc, sweep);
 
     while(streaming) {
-
         if(captureCount) {
             if(reconfigure) {
                 Reconfigure(sessionPtr->demod_settings, &iqc, sweep);

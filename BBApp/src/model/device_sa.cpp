@@ -1,7 +1,8 @@
 #include "device_sa.h"
 #include "mainwindow.h"
-
 #include "lib/sa_api.h"
+
+#include <QElapsedTimer>
 
 DeviceSA::DeviceSA(const Preferences *preferences) :
     Device(preferences)
@@ -65,9 +66,9 @@ bool DeviceSA::Reconfigure(const SweepSettings *s, Trace *t)
 {
     saConfigCenterSpan(id, s->Center(), s->Span());
     saConfigAcquisition(id, SA_MIN_MAX, SA_LOG_SCALE, 0.1);
-    saConfigLevel(id, 0.0, SA_AUTO_ATTEN, SA_AUTO_GAIN, false);
+    saConfigLevel(id, s->RefLevel(), SA_AUTO_ATTEN, SA_AUTO_GAIN, false);
     saConfigSweepCoupling(id, s->RBW(), s->VBW(), s->Rejection());
-    //saConfigProcUnits(id, SA_LOG_UNITS);
+    saConfigProcUnits(id, SA_LOG_UNITS);
 
     int init_mode = SA_SWEEPING;
     if(s->Mode() == BB_REAL_TIME) init_mode = SA_REAL_TIME;
@@ -97,19 +98,11 @@ bool DeviceSA::GetSweep(const SweepSettings *s, Trace *t)
 //    }
 
     int startIx, stopIx;
-    double *min = new double[t->Length()];
-    double *max = new double[t->Length()];
-    status = saFetchPartialData_64f(id, min, max, &startIx, &stopIx);
 
+    status = saFetchPartialData(id, t->Min(), t->Max(), &startIx, &stopIx);
+
+    t->SetUpdateRange(startIx, stopIx);
     adc_overflow = false;
-
-    for(int i = 0; i < t->Length(); i++) {
-        t->Min()[i] = min[i];
-        t->Max()[i] = max[i];
-    }
-
-    delete [] min;
-    delete [] max;
 
     return true;
 }
@@ -117,16 +110,57 @@ bool DeviceSA::GetSweep(const SweepSettings *s, Trace *t)
 // Stream
 bool DeviceSA::Reconfigure(const DemodSettings *s, IQDescriptor *iqc)
 {
+    saAbort(id);
+
+    int atten = (s->Atten() == 0) ? SA_AUTO_ATTEN : s->Atten() - 1;
+    int gain = (s->Gain() == 0) ? SA_AUTO_GAIN : s->Gain() - 1;
+    saConfigCenterSpan(id, s->CenterFreq(), 250.0e3);
+    saConfigLevel(id, s->InputPower(), atten, gain, false);
+    saConfigIQ(id, 0x1 << s->DecimationFactor(), s->Bandwidth() / 10.0);
+    saInitiate(id, SA_IQ, 0);
+
+    double sr = 0;
+    saQueryStreamInfo(id, &iqc->returnLen, &iqc->bandwidth, &sr);
+    iqc->sampleRate = sr;
+    iqc->timeDelta = 1.0 / (double)sr;
+    iqc->decimation = 1;
+
     return true;
 }
 
 bool DeviceSA::GetIQ(IQCapture *iqc)
 {
+    float *re = new float[iqc->capture.size()], *im = new float[iqc->capture.size()];
+    saFetchData(id, re, im);
+
+    for(int i = 0; i < iqc->capture.size(); i++) {
+        iqc->capture[i].re = re[i];
+        iqc->capture[i].im = im[i];
+    }
+
+    delete [] re;
+    delete [] im;
     return true;
 }
 
 bool DeviceSA::GetIQFlush(IQCapture *iqc, bool sync)
 {
+    //GetIQ(iqc);
+    int rs;
+    if(!sync) {
+        return GetIQ(iqc);
+    } else {
+        QElapsedTimer timer;
+        do {
+            timer.start();
+            if(!GetIQ(iqc)) {
+                return false;
+            }
+            rs = timer.restart();
+            //printf("%d\n", rs);
+        } while(rs < 2);
+        //} while(timer.restart() < 2);
+    }
     return true;
 }
 

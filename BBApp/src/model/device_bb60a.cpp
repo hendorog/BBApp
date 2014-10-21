@@ -146,6 +146,7 @@ bool DeviceBB60A::Reconfigure(const SweepSettings *s, Trace *t)
     t->SetSettings(*s);
     t->SetSize(traceSize);
     t->SetFreq(binSize, startFreq);
+    t->SetUpdateRange(0, traceSize-1);
 
     bbGetDeviceDiagnostics(id, &last_temp, &voltage, &current);
 

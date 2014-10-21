@@ -251,6 +251,7 @@ void DemodIQTimePlot::DrawPlotText()
     glLoadIdentity();
     glOrtho(0, width(), 0, height(), -1, 1);
 
+    const IQSweep &sweep = GetSession()->iq_capture;
     const DemodSettings *ds = GetSession()->demod_settings;
     QString str;
 
@@ -281,7 +282,8 @@ void DemodIQTimePlot::DrawPlotText()
     DrawString(str, textFont, QPoint(grat_ll.x() + 5, grat_ll.y() - textHeight), LEFT_ALIGNED);
     str = "Capture Len " + ds->SweepTime().GetString();
     DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - textHeight), RIGHT_ALIGNED);
-    str = "Sample Rate " + QVariant(40.0 / (1 << ds->DecimationFactor())).toString() + " MS/s";
+    //str = "Sample Rate " + QVariant(40.0 / (1 << ds->DecimationFactor())).toString() + " MS/s";
+    str = "Sample Rate " + getSampleRateString(sweep.descriptor.sampleRate);
     DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ul.y() + 2), RIGHT_ALIGNED);
 
     for(int i = 0; i <= 10; i++) {

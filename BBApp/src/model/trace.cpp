@@ -196,7 +196,7 @@ void Trace::GetPeakList(std::vector<int> &peak_index_list) const
         }
     }
 }
-
+#include <iostream>
 void Trace::Update(const Trace &other)
 {
     if(!_update) {
@@ -210,6 +210,8 @@ void Trace::Update(const Trace &other)
 
     _start = other._start;
     _binSize = other._binSize;
+    _updateStart = other._updateStart;
+    _updateStop = other._updateStop;
     settings = *other.GetSettings();
 
     if(_type == OFF) {
@@ -221,35 +223,43 @@ void Trace::Update(const Trace &other)
 
     switch(_type) {
     case NORMAL:
-        for(int i = 0; i < _size; i++) {
+        for(int i = _updateStart; i < _updateStop; i++) {
             _minBuf[i] = other._minBuf[i];
             _maxBuf[i] = other._maxBuf[i];
         }
         break;
     case MAX_HOLD:
-        for(int i = 0; i < _size; i++) {
+        for(int i = _updateStart; i < _updateStop; i++) {
             _maxBuf[i] = _minBuf[i] = bb_lib::max2(_maxBuf[i], other._maxBuf[i]);
         }
         break;
     case MIN_HOLD:
-        for(int i = 0; i < _size; i++) {
+        for(int i = _updateStart; i < _updateStop; i++) {
             _maxBuf[i] = _minBuf[i] = bb_lib::min2(_minBuf[i], other._minBuf[i]);
         }
         break;
     case MIN_AND_MAX:
-        for(int i = 0; i < _size; i++) {
+        for(int i = _updateStart; i < _updateStop; i++) {
             _minBuf[i] = bb_lib::min2(_minBuf[i], other._minBuf[i]);
             _maxBuf[i] = bb_lib::max2(_maxBuf[i], other._maxBuf[i]);
         }
         break;
     case AVERAGE_10:
-        for(int i = 0; i < _size; i++) {
-            _minBuf[i] = _minBuf[i]*0.9 + other._minBuf[i]*0.1;
-            _maxBuf[i] = _maxBuf[i]*0.9 + other._maxBuf[i]*0.1;
+        std::cout << _maxBuf[_updateStart] << "\n";
+        if(_maxBuf[_updateStart] < -199.0) {
+            for(int i = _updateStart; i < _updateStop; i++) {
+                _minBuf[i] = other._minBuf[i];
+                _maxBuf[i] = other._maxBuf[i];
+            }
+        } else {
+            for(int i = _updateStart; i < _updateStop; i++) {
+                _minBuf[i] = _minBuf[i]*0.9 + other._minBuf[i]*0.1;
+                _maxBuf[i] = _maxBuf[i]*0.9 + other._maxBuf[i]*0.1;
+            }
         }
         break;
     case AVERAGE_100:
-        for(int i = 0; i < _size; i++) {
+        for(int i = _updateStart; i < _updateStop; i++) {
             _minBuf[i] = _minBuf[i]*0.99 + other._minBuf[i]*0.01;
             _maxBuf[i] = _maxBuf[i]*0.99 + other._maxBuf[i]*0.01;
         }
@@ -328,6 +338,14 @@ void Trace::ApplyOffset(double dB) {
             _maxBuf[i] *= scalar;
         }
     }
+}
+
+void Trace::SetUpdateRange(int start, int stop)
+{
+    _updateStart = start;
+    _updateStop = stop;
+    Q_ASSERT(_updateStart >= 0 && _updateStart <= _size);
+    Q_ASSERT(_updateStop > _updateStart && _updateStop <= _size);
 }
 
 void Trace::GetOccupiedBandwidth(OccupiedBandwidthInfo &info) const

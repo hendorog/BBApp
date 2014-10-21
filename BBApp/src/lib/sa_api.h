@@ -13,16 +13,19 @@
 #define SA_DEVICE_SA124B 0x1
 
 // Limits
-#define SA_MIN_FREQ 0.01
-#define SA_MAX_FREQ 4.4e9
-#define SA_MIN_SPAN 100.0
-#define SA_MAX_REF 20 // dBm
-#define SA_MAX_ATTEN 15
-#define SA_MIN_RBW 0.1
-#define SA_MAX_RBW 5.0e6
-#define SA_MIN_RT_RBW 100.0
-#define SA_MAX_RT_RBW 10000.0
-#define SA_MAX_SWEEP_TIME 30000 // ms
+#define SA_MIN_FREQ (0.01)
+#define SA_MAX_FREQ (4.4e9)
+#define SA_MIN_SPAN (100.0)
+#define SA_MAX_REF (20) // dBm
+#define SA_MAX_ATTEN (3)
+#define SA_MAX_GAIN (2)
+#define SA_MIN_RBW (0.1)
+#define SA_MAX_RBW (5.0e6)
+#define SA_MIN_RT_RBW (100.0)
+#define SA_MAX_RT_RBW (10000.0)
+#define SA_MAX_SWEEP_TIME (30000) // ms
+#define SA_MIN_IQ_BANDWIDTH (100.0)
+#define SA_MAX_IQ_DECIMATION (128)
 
 // Modes
 #define SA_IDLE     -1
@@ -68,7 +71,8 @@ enum saStatus {
     saBandwidthErr = -91,
     saRealTimeBandwidthErr = -90,
 
-    //Data errors
+    // Data errors
+    saInternetErr = -11,
     saUSBCommErr = -10,
 
     // General configuration errors
@@ -86,133 +90,40 @@ enum saStatus {
     saNoError = 0,
 
     // Warnings
-    saNoCorrections = 1
+    saNoCorrections = 1,
+    saCompressionWarning = 2
 };
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-SA_API saStatus saOpenDevice(
-    int *device
-    );
+SA_API saStatus saOpenDevice(int *device);
+SA_API saStatus saCloseDevice(int device);
+SA_API saStatus saGetSerialNumber(int device, int *serial);
+SA_API saStatus saGetFirmwareString(int device, char firmwareString[16]);
+SA_API saStatus saGetDeviceType(int device, int *device_type);
+SA_API saStatus saConfigAcquisition(int device, int detector, int scale, int sweepTime);
+SA_API saStatus saConfigCenterSpan(int device, double center, double span);
+SA_API saStatus saConfigLevel(int device, double ref, int atten, int gain, bool preAmp);
+SA_API saStatus saConfigSweepCoupling(int device, double rbw, double vbw, bool reject);
+SA_API saStatus saConfigProcUnits(int device, int units);
+SA_API saStatus saConfigIQ(int device, int decimation, double bandwidth);
 
-SA_API saStatus saCloseDevice(
-    int device
-    );
+SA_API saStatus saInitiate(int device, int mode, int flag);
+SA_API saStatus saAbort(int device);
 
-SA_API saStatus saGetSerialNumber(
-    int device,
-    int *serial
-    );
+SA_API saStatus saQuerySweepTime(int device, int *time);
+SA_API saStatus saQueryTraceInfo(int device, int *traceLength, double *startFreq, double *binSize);
+SA_API saStatus saQueryStreamInfo(int device, int *returnLen, double *bandwidth, double *samplesPerSecond);
+SA_API saStatus saFetchData(int device, float *a, float *b);
+SA_API saStatus saFetchData_64f(int device, double *a, double *b);
+SA_API saStatus saFetchPartialData(int device, float *a, float *b, int *start, int *stop);
+SA_API saStatus saFetchPartialData_64f(int device, double *a, double *b, int *start, int *stop);
+SA_API saStatus saQueryTemperature(int device, float *temp);
+SA_API saStatus saQueryDiagnostics(int device, float *voltage, float *current);
 
-SA_API saStatus saGetFirmwareString(
-    int device,
-    char firmwareString[16]
-    );
-
-SA_API saStatus saGetDeviceType(
-    int device,
-    int *device_type
-    );
-
-SA_API saStatus saConfigAcquisition(
-    int device,
-    int detector,
-    int scale,
-    int sweepTime // milli-seconds
-    );
-
-SA_API saStatus saConfigCenterSpan(
-    int device,
-    double center,
-    double span
-    );
-
-SA_API saStatus saConfigLevel(
-    int device,
-    double ref,
-    int atten, // 0,5,10,15
-    int gain,
-    bool preAmp
-    );
-
-SA_API saStatus saConfigSweepCoupling(
-    int device,
-    double rbw,
-    double vbw,
-    bool reject
-    );
-
-SA_API saStatus saConfigProcUnits(
-    int device,
-    int units
-    );
-
-SA_API saStatus saInitiate(
-    int device,
-    int mode,
-    int flag
-    );
-
-SA_API saStatus saAbort(
-    int device
-    );
-
-SA_API saStatus saQuerySweepTime(
-    int device,
-    int *time
-    );
-
-SA_API saStatus saQueryTraceInfo(
-    int device,
-    int *traceLength,
-    double *startFreq,
-    double *binSize
-    );
-
-SA_API saStatus saFetchData(
-    int device,
-    float *a,
-    float *b
-    );
-
-SA_API saStatus saFetchData_64f(
-    int device,
-    double *a,
-    double *b
-    );
-
-SA_API saStatus saFetchPartialData(
-    int device,
-    float *a,
-    float *b,
-    int *start,
-    int *stop
-    );
-
-SA_API saStatus saFetchPartialData_64f(
-    int device,
-    double *a,
-    double *b,
-    int *start,
-    int *stop
-    );
-
-SA_API saStatus saQueryTemperature(
-    int device,
-    float *temp
-    );
-
-SA_API saStatus saQueryDiagnostics(
-    int device,
-    float *voltage,
-    float *current
-    );
-
-SA_API const char* saGetErrorString(
-    saStatus code
-    );
+SA_API const char* saGetErrorString(saStatus code);
 
 #ifdef __cplusplus
 } // extern "C"

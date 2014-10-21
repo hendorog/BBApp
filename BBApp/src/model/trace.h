@@ -93,6 +93,8 @@ public:
     float* Min() const { return _minBuf; }
     float* Max() const { return _maxBuf; }
     qint64 Time() const { return msFromEpoch; }
+    int UpdateStart() const { return _updateStart; }
+    int UpdateStop() const { return _updateStop; }
 
     void Update(const Trace &other);
     // Export to path, with a given bin size spacing
@@ -103,6 +105,10 @@ public:
     bool GetChannelPower(double ch_start, double ch_stop, double *power) const;
     // Apply a flat offset, either in linear or logarithmic scale
     void ApplyOffset(double dB);
+    void SetUpdateRange(int start, int stop);
+    // Returns true if the last data retrieved finished the sweep
+    // Only relevant on SA fast sweep
+    bool IsFullSweep() const { return _updateStop == _size; }
 
     void GetOccupiedBandwidth(OccupiedBandwidthInfo &info) const;
 
@@ -123,6 +129,8 @@ private:
 
     float *_minBuf;
     float *_maxBuf;
+    int _updateStart;
+    int _updateStop;
 
     qint64 msFromEpoch;
 
