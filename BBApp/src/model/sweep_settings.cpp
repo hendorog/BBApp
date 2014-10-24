@@ -2,7 +2,8 @@
 
 #include <QSettings>
 
-#include "../lib/bb_api.h"
+#include "lib/bb_api.h"
+#include "lib/device_traits.h"
 
 double SweepSettings::maxRealTimeSpan = BB60A_MAX_RT_SPAN;
 
@@ -86,19 +87,19 @@ void SweepSettings::LoadDefaults()
 {
     mode = MODE_SWEEPING;
 
-    start = 11.0e6;
-    stop = 6.0e9;
-//    start = .8e9;
-//    stop = 1.1e9;
+//    start = 11.0e6;
+//    stop = 6.0e9;
+    start = .8e9;
+    stop = 1.1e9;
 
     span = (stop - start);
     center = (start + stop) / 2.0;
     step = 20.0e6;
 
-    rbw = 300.0e3;
-    vbw = 300.0e3;
-//    rbw = 100.0e3;
-//    vbw = 100.0e3;
+//    rbw = 300.0e3;
+//    vbw = 300.0e3;
+    rbw = 100.0e3;
+    vbw = 100.0e3;
 
     auto_rbw = true;
     auto_vbw = true;
@@ -269,6 +270,7 @@ void SweepSettings::setStart(Frequency f)
 void SweepSettings::setStop(Frequency f)
 {
     bool valid = false;
+    double max_freq = device_traits::max_frequency();
     Frequency max_stop = bb_lib::min2(f.Val(), BB60_MAX_FREQ);
 
     // Only change if room

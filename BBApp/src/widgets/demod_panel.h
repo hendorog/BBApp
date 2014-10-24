@@ -21,6 +21,7 @@ private:
     ComboEntry *gainEntry;
     ComboEntry *attenEntry;
     ComboEntry *decimationEntry;
+    TextOutEntry *sampleRateOutput;
     FrequencyEntry *bandwidthEntry;
     CheckBoxEntry *autoBandwidthEntry;
     TimeEntry *sweepTimeEntry;

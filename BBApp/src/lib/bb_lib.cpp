@@ -267,17 +267,17 @@ double getSignalFrequency(const std::vector<complex_f> &src, double sampleRate)
     return freq * phaseToFreq;
 }
 
-QString getSampleRateString(int sampleRate)
+QString getSampleRateString(double sampleRate)
 {
     Q_ASSERT(sampleRate >= 0);
 
     if(sampleRate > 1.0e6) {
-        return QVariant(sampleRate / 1000000).toString() + " MS/s";
+        return QString().sprintf("%.3f MS/s", sampleRate / 1.0e6);
     } else if(sampleRate > 1.0e3) {
-        return QVariant(sampleRate / 1000).toString() + " kS/s";
+        return QString().sprintf("%.3f kS/s", sampleRate / 1.0e3);
     }
 
-    return QVariant(sampleRate).toString() + " S/s";
+    return QString().sprintf("%.3f S/s", sampleRate);
 }
 
 void getPeakCorrelation(const complex_f *src,

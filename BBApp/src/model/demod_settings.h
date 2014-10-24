@@ -41,7 +41,6 @@ public:
     int Gain() const { return gain; }
     int Atten() const { return atten; }
     int DecimationFactor() const { return decimationFactor; }
-    double SampleRate() const { return 40.0e6 / (0x1 << DecimationFactor()); }
     Frequency Bandwidth() const { return bandwidth; }
     bool AutoBandwidth() const { return autoBandwidth; }
     Time SweepTime() const { return sweepTime; }
@@ -99,14 +98,14 @@ signals:
 // Descriptor for the device IQ stream
 struct IQDescriptor {
     IQDescriptor() {
-        sampleRate = 0;
+        sampleRate = 0.0;
         decimation = 0;
         timeDelta = 0.0;
         returnLen = 0;
         bandwidth = 0.0;
     }
 
-    int sampleRate;
+    double sampleRate;
     int decimation;
     double timeDelta; // Delta 'time' per sample in seconds?
     int returnLen;

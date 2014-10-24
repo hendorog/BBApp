@@ -209,7 +209,7 @@ void DemodSweepPlot::DemodAndDraw()
         }
 
     } else if(demodType == DemodTypeFM) {
-        ref = 40.0e6 / (0x1 << ds->DecimationFactor()) / 2.0;
+        ref = sweep.descriptor.sampleRate / 2.0;
         botRef = -ref;
 
         for(int i = 0; i < sweep.fmWaveform.size(); i++) {
@@ -273,6 +273,7 @@ void DemodSweepPlot::DrawPlotText()
     glOrtho(0, width(), 0, height(), -1, 1);
 
     const DemodSettings *ds = GetSession()->demod_settings;
+    const IQSweep &sweep = GetSession()->iq_capture;
     QString str;
 
     glQColor(GetSession()->colors.text);
@@ -301,7 +302,7 @@ void DemodSweepPlot::DrawPlotText()
             DrawString(str, divFont, x_pos, y_pos, RIGHT_ALIGNED);
         }
     } else if(demodType == DemodTypeFM) {
-        Frequency ref = 40.0e6 / ((0x1 << ds->DecimationFactor()) * 2.0);
+        Frequency ref = sweep.descriptor.sampleRate / 2.0;
         double div = ref / 5.0;
         DrawString("Ref " + ref.GetFreqString(), textFont,
                    QPoint(grat_ul.x() + 5, grat_ul.y() + 2), LEFT_ALIGNED);
@@ -371,11 +372,13 @@ void DemodSweepPlot::DrawMarkers()
     if(!markerOn) return;
 
     const DemodSettings *ds = GetSession()->demod_settings;
+    const IQSweep &sweep = GetSession()->iq_capture;
+
     QString str, delStr;
-    double binSize = 1.0 / (40.0e6 / (0x1 << ds->DecimationFactor()));
+    double binSize = 1.0 / sweep.descriptor.sampleRate;
 
     markerIndex = (trace.size() / 2) * markerPos.x();
-    markerPos.setX((double)markerIndex / (trace.size() / 2));
+    markerPos.setX((double)markerIndex / ((trace.size()-1) / 2));
     str = QVariant(markerIndex * binSize * 1000.0).toString() + " ms : ";
     int index = markerIndex * 2 + 1;
 
@@ -398,7 +401,7 @@ void DemodSweepPlot::DrawMarkers()
         }
         str += markerAmp.GetString();
     } else if(demodType == DemodTypeFM) {
-        float botRef = -40.0e6 / (0x1 << ds->DecimationFactor()) / 2.0;
+        float botRef = -sweep.descriptor.sampleRate / 2.0;
         markerPos.setY((markerVal - botRef) / fabs(2.0 * botRef));
         str += Frequency(markerVal).GetFreqString();
     } else if(demodType == DemodTypePM) {

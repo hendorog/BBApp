@@ -5,7 +5,10 @@ QString Session::title;
 Session::Session()
 {
     device = new DeviceBB60A(&prefs);
-    //device = new DeviceSA(&prefs);
+    device_traits::set_device_type(DeviceTypeBB60C);
+//    device = new DeviceSA(&prefs);
+//    device_traits::set_device_type(DeviceTypeSA44);
+
     sweep_settings = new SweepSettings();
     trace_manager = new TraceManager();
     demod_settings = new DemodSettings();
@@ -25,6 +28,7 @@ Session::~Session()
     delete trace_manager;
     delete demod_settings;
     delete audio_settings;
+
     // Delete device last
     delete device;
 }

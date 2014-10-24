@@ -243,8 +243,10 @@ bool DeviceBB60A::Reconfigure(const DemodSettings *ds, IQDescriptor *desc)
     bbConfigureGain(id, gain);
 
     bbInitiate(id, BB_STREAMING, BB_STREAM_IQ);
-    bbQueryStreamInfo(id, &desc->returnLen, &desc->bandwidth, &desc->sampleRate);
 
+    int sampleRate;
+    bbQueryStreamInfo(id, &desc->returnLen, &desc->bandwidth, &sampleRate);
+    desc->sampleRate = (double)sampleRate;
     desc->timeDelta = 1.0 / (double)desc->sampleRate;
     desc->decimation = decimation;
 
@@ -311,8 +313,9 @@ bool DeviceBB60A::ConfigureForTRFL(double center,
     bbConfigureGain(id, gain);
 
     bbInitiate(id, BB_STREAMING, BB_STREAM_IQ);
-    bbQueryStreamInfo(id, &desc.returnLen, &desc.bandwidth, &desc.sampleRate);
-
+    int sampleRate;
+    bbQueryStreamInfo(id, &desc.returnLen, &desc.bandwidth, &sampleRate);
+    desc.sampleRate = (double)sampleRate;
     desc.timeDelta = 1.0 / (double)desc.sampleRate;
     desc.decimation = 128;
 

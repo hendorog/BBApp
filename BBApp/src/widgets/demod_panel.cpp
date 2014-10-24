@@ -32,6 +32,8 @@ DemodPanel::DemodPanel(const QString &title,
                      tr("2.5 MS/s") << tr("1.25 MS/s") << tr("0.625 MS/s") << tr("0.3125 MS/s");
     decimationEntry->setComboText(decimation_sl);
 
+    sampleRateOutput = new TextOutEntry(tr("Sample Rate"));
+
     bandwidthEntry = new FrequencyEntry(tr("IF BW"), 0.0);
     autoBandwidthEntry = new CheckBoxEntry(tr("Auto IFBW"));
     sweepTimeEntry = new TimeEntry(tr("Swp Time"), Time(0.0), MILLISECOND);
@@ -56,6 +58,7 @@ DemodPanel::DemodPanel(const QString &title,
     demodPage->AddWidget(gainEntry);
     demodPage->AddWidget(attenEntry);
     demodPage->AddWidget(decimationEntry);
+    demodPage->AddWidget(sampleRateOutput);
     demodPage->AddWidget(bandwidthEntry);
     demodPage->AddWidget(autoBandwidthEntry);
     demodPage->AddWidget(sweepTimeEntry);
@@ -120,6 +123,9 @@ void DemodPanel::updatePanel(const DemodSettings *ds)
     attenEntry->setComboIndex(ds->Atten());
     decimationEntry->setDisabled(mrActive);
     decimationEntry->setComboIndex(ds->DecimationFactor());
+    sampleRateOutput->SetText(getSampleRateString(
+                                  device_traits::sample_rate() /
+                                  (0x1 << ds->DecimationFactor())));
     bandwidthEntry->SetFrequency(ds->Bandwidth());
     autoBandwidthEntry->SetChecked(ds->AutoBandwidth());
     sweepTimeEntry->setDisabled(mrActive);

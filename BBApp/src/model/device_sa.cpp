@@ -116,13 +116,11 @@ bool DeviceSA::Reconfigure(const DemodSettings *s, IQDescriptor *iqc)
     int gain = (s->Gain() == 0) ? SA_AUTO_GAIN : s->Gain() - 1;
     saConfigCenterSpan(id, s->CenterFreq(), 250.0e3);
     saConfigLevel(id, s->InputPower(), atten, gain, false);
-    saConfigIQ(id, 0x1 << s->DecimationFactor(), s->Bandwidth() / 10.0);
+    saConfigIQ(id, 0x1 << s->DecimationFactor(), s->Bandwidth());
     saInitiate(id, SA_IQ, 0);
 
-    double sr = 0;
-    saQueryStreamInfo(id, &iqc->returnLen, &iqc->bandwidth, &sr);
-    iqc->sampleRate = sr;
-    iqc->timeDelta = 1.0 / (double)sr;
+    saQueryStreamInfo(id, &iqc->returnLen, &iqc->bandwidth, &iqc->sampleRate);
+    iqc->timeDelta = 1.0 / iqc->sampleRate;
     iqc->decimation = 1;
 
     return true;
@@ -164,8 +162,24 @@ bool DeviceSA::GetIQFlush(IQCapture *iqc, bool sync)
     return true;
 }
 
-bool DeviceSA::ConfigureForTRFL(double center, int atten, int gain, IQDescriptor &desc)
+bool DeviceSA::ConfigureForTRFL(double center,
+                                int atten,
+                                int gain,
+                                IQDescriptor &desc)
 {
+    saAbort(id);
+
+//    int atten = (atten == 0) ? SA_AUTO_ATTEN : atten - 1;
+//    int gain = (gain == 0) ? SA_AUTO_GAIN : gain - 1;
+//    saConfigCenterSpan(id, center, 250.0e3);
+//    saConfigLevel(id, s->InputPower(), atten, gain, false);
+//    saConfigIQ(id, 1, 250.0e3);
+//    saInitiate(id, SA_IQ, 0);
+
+//    saQueryStreamInfo(id, &desc->returnLen, &desc->bandwidth, &desc->sampleRate);
+//    desc->timeDelta = 1.0 / desc->sampleRate;
+//    desc->decimation = 1;
+
     return true;
 }
 

@@ -86,6 +86,46 @@ public:
     }
 };
 
+// Entry used for text output
+// [label - custom_text]
+class TextOutEntry : public QWidget {
+    Q_OBJECT
+
+public:
+    TextOutEntry(const QString &title, QWidget *parent = 0)
+        : QWidget(parent)
+    {
+        move(0, 0);
+        resize(ENTRY_WIDTH, ENTRY_H);
+
+        label = new Label(title, this);
+        outText = new Label(this);
+    }
+
+    ~TextOutEntry() {}
+
+    void SetText(const QString &text)
+    {
+        outText->setText(text);
+    }
+
+protected:
+    void resizeEvent(QResizeEvent *)
+    {
+        int entryWidth = (width() < 200) ? 120 : qMin(width() - 80, 210);
+        int lblWidth = qMax(200, width()) - entryWidth;
+
+        label->move(ENTRY_OFFSET, 0);
+        label->resize(lblWidth - ENTRY_OFFSET, ENTRY_H);
+        outText->move(lblWidth, 0);
+        outText->resize(entryWidth, ENTRY_H);
+    }
+
+private:
+    Label *label;
+    Label *outText;
+};
+
 // Custom combo_box for style_sheet convenience
 class ComboBox : public QComboBox {
     Q_OBJECT

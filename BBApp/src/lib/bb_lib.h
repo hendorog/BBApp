@@ -23,6 +23,8 @@
 #include "time_type.h"
 #include "kiss_fft/kissfft.hh"
 
+#include "lib/device_traits.h"
+
 class Trace;
 
 #define INDEX_OFFSET(x) ((GLvoid*)x)
@@ -300,7 +302,7 @@ void getPeakCorrelation(const complex_f *src,
                         double &peakPower);
 
 double getSignalFrequency(const std::vector<complex_f> &src, double sampleRate);
-QString getSampleRateString(int sampleRate);
+QString getSampleRateString(double sampleRate);
 
 namespace bb_lib {
 

@@ -351,7 +351,7 @@ void IQSweep::Demod()
         pmWaveform.push_back(atan2(iq[i].im, iq[i].re));
     }
 
-    double phaseToFreq = settings.SampleRate() / BB_TWO_PI;
+    double phaseToFreq = descriptor.sampleRate / BB_TWO_PI;
     double lastPhase = pmWaveform[0];
 
     for(float phase : pmWaveform) {
@@ -380,7 +380,7 @@ void IQSweep::CalculateReceiverStats()
     temp2.resize(fm.size());
 
     // Low pass filter
-    FirFilter fir(settings.MALowPass() / settings.SampleRate(), 1024); // Filters AM and FM
+    FirFilter fir(settings.MALowPass() / descriptor.sampleRate, 1024); // Filters AM and FM
 
     // Calculate RF Center based on average of FM frequencies
     stats.rfCenter = 0.0;
@@ -399,7 +399,7 @@ void IQSweep::CalculateReceiverStats()
     fir.Filter(&temp[0], &temp2[0], fm.size());
     fir.Reset();
 
-    stats.fmAudioFreq = getAudioFreq(temp2, settings.SampleRate(), 1024);
+    stats.fmAudioFreq = getAudioFreq(temp2, descriptor.sampleRate, 1024);
 
     // FM RMS
     stats.fmPeakPlus = std::numeric_limits<double>::lowest();
@@ -432,7 +432,7 @@ void IQSweep::CalculateReceiverStats()
 
     fir.Filter(&temp2[0], &temp[0], temp2.size());
 
-    stats.amAudioFreq = getAudioFreq(temp, settings.SampleRate(), 1024);
+    stats.amAudioFreq = getAudioFreq(temp, descriptor.sampleRate, 1024);
     stats.amPeakPlus = std::numeric_limits<double>::lowest();
     stats.amPeakMinus = std::numeric_limits<double>::max();
     stats.amRMS = 0.0;

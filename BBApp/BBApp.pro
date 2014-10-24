@@ -46,7 +46,8 @@ SOURCES += src/main.cpp \
     src/views/demod_spectrum_plot.cpp \
     src/views/demod_sweep_plot.cpp \
     src/widgets/measuring_receiver_dialog.cpp \
-    src/model/device_sa.cpp
+    src/model/device_sa.cpp \
+    src/lib/device_traits.cpp
 
 HEADERS += src/mainwindow.h \
     src/lib/frequency.h \
@@ -94,7 +95,8 @@ HEADERS += src/mainwindow.h \
     src/views/demod_sweep_plot.h \
     src/widgets/measuring_receiver_dialog.h \
     src/model/device_sa.h \
-    src/lib/sa_api.h
+    src/lib/sa_api.h \
+    src/lib/device_traits.h
 
 OTHER_FILES += \
     style_sheet.css \

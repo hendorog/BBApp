@@ -278,11 +278,10 @@ void DemodIQTimePlot::DrawPlotText()
     DrawString("I", textFont, QPoint(grat_ul.x() + 25, grat_ul.y() + 2), LEFT_ALIGNED);
     DrawString("Q", textFont, QPoint(grat_ul.x() + 65, grat_ul.y() + 2), LEFT_ALIGNED);
 
-    str = "IF Bandwidth " + ds->Bandwidth().GetFreqString();
+    str = "IF Bandwidth " + Frequency(sweep.descriptor.bandwidth).GetFreqString(3, true);
     DrawString(str, textFont, QPoint(grat_ll.x() + 5, grat_ll.y() - textHeight), LEFT_ALIGNED);
     str = "Capture Len " + ds->SweepTime().GetString();
     DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - textHeight), RIGHT_ALIGNED);
-    //str = "Sample Rate " + QVariant(40.0 / (1 << ds->DecimationFactor())).toString() + " MS/s";
     str = "Sample Rate " + getSampleRateString(sweep.descriptor.sampleRate);
     DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ul.y() + 2), RIGHT_ALIGNED);
 
