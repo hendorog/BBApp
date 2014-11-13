@@ -25,6 +25,7 @@ private:
     NumericEntry *div;
     ComboEntry *gain;
     ComboEntry *atten;
+    ComboEntry *preamp;
 
     CheckBoxEntry *native_rbw;
     FreqShiftEntry *rbw;
@@ -41,6 +42,7 @@ public slots:
     void enableManualGainAtten(bool enable) {
         gain->setEnabled(enable);
         atten->setEnabled(enable);
+        preamp->setEnabled(enable);
     }
 
 signals:

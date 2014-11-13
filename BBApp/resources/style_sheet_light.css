@@ -54,7 +54,7 @@ QPushButton:hover#BBFlatButton {
 /********
  * Ordinary Push Buttons
  ********/
-QPushButton#BBPushButton {
+QPushButton#SH_PushButton {
   background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
     stop: 0 rgb(234,236,249), stop: 0.1 rgb(204,206,219),
     stop: 0.9 rgb(194,196,209), stop: 1 rgb(154,156,169));
@@ -70,7 +70,7 @@ QPushButton#BBPushButton {
   padding-left: 5px;
 }
 
-QPushButton:pressed#BBPushButton {
+QPushButton:pressed#SH_PushButton {
   background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
     stop: 0 rgb(234,236,249), stop: 0.1 rgb(204,206,219),
     stop: 0.9 rgb(194,196,209), stop: 1 rgb(154,156,169));
@@ -91,7 +91,7 @@ QPushButton:pressed#BBPushButton {
 /********
  * Same as 'pressed', for checkable buttons
  ********/
-QPushButton:checked#BBPushButton {
+QPushButton:checked#SH_PushButton {
   background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
     stop: 0 rgb(234,236,249), stop: 0.1 rgb(204,206,219),
     stop: 0.9 rgb(194,196,209), stop: 1 rgb(154,156,169));

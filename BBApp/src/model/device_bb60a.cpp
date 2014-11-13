@@ -9,16 +9,6 @@
         return false; \
     } /* end */
 
-// Maps software mode to device mode
-//static int g_mode_map[] = {
-//    SA_IDLE,          // idle
-//    SA_SWEEPING,      // sweep
-//    SA_REAL_TIME,     // rt
-//    SA_IQ,            // zs
-//    SA_IQ,            // audio
-//    SA_IDLE           // sna // todo
-//};
-
 DeviceBB60A::DeviceBB60A(const Preferences *preferences) :
     Device(preferences)
 {
@@ -28,6 +18,8 @@ DeviceBB60A::DeviceBB60A(const Preferences *preferences) :
     lastStatus = bbNoError;
 
     timebase_reference = TIMEBASE_INTERNAL;
+
+    last_audio_freq = -1.0e6;
 }
 
 DeviceBB60A::~DeviceBB60A()
@@ -97,7 +89,7 @@ bool DeviceBB60A::Preset()
 
 bool DeviceBB60A::Reconfigure(const SweepSettings *s, Trace *t)
 {
-    bbAbort(id);
+    Abort();
 
     int scale = s->RefLevel().IsLogScale() ?
                 BB_LOG_SCALE : BB_LIN_SCALE;
@@ -130,7 +122,7 @@ bool DeviceBB60A::Reconfigure(const SweepSettings *s, Trace *t)
     // Scale based on amp unit type
     STATUS_CHECK(bbConfigureAcquisition(id, detector, scale));
     STATUS_CHECK(bbConfigureCenterSpan(id, s->Center(), s->Span()));
-    STATUS_CHECK(bbConfigureLevel(id, reference, (s->Attenuation()-1) * 10));
+    STATUS_CHECK(bbConfigureLevel(id, reference, (s->Atten()-1) * 10));
     STATUS_CHECK(bbConfigureSweepCoupling(id, s->RBW(), s->VBW(), sweep_time,
                                           rbw_type, rejection));
     STATUS_CHECK(bbConfigureWindow(id, BB_NUTALL));
@@ -146,7 +138,7 @@ bool DeviceBB60A::Reconfigure(const SweepSettings *s, Trace *t)
     t->SetSettings(*s);
     t->SetSize(traceSize);
     t->SetFreq(binSize, startFreq);
-    t->SetUpdateRange(0, traceSize-1);
+    t->SetUpdateRange(0, traceSize);
 
     bbGetDeviceDiagnostics(id, &last_temp, &voltage, &current);
 
@@ -203,7 +195,7 @@ bool DeviceBB60A::GetSweep(const SweepSettings *s, Trace *t)
 
 bool DeviceBB60A::Reconfigure(const DemodSettings *ds, IQDescriptor *desc)
 {   
-    bbAbort(id);
+    Abort();
 
     int gain = ds->Gain() - 1, atten = (ds->Atten() - 1) * 10.0;
     if(gain < 0) gain = BB_AUTO_GAIN;
@@ -291,7 +283,7 @@ bool DeviceBB60A::ConfigureForTRFL(double center,
                                    int gain,
                                    IQDescriptor &desc)
 {
-    bbAbort(id);
+    Abort();
 
     int port_one_mask;
     switch(timebase_reference) {
@@ -318,6 +310,35 @@ bool DeviceBB60A::ConfigureForTRFL(double center,
     desc.sampleRate = (double)sampleRate;
     desc.timeDelta = 1.0 / (double)desc.sampleRate;
     desc.decimation = 128;
+
+    return true;
+}
+
+bool DeviceBB60A::ConfigureAudio(const AudioSettings &as)
+{
+    lastStatus = bbConfigureDemod(
+                id,
+                as.AudioMode(),
+                as.CenterFreq(),
+                as.IFBandwidth(),
+                as.LowPassFreq(),
+                as.HighPassFreq(),
+                as.FMDeemphasis());
+
+    double low_limit = last_audio_freq - 1.75e6;
+    double high_limit = last_audio_freq + 1.75e6;
+
+    if(as.CenterFreq() < low_limit || as.CenterFreq() > high_limit) {
+        lastStatus = bbInitiate(id, BB_AUDIO_DEMOD, 0);
+        last_audio_freq = as.CenterFreq();
+    }
+
+    return true;
+}
+
+bool DeviceBB60A::GetAudio(float *audio)
+{
+    lastStatus = bbFetchAudio(id, audio);
 
     return true;
 }

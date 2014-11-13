@@ -9,8 +9,10 @@
 
 #define SA_MAX_DEVICES 8
 
-#define SA_DEVICE_SA44B 0x0
-#define SA_DEVICE_SA124B 0x1
+#define SA_DEVICE_NONE (0x0);
+#define SA_DEVICE_SA44B (0x1)
+#define SA_DEVICE_SA124A (0x2)
+#define SA_DEVICE_SA124B (0x3)
 
 // Limits
 #define SA_MIN_FREQ (0.01)
@@ -28,34 +30,46 @@
 #define SA_MAX_IQ_DECIMATION (128)
 
 // Modes
-#define SA_IDLE     -1
-#define SA_SWEEPING  0x0
-#define SA_REAL_TIME 0x1
-#define SA_IQ        0x2
+#define SA_IDLE      (-1)
+#define SA_SWEEPING  (0x0)
+#define SA_REAL_TIME (0x1)
+#define SA_IQ        (0x2)
+#define SA_AUDIO     (0x3)
+#define SA_TG_SWEEP  (0x4)
 
 // Detectors
-#define SA_MIN_MAX 0x0
-#define SA_AVERAGE 0x1
+#define SA_MIN_MAX (0x0)
+#define SA_AVERAGE (0x1)
 
 // Scales
-#define SA_LOG_SCALE      0x0
-#define SA_LOG_FULL_SCALE 0x1
-#define SA_LIN_SCALE      0x2
-#define SA_LIN_FULL_SCALE 0x3
+#define SA_LOG_SCALE      (0x0)
+#define SA_LOG_FULL_SCALE (0x1)
+#define SA_LIN_SCALE      (0x2)
+#define SA_LIN_FULL_SCALE (0x3)
 
 // Levels
-#define SA_AUTO_ATTEN -1
-#define SA_AUTO_GAIN  -1
+#define SA_AUTO_ATTEN (-1)
+#define SA_AUTO_GAIN  (-1)
+
+// Pre-amplifier
+#define SA_PREAMP_AUTO (-1)
+#define SA_PREAMP_OFF  (0x0)
+#define SA_PREAMP_ON   (0x1)
 
 // Video Processing Units
-#define SA_POWER_UNITS 0x0
-#define SA_LOG_UNITS   0x1
-#define SA_VOLT_UNITS  0x2
-#define SA_BYPASS      0x3
+#define SA_POWER_UNITS (0x0)
+#define SA_LOG_UNITS   (0x1)
+#define SA_VOLT_UNITS  (0x2)
+#define SA_BYPASS      (0x3)
+
+#define SA_AUDIO_AM  (0x0)
+#define SA_AUDIO_FM  (0x1)
+#define SA_AUDIO_USB (0x2)
+#define SA_AUDIO_LSB (0x3)
+#define SA_AUDIO_CW  (0x4)
 
 // Return values
 enum saStatus {
-    // Impossible
     saUnknownErr = -666,
 
     // Setting specific error codes
@@ -91,24 +105,35 @@ enum saStatus {
 
     // Warnings
     saNoCorrections = 1,
-    saCompressionWarning = 2
+    saCompressionWarning = 2,
+    saParameterClamped = 3
 };
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+SA_API saStatus saGetSerialNumberList(int serialNumbers[8], int *deviceCount);
+SA_API saStatus saOpenDeviceBySerialNumber(int *device, int serialNumber);
 SA_API saStatus saOpenDevice(int *device);
+SA_API saStatus saAttachTrackingGenerator(int device);
 SA_API saStatus saCloseDevice(int device);
+SA_API saStatus saPreset(int device);
+
 SA_API saStatus saGetSerialNumber(int device, int *serial);
 SA_API saStatus saGetFirmwareString(int device, char firmwareString[16]);
 SA_API saStatus saGetDeviceType(int device, int *device_type);
 SA_API saStatus saConfigAcquisition(int device, int detector, int scale, int sweepTime);
 SA_API saStatus saConfigCenterSpan(int device, double center, double span);
-SA_API saStatus saConfigLevel(int device, double ref, int atten, int gain, bool preAmp);
+SA_API saStatus saConfigLevel(int device, double ref);
+SA_API saStatus saConfigGainAtten(int device, int atten, int gain, bool preAmp);
 SA_API saStatus saConfigSweepCoupling(int device, double rbw, double vbw, bool reject);
 SA_API saStatus saConfigProcUnits(int device, int units);
 SA_API saStatus saConfigIQ(int device, int decimation, double bandwidth);
+SA_API saStatus saConfigAudio(int device, int audioType, double centerFreq,
+                              double bandwidth, double audioLowPassFreq,
+                              double audioHighPassFreq, double fmDeemphasis);
+SA_API saStatus saConfigTG(int device, int stepSize, double outputAmplitude);
 
 SA_API saStatus saInitiate(int device, int mode, int flag);
 SA_API saStatus saAbort(int device);
@@ -120,6 +145,9 @@ SA_API saStatus saFetchData(int device, float *a, float *b);
 SA_API saStatus saFetchData_64f(int device, double *a, double *b);
 SA_API saStatus saFetchPartialData(int device, float *a, float *b, int *start, int *stop);
 SA_API saStatus saFetchPartialData_64f(int device, double *a, double *b, int *start, int *stop);
+SA_API saStatus saGetIQ(int device, float *iq);
+SA_API saStatus saGetIQ_64f(int device, double *iq);
+SA_API saStatus saGetAudio(int device, float *audio);
 SA_API saStatus saQueryTemperature(int device, float *temp);
 SA_API saStatus saQueryDiagnostics(int device, float *voltage, float *current);
 

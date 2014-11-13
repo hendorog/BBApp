@@ -35,6 +35,12 @@ SweepPanel::SweepPanel(const QString &title,
     atten->setComboText(atten_sl);
     atten->setEnabled(false);
 
+    preamp = new ComboEntry(tr("Preamp"));
+    QStringList preamp_sl;
+    preamp_sl << "Auto" << "Off" << "On";
+    preamp->setComboText(preamp_sl);
+    preamp->setEnabled(false);
+
     native_rbw = new CheckBoxEntry("Native RBW");
     rbw = new FreqShiftEntry(tr("RBW"), 0.0);
     vbw = new FreqShiftEntry(tr("VBW"), 0.0);
@@ -65,6 +71,7 @@ SweepPanel::SweepPanel(const QString &title,
     amplitude_page->AddWidget(div);
     amplitude_page->AddWidget(gain);
     amplitude_page->AddWidget(atten);
+    amplitude_page->AddWidget(preamp);
 
     bandwidth_page->AddWidget(native_rbw);
     bandwidth_page->AddWidget(rbw);
@@ -116,6 +123,8 @@ SweepPanel::SweepPanel(const QString &title,
             settings, SLOT(setGain(int)));
     connect(atten, SIGNAL(comboIndexChanged(int)),
             settings, SLOT(setAttenuation(int)));
+    connect(preamp, SIGNAL(comboIndexChanged(int)),
+            settings, SLOT(setPreAmp(int)));
 
     connect(native_rbw, SIGNAL(clicked(bool)),
             settings, SLOT(setNativeRBW(bool)));
@@ -154,7 +163,8 @@ void SweepPanel::updatePanel(const SweepSettings *settings)
     ref->SetAmplitude(settings->RefLevel());
     div->SetValue(settings->Div());
     gain->setComboIndex(settings->Gain());
-    atten->setComboIndex(settings->Attenuation());
+    atten->setComboIndex(settings->Atten());
+    preamp->setComboIndex(settings->Preamp());
 
     native_rbw->SetChecked(settings->NativeRBW());
     rbw->SetFrequency(settings->RBW());

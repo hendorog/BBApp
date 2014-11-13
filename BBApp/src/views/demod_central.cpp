@@ -34,13 +34,11 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     demodSelect->insertItems(0, comboString);
     demodSelect->setFixedSize(200, 30-4);
 
-    QPushButton *markerOff, *markerDelta;
-    markerOff = new QPushButton("Marker Off");
-    markerOff->setObjectName("BBPushButton");
+    SHPushButton *markerOff, *markerDelta;
+    markerOff = new SHPushButton("Marker Off");
     markerOff->setFixedSize(120, 30-4);
 
-    markerDelta = new QPushButton("Marker Delta");
-    markerDelta->setObjectName("BBPushButton");
+    markerDelta = new SHPushButton("Marker Delta");
     markerDelta->setFixedSize(120, 30-4);
 
     toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
@@ -55,16 +53,16 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     toolBar->addWidget(spacer);
 
-    QPushButton *singleSweep, *autoSweep, *presetBtn;
-
-    singleSweep = new PushButton("Single", toolBar);
+    SHPushButton *singleSweep, *autoSweep;
+    singleSweep = new SHPushButton("Single", toolBar);
     singleSweep->setFixedSize(120, TOOLBAR_HEIGHT - 4);
     connect(singleSweep, SIGNAL(clicked()), this, SLOT(singlePressed()));
 
-    autoSweep = new PushButton("Auto", toolBar);
+    autoSweep = new SHPushButton("Auto", toolBar);
     autoSweep->setFixedSize(120, TOOLBAR_HEIGHT - 4);
     connect(autoSweep, SIGNAL(clicked()), this, SLOT(autoPressed()));
 
+    QPushButton *presetBtn;
     presetBtn = new QPushButton("Preset", toolBar);
     presetBtn->setObjectName("BBPresetButton");
     presetBtn->setFixedSize(120, TOOLBAR_HEIGHT - 4);
@@ -87,7 +85,7 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     Label *recordDirLabel = new Label("Record Directory");
     recordDirLabel->setFixedSize(100, 30);
     recordDirLabel->setAlignment(Qt::AlignCenter);
-    PushButton *browseDirButton = new PushButton("Browse");
+    SHPushButton *browseDirButton = new SHPushButton("Browse");
     browseDirButton->setFixedSize(80, 26);
     currentRecordDirLabel = new Label(currentRecordDir);
     currentRecordDirLabel->setAlignment(Qt::AlignCenter);
@@ -109,7 +107,7 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     saveAsSelect->insertItems(0, saveAsComboString);
     saveAsSelect->setFixedSize(80, 26);
     connect(saveAsSelect, SIGNAL(activated(int)), this, SLOT(saveAsType(int)));
-    PushButton *recordButton = new PushButton("Record");
+    SHPushButton *recordButton = new SHPushButton("Record");
     recordButton->setFixedSize(120, 26);
 
     recordToolBar->addWidget(new FixedSpacer(QSize(10, 30)));
@@ -206,6 +204,11 @@ void DemodCentral::GetViewImage(QImage &image)
     painter.end();
 
     image = temp;
+}
+
+Frequency DemodCentral::GetCurrentCenterFreq() const
+{
+    return sessionPtr->demod_settings->CenterFreq();
 }
 
 void DemodCentral::resizeEvent(QResizeEvent *)

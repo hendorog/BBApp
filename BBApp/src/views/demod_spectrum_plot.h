@@ -23,9 +23,9 @@ private:
     std::unique_ptr<FFT> fft;
     std::vector<complex_f> postTransform;
 
-    QPoint grat_sz, grat_ul, grat_ll;
-    GLVector grat, gratBorder;
-    GLuint gratVBO, gratBorderVBO;
+//    QPoint grat_sz, grat_ul, grat_ll;
+//    GLVector grat, gratBorder;
+//    GLuint gratVBO, gratBorderVBO;
 
     GLVector spectrum;
     GLuint traceVBO;

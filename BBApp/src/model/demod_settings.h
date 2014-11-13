@@ -5,10 +5,6 @@
 
 #include <QSettings>
 
-void get_next_iq_bandwidth(Frequency current, Frequency &next, int &decimationRate);
-void get_prev_iq_bandwidth(Frequency current, Frequency &prev, int &decimationRate);
-void get_clamped_iq_bandwidth(Frequency &bw, int downsampleFactor);
-
 enum TriggerType {
     TriggerTypeNone = 0,
     TriggerTypeVideo = 1,
@@ -40,6 +36,7 @@ public:
     Frequency CenterFreq() const { return centerFreq; }
     int Gain() const { return gain; }
     int Atten() const { return atten; }
+    int Preamp() const { return preamp; }
     int DecimationFactor() const { return decimationFactor; }
     Frequency Bandwidth() const { return bandwidth; }
     bool AutoBandwidth() const { return autoBandwidth; }
@@ -62,6 +59,7 @@ private:
     Frequency centerFreq;
     int gain; // Index, 0 == auto
     int atten; // Index, 0 == auto
+    int preamp; // Index, 0 == auto
     int decimationFactor;
     Frequency bandwidth;
     bool autoBandwidth;

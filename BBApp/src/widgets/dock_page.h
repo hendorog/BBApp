@@ -42,6 +42,7 @@ public:
 
     // Add entry widget to the page
     void AddWidget(QWidget *new_widget);
+    void RemoveWidget(QWidget *widget);
 
     // Get height of widget, height is determined by whether
     //  the page is open or not
@@ -60,7 +61,8 @@ private:
     PageTab *tab;
     // List of widgets who belong to this page
     // Page does not own the widgets
-    QVector<QWidget*> list;
+    //QVector<QWidget*> list;
+    std::vector<QWidget*> list;
     bool open;
     int pageHeight;
 
@@ -68,6 +70,7 @@ signals:
     void tabUpdated();
 
 public slots:
+    void updateTab() { tabToggled(open); }
     void tabToggled(bool checked);
 
 private:

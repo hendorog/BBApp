@@ -287,17 +287,17 @@ PreferenceDialog::PreferenceDialog(Session *session,
     //panels.push_back(new PreferenceTracePanel(tr("Sweep Settings"), this));
     //panels.push_back(new PreferenceDevicePanel(tr("Device Settings"), this));
 
-    applyBtn = new PushButton(tr("Apply"), this);
+    applyBtn = new SHPushButton(tr("Apply"), this);
     applyBtn->resize(90, 30);
     applyBtn->move(width() - 95, height() - 35);
     connect(applyBtn, SIGNAL(clicked()), this, SLOT(applyClicked()));
 
-    cancelBtn = new PushButton(tr("Cancel"), this);
+    cancelBtn = new SHPushButton(tr("Cancel"), this);
     cancelBtn->resize(90, 30);
     cancelBtn->move(width() - 190, height() - 35);
     connect(cancelBtn, SIGNAL(clicked()), this, SLOT(reject()));
 
-    okBtn = new PushButton(tr("OK"), this);
+    okBtn = new SHPushButton(tr("OK"), this);
     okBtn->resize(90, 30);
     okBtn->move(width() - 285, height() - 35);
     connect(okBtn, SIGNAL(clicked()), this, SLOT(accept()));

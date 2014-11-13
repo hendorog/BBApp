@@ -45,7 +45,7 @@
 #define BB_MIN_BW                0.602006912
 #define BB_MAX_BW                10100000.0
 #define BB_MAX_SWEEP_TIME        0.1 // 100ms
-#define BB_MIN_RT_RBW            2465.0      
+#define BB_MIN_RT_RBW            2465.820313
 #define BB_MAX_RT_RBW            631250.0 
 #define BB_MIN_RT_SPAN           200.0e3
 #define BB60A_MAX_RT_SPAN        20.0e6

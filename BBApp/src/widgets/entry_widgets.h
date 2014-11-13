@@ -117,8 +117,8 @@ protected:
 
         label->move(ENTRY_OFFSET, 0);
         label->resize(lblWidth - ENTRY_OFFSET, ENTRY_H);
-        outText->move(lblWidth, 0);
-        outText->resize(entryWidth, ENTRY_H);
+        outText->move(lblWidth + 5, 0);
+        outText->resize(entryWidth - 5, ENTRY_H);
     }
 
 private:
@@ -140,18 +140,18 @@ public:
 };
 
 // Single Button
-class PushButton : public QPushButton {
+class SHPushButton : public QPushButton {
     Q_OBJECT
 
 public:
-    PushButton(const QString &title, QWidget *parent = 0) :
+    SHPushButton(const QString &title, QWidget *parent = 0) :
         QPushButton(title, parent)
     {
-        setObjectName("BBPushButton");
+        setObjectName("SH_PushButton");
     }
 
 private:
-    DISALLOW_COPY_AND_ASSIGN(PushButton)
+    DISALLOW_COPY_AND_ASSIGN(SHPushButton)
 };
 
 // Toggle button, on/off button
@@ -162,7 +162,7 @@ public:
     ToggleButton(const QString &title, QWidget *parent = 0) :
         QPushButton(title, parent)
     {
-        setObjectName("BBPushButton");
+        setObjectName("SH_PushButton");
         setCheckable(true);
     }
 
@@ -523,7 +523,7 @@ protected:
     void resizeEvent(QResizeEvent *);
 
 private:
-    PushButton *left_button, *right_button;
+    SHPushButton *left_button, *right_button;
 
 signals:
     void leftPressed();

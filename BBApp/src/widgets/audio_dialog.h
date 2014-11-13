@@ -16,11 +16,11 @@ class AudioDialog : public QDialog {
     Q_OBJECT
 
 public:
-    AudioDialog(const Device *device_ptr,
-                const AudioSettings *settings_ptr);
+    AudioDialog(Device *device_ptr,
+                AudioSettings *settings_ptr);
     ~AudioDialog();
 
-    const AudioSettings* Configuration() const { return &config; }
+    const AudioSettings* Configuration() const { return config; }
 
 protected:
     void keyPressEvent(QKeyEvent *e);
@@ -29,8 +29,8 @@ private:
     void Reconfigure();
     void AudioThread();
 
-    int device_id;
-    AudioSettings config; // Does not own
+    Device *device; // Does not own
+    AudioSettings *config; // Does not own
     float *from_device;
     short *buffer;
 
@@ -45,11 +45,11 @@ private:
     FrequencyEntry *high_pass_entry;
     NumericEntry *deemphasis;
 
-    PushButton *smallDec, *smallInc;
-    PushButton *largeDec, *largeInc;
+    SHPushButton *smallDec, *smallInc;
+    SHPushButton *largeDec, *largeInc;
     QTimer reset_timer;
 
-    PushButton *okBtn;
+    SHPushButton *okBtn;
 
     double low_limit, high_limit;
     double factor; // factor = log2(factor)

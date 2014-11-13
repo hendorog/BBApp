@@ -120,7 +120,7 @@ void PlaybackFile::PrepFirstTrace(const Trace *trace)
     header.vbw = set->VBW();
     header.ref_level = set->RefLevel();
     header.div = set->Div();
-    header.atten = set->Attenuation();
+    header.atten = set->Atten();
     header.gain = set->Gain();
     header.detector = set->Detector();
 

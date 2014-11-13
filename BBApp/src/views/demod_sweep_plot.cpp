@@ -379,7 +379,8 @@ void DemodSweepPlot::DrawMarkers()
 
     markerIndex = (trace.size() / 2) * markerPos.x();
     markerPos.setX((double)markerIndex / ((trace.size()-1) / 2));
-    str = QVariant(markerIndex * binSize * 1000.0).toString() + " ms : ";
+    str += QString().sprintf("%.2f ms : ", markerIndex * binSize * 1000.0);
+    //str = QVariant(markerIndex * binSize * 1000.0).toString() + " ms : ";
     int index = markerIndex * 2 + 1;
 
     // Clamp to size, no out of bound indexing please

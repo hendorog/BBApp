@@ -597,8 +597,8 @@ DualButtonEntry::DualButtonEntry(const QString &left_button_title,
     move(0, 0);
     resize(ENTRY_WIDTH, ENTRY_H);
 
-    left_button = new PushButton(left_button_title, this);
-    right_button = new PushButton(right_button_title, this);
+    left_button = new SHPushButton(left_button_title, this);
+    right_button = new SHPushButton(right_button_title, this);
 
     connect(left_button, SIGNAL(clicked()), this, SIGNAL(leftPressed()));
     connect(right_button, SIGNAL(clicked()), this, SIGNAL(rightPressed()));

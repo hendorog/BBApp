@@ -134,7 +134,7 @@ private:
     QGroupBox *groupBox;
     // List of radio buttons, correspond to panels
     QVector<PreferencePanel*> panels;
-    PushButton *okBtn, *cancelBtn, *applyBtn;
+    SHPushButton *okBtn, *cancelBtn, *applyBtn;
 
 private slots:
     void switchPanel(int panelIndex);

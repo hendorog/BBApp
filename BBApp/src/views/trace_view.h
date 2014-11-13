@@ -58,6 +58,7 @@ protected:
     void DrawOCBWMarker(int x, int y, bool left);
     void DrawPersistence();
     void DrawLimitLines(const Trace *limitTrace, const GLVector &v);
+    void DrawBackdrop(QPoint pos, QPoint size);
 
     void AddToPersistence(const GLVector &v);
     void AddToWaterfall(const GLVector &v);

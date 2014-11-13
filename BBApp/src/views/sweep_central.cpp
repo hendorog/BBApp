@@ -55,8 +55,7 @@ SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
     connect(persistence_check, SIGNAL(stateChanged(int)),
             trace_view, SLOT(enablePersistence(int)));
 
-    persistence_clear = new QPushButton(tr("Clear"), toolBar);
-    persistence_clear->setObjectName("BBPushButton");
+    persistence_clear = new SHPushButton(tr("Clear"), toolBar);
     persistence_clear->setFixedSize(100, TOOLBAR_H - 4);
     toolBar->addWidget(persistence_clear);
     connect(persistence_clear, SIGNAL(clicked()), trace_view, SLOT(clearPersistence()));
@@ -72,13 +71,11 @@ SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     toolBar->addWidget(spacer);
 
-    single_sweep = new QPushButton(tr("Single Trig"), toolBar);
-    single_sweep->setObjectName("BBPushButton");
+    single_sweep = new SHPushButton(tr("Single Trig"), toolBar);
     single_sweep->setFixedSize(120, TOOLBAR_H - 4);
     toolBar->addWidget(single_sweep);
 
-    continuous_sweep = new QPushButton(tr("Continuous"), toolBar);
-    continuous_sweep->setObjectName("BBPushButton");
+    continuous_sweep = new SHPushButton(tr("Continuous"), toolBar);
     continuous_sweep->setFixedSize(120, TOOLBAR_H - 4);
     toolBar->addWidget(continuous_sweep);
 

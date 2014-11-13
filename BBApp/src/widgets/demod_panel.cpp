@@ -26,10 +26,10 @@ DemodPanel::DemodPanel(const QString &title,
     attenEntry->setComboText(atten_sl);
     attenEntry->setEnabled(false);
 
-    decimationEntry = new ComboEntry(tr("Sample Rate"));
+    decimationEntry = new ComboEntry(tr("Decimation"));
     QStringList decimation_sl;
-    decimation_sl << tr("40 MS/s") << tr("20 MS/s") << tr("10 MS/s") << tr("5 MS/s") <<
-                     tr("2.5 MS/s") << tr("1.25 MS/s") << tr("0.625 MS/s") << tr("0.3125 MS/s");
+    decimation_sl << tr("1") << tr("2") << tr("4") << tr("8") <<
+                     tr("16") << tr("32") << tr("64") << tr("128");
     decimationEntry->setComboText(decimation_sl);
 
     sampleRateOutput = new TextOutEntry(tr("Sample Rate"));

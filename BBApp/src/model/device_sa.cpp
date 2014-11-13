@@ -59,14 +59,29 @@ bool DeviceSA::Abort()
 
 bool DeviceSA::Preset()
 {
+    if(!open) {
+        //lastStatus = saDeviceNotOpenErr;
+        return false;
+    }
+
     return true;
 }
 
 bool DeviceSA::Reconfigure(const SweepSettings *s, Trace *t)
 {
+    int atten = (s->Atten() == 0) ? SA_AUTO_ATTEN : s->Atten() - 1;
+    int gain = (s->Gain() == 0) ? SA_AUTO_GAIN : s->Gain() - 1;
+    int preamp = (s->Preamp() == 0) ? SA_PREAMP_AUTO : s->Preamp() - 1;
+
     saConfigCenterSpan(id, s->Center(), s->Span());
     saConfigAcquisition(id, SA_MIN_MAX, SA_LOG_SCALE, 0.1);
-    saConfigLevel(id, s->RefLevel(), SA_AUTO_ATTEN, SA_AUTO_GAIN, false);
+
+    if(s->Atten() == 0 || s->Gain() == 0 || s->Preamp() == 0) {
+        saConfigLevel(id, s->RefLevel());
+    } else {
+        saConfigGainAtten(id, s->Atten(), s->Gain(), s->Preamp());
+    }
+
     saConfigSweepCoupling(id, s->RBW(), s->VBW(), s->Rejection());
     saConfigProcUnits(id, SA_LOG_UNITS);
 
@@ -102,7 +117,8 @@ bool DeviceSA::GetSweep(const SweepSettings *s, Trace *t)
     status = saFetchPartialData(id, t->Min(), t->Max(), &startIx, &stopIx);
 
     t->SetUpdateRange(startIx, stopIx);
-    adc_overflow = false;
+
+    adc_overflow = (status == saCompressionWarning);
 
     return true;
 }
@@ -115,7 +131,13 @@ bool DeviceSA::Reconfigure(const DemodSettings *s, IQDescriptor *iqc)
     int atten = (s->Atten() == 0) ? SA_AUTO_ATTEN : s->Atten() - 1;
     int gain = (s->Gain() == 0) ? SA_AUTO_GAIN : s->Gain() - 1;
     saConfigCenterSpan(id, s->CenterFreq(), 250.0e3);
-    saConfigLevel(id, s->InputPower(), atten, gain, false);
+
+    if(s->Atten() == 0 || s->Gain() == 0 || s->Preamp() == 0) {
+        saConfigLevel(id, s->InputPower());
+    } else {
+        saConfigGainAtten(id, s->Atten(), s->Gain(), s->Preamp());
+    }
+
     saConfigIQ(id, 0x1 << s->DecimationFactor(), s->Bandwidth());
     saInitiate(id, SA_IQ, 0);
 
@@ -128,16 +150,10 @@ bool DeviceSA::Reconfigure(const DemodSettings *s, IQDescriptor *iqc)
 
 bool DeviceSA::GetIQ(IQCapture *iqc)
 {
-    float *re = new float[iqc->capture.size()], *im = new float[iqc->capture.size()];
-    saFetchData(id, re, im);
+    saStatus status = saGetIQ(id, (float*)(&iqc->capture[0]));
 
-    for(int i = 0; i < iqc->capture.size(); i++) {
-        iqc->capture[i].re = re[i];
-        iqc->capture[i].im = im[i];
-    }
+    adc_overflow = (status == saCompressionWarning);
 
-    delete [] re;
-    delete [] im;
     return true;
 }
 
@@ -183,9 +199,35 @@ bool DeviceSA::ConfigureForTRFL(double center,
     return true;
 }
 
+bool DeviceSA::ConfigureAudio(const AudioSettings &as)
+{
+    /*lastStatus = */saConfigAudio(
+                id,
+                as.AudioMode(),
+                as.CenterFreq(),
+                as.IFBandwidth(),
+                as.LowPassFreq(),
+                as.HighPassFreq(),
+                as.FMDeemphasis());
+
+    /*lastStatus = */saInitiate(id, SA_AUDIO, 0);
+
+    return true;
+}
+
+bool DeviceSA::GetAudio(float *audio)
+{
+    /*lastStatus = */ saGetAudio(id, audio);
+
+    return true;
+}
+
 QString DeviceSA::GetDeviceString() const
 {
-    return "SA44B";
+    if(device_type == SA_DEVICE_SA44B) return "SA44";
+    if(device_type == SA_DEVICE_SA124B) return "SA124";
+
+    return "No Device Open";
 }
 
 void DeviceSA::UpdateDiagnostics()

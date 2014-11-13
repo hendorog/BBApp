@@ -7,9 +7,10 @@
 #include "lib/bb_api.h"
 #include "lib/macros.h"
 
-#include "model/sweep_settings.h"
-#include "model/demod_settings.h"
-#include "model/trace.h"
+#include "sweep_settings.h"
+#include "demod_settings.h"
+#include "audio_settings.h"
+#include "trace.h"
 
 const int TIMEBASE_INTERNAL = 0;
 const int TIMEBASE_EXT_AC = 1;
@@ -43,6 +44,8 @@ public:
     virtual bool GetIQ(IQCapture *iqc) = 0;
     virtual bool GetIQFlush(IQCapture *iqc, bool flush) = 0;
     virtual bool ConfigureForTRFL(double center, int atten, int gain, IQDescriptor &desc) = 0;
+    virtual bool ConfigureAudio(const AudioSettings &as) = 0;
+    virtual bool GetAudio(float *audio) = 0;
 
     bool IsOpen() const { return open; }
     int Handle() const { return id; }

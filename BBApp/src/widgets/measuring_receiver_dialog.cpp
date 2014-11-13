@@ -102,12 +102,12 @@ MeasuringReceiver::MeasuringReceiver(Device *devicePtr,
     averageReadout->resize(width()/2, WIDGET_HEIGHT);
     pos += QPoint(0, WIDGET_HEIGHT*1.5);
 
-    PushButton *sync = new PushButton("Sync", this);
+    SHPushButton *sync = new SHPushButton("Sync", this);
     sync->move(QPoint(5, pos.y()));
     sync->resize(width()/2 - 10, WIDGET_HEIGHT);
     //pos += QPoint(0, WIDGET_HEIGHT);
 
-    PushButton *done = new PushButton("Done", this);
+    SHPushButton *done = new SHPushButton("Done", this);
     done->move(QPoint(width()/2 + 5, pos.y()));
     done->resize(width()/2 - 10, WIDGET_HEIGHT);
     pos += QPoint(0, WIDGET_HEIGHT*2);

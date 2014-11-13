@@ -77,9 +77,7 @@ public:
     void StopStreaming();
     void ResetView();
     void GetViewImage(QImage &image);
-    Frequency GetCurrentCenterFreq() const {
-        return 1.0e6;
-    }
+    Frequency GetCurrentCenterFreq() const;
 
 protected:
     void resizeEvent(QResizeEvent *);

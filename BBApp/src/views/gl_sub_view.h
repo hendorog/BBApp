@@ -39,79 +39,81 @@ class GLSubView : public QGLWidget, public QOpenGLFunctions {
     Q_OBJECT
 
 public:
-    GLSubView(Session *sPtr, QWidget *parent = 0) :
-        QGLWidget(parent), sessionPtr(sPtr)
-    {
-        makeCurrent();
-        initializeOpenGLFunctions();
-        doneCurrent();
-
-        setAutoFillBackground(false);
-    }
+    GLSubView(Session *sPtr, QWidget *parent = 0);
+    ~GLSubView();
 
 protected:
     Session* GetSession() const { return sessionPtr; }
 
     enum TextAlignment {
-        LEFT_ALIGNED, RIGHT_ALIGNED, CENTER_ALIGNED
+        LEFT_ALIGNED,
+        RIGHT_ALIGNED,
+        CENTER_ALIGNED
     };
 
     void DrawString(const QString &s, const GLFont &f,
-                    QPoint p, TextAlignment alignment)
-    {
-        if(alignment == RIGHT_ALIGNED) {
-            p -= QPoint(f.GetTextWidth(s), 0);
-        } else if(alignment == CENTER_ALIGNED) {
-            p -= QPoint(f.GetTextWidth(s) / 2, 0);
-        }
-        renderText(p.x(), p.y(), 0, s, f.Font());
-    }
-
+                    QPoint p, TextAlignment alignment);
     void DrawString(const QString &s, const GLFont &f,
-                    int x, int y, TextAlignment alignment)
+                    int x, int y, TextAlignment alignment);
+    void SetGraticuleDimensions(QPoint pos, QPoint size)
     {
-        DrawString(s, f, QPoint(x, y), alignment);
+        grat_ll = pos;
+        grat_sz = size;
+        grat_ul.setX(grat_ll.x());
+        grat_ul.setY(grat_ll.y() + grat_sz.y());
     }
+    void SetGraticuleDimensions(int posX, int posY, int width, int height)
+    {
+        SetGraticuleDimensions(QPoint(posX, posY), QPoint(width, height));
+    }
+    void DrawGraticule();
+
+    QPoint grat_ll;
+    QPoint grat_ul;
+    QPoint grat_sz;
 
 private:
     Session *sessionPtr;
+
+    GLuint gratVBO;
+    GLuint gratBorderVBO;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(GLSubView)
 };
 
-// View synchronized via supplied mutex
-// Non-threaded drawing
-// Intended for use with demod views
-class GLSyncSubView : public GLSubView {
-    Q_OBJECT
+//// View synchronized via supplied mutex
+//// Non-threaded drawing
+//// Intended for use with demod views
+//class GLSyncSubView : public GLSubView {
+//    Q_OBJECT
 
-public:
-    GLSyncSubView(Session *sPtr, std::mutex &lock, QWidget *parent = 0) :
-        GLSubView(sPtr, parent),
-        syncLock(lock)
-    {
-    }
-    ~GLSyncSubView() {}
+//public:
+//    GLSyncSubView(Session *sPtr, std::mutex &lock, QWidget *parent = 0) :
+//        GLSubView(sPtr, parent),
+//        syncLock(lock)
+//    {
+//    }
+//    ~GLSyncSubView() {}
 
-protected:
-    virtual void Paint() = 0;
+//protected:
+//    virtual void Paint() = 0;
 
-private:
-    // Painting synchronized via external lock
-    // Drawing happens in Paint()
-    void paintEvent(QPaintEvent *)
-    {
-        if(syncLock.try_lock()) {
-            Paint();
-        }
-    }
+//private:
+//    // Painting synchronized via external lock
+//    // Drawing happens in Paint()
+//    void paintEvent(QPaintEvent *)
+//    {
+//        if(syncLock.try_lock()) {
+//            Paint();
+//        }
+//    }
 
-    // Does not own
-    std::mutex &syncLock;
+//    // Does not own
+//    std::mutex &syncLock;
 
-private:
-    DISALLOW_COPY_AND_ASSIGN(GLSyncSubView)
-};
+//private:
+//    DISALLOW_COPY_AND_ASSIGN(GLSyncSubView)
+//};
 
 #endif // GL_SUB_VIEW_H

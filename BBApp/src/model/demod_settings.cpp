@@ -1,62 +1,5 @@
 #include "demod_settings.h"
 
-struct iq_auto_bandwidth_entry {
-    Frequency bandwidth;
-    int decimationRate;
-};
-
-static iq_auto_bandwidth_entry iq_auto_bandwidth_lut[] = {
-    { 27.0e6,  0 },
-    { 10.0e6,  1 },
-    { 5.0e6,   2 },
-    { 2.0e6,   3 },
-    { 1.0e6,   4 },
-    { 500.0e3, 5 },
-    { 200.0e3, 6 },
-    { 100.0e3, 7 }
-};
-static int iq_auto_bandwidth_lut_sz =
-        sizeof(iq_auto_bandwidth_lut) /
-        sizeof(iq_auto_bandwidth_entry);
-
-void get_next_iq_bandwidth(Frequency current,
-                           Frequency &next,
-                           int &decimationRate)
-{
-    int lutIx = 0;
-    while(current < iq_auto_bandwidth_lut[lutIx].bandwidth &&
-          lutIx < iq_auto_bandwidth_lut_sz)
-        lutIx++;
-}
-
-// Index is the decimation index
-static double bin_size_table[] = {
-    1.0 / 40.0e6,
-    1.0 / 20.0e6,
-    1.0 / 10.0e6,
-    1.0 / 5.0e6,
-    1.0 / 2.5e6,
-    1.0 / 1.25e6,
-    1.0 / 0.625e6,
-    1.0 / 0.3125e6,
-    1.0 / 0.15625e6
-};
-static int bin_size_table_sz =
-        sizeof(bin_size_table) / sizeof(double);
-
-static double max_bw_table[] = {
-    27.0e6,
-    17.8e6,
-    8.0e6,
-    3.75e6,
-    2.0e6,
-    1.0e6,
-    0.5e6,
-    0.25e6
-};
-static int max_bandwidth_sz =
-        sizeof(max_bw_table) / sizeof(double);
-
 DemodSettings::DemodSettings()
 {
     LoadDefaults();
@@ -122,7 +65,7 @@ void DemodSettings::LoadDefaults()
     atten = 0; // Index, 0 == auto
     decimationFactor = 6;
     //bandwidth = iq_auto_bandwidth_lut[decimationFactor].bandwidth;
-    bandwidth = max_bw_table[decimationFactor];
+    bandwidth = device_traits::max_iq_bandwidth(decimationFactor);
     autoBandwidth = true;
     sweepTime = 1.0e-3;
 
@@ -187,12 +130,12 @@ void DemodSettings::setInputPower(Amplitude a)
 
 void DemodSettings::setCenterFreq(Frequency f)
 {
-    if(f > Frequency(6.0e9)) {
-        f = Frequency(6.0e9);
+    if(f > Frequency(device_traits::max_frequency())) {
+        f = Frequency(device_traits::max_frequency());
     }
 
-    if(f < Frequency(20.0e6)) {
-        f = Frequency(20.0e6);
+    if(f < Frequency(device_traits::min_iq_frequency())) {
+        f = Frequency(device_traits::min_iq_frequency());
     }
 
     centerFreq = f;
@@ -202,7 +145,7 @@ void DemodSettings::setCenterFreq(Frequency f)
 void DemodSettings::setGain(int g)
 {
     if(g < 0) g = 0;
-    if(g > 4) g = 4;
+    if(g > device_traits::max_gain()) g = device_traits::max_gain();
 
     gain = g;
     emit updated(this);
@@ -211,7 +154,7 @@ void DemodSettings::setGain(int g)
 void DemodSettings::setAtten(int a)
 {
     if(a < 0) a = 0;
-    if(a > 4) a = 4;
+    if(a > device_traits::max_atten()) a = device_traits::max_atten();
 
     atten = a;
     emit updated(this);
@@ -233,10 +176,10 @@ void DemodSettings::setDecimation(int d)
 void DemodSettings::setBandwidth(Frequency bw)
 {
     autoBandwidth = false;
-    double maxBandwidth = max_bw_table[decimationFactor];
+    double maxBandwidth = device_traits::max_iq_bandwidth(decimationFactor);
 
-    if(bw < 100.0e3) {
-        bandwidth = 100.0e3;
+    if(bw < device_traits::min_iq_bandwidth()) {
+        bandwidth = device_traits::min_iq_bandwidth();
     } else if(bw > maxBandwidth) {
         bandwidth = maxBandwidth;
     } else {
@@ -304,20 +247,26 @@ void DemodSettings::setMALowPass(Frequency f)
 void DemodSettings::SetMRConfiguration()
 {
     // Max decimation
-    decimationFactor = 7;
+    decimationFactor = device_traits::mod_analysis_decimation_order();
+
     // Clamp down bandwidth
-    double maxBandwidth = max_bw_table[decimationFactor];
+    double maxBandwidth = device_traits::max_iq_bandwidth(decimationFactor);
     if(bandwidth > maxBandwidth) {
         bandwidth = maxBandwidth;
     }
+
     // Max possible sweep time
-    sweepTime = bin_size_table[decimationFactor] * MAX_IQ_SWEEP_LEN;
+    double binSize = (0x1 << decimationFactor) / device_traits::sample_rate();
+    sweepTime = binSize * MAX_IQ_SWEEP_LEN;
 }
 
 void DemodSettings::ClampSweepTime()
 {
+    // Max of 1/2 second capture length
+    if(sweepTime > 0.5) sweepTime = 0.5;
+
     // Clamp sweep time to a min/max sweepCount
-    double binSize = bin_size_table[decimationFactor];
+    double binSize = (0x1 << decimationFactor) / device_traits::sample_rate();
     int sweepLen = sweepTime.Val() / binSize;
 
     if(sweepLen < MIN_IQ_SWEEP_LEN) {
@@ -329,8 +278,14 @@ void DemodSettings::ClampSweepTime()
 
 void DemodSettings::UpdateAutoBandwidths()
 {
+    double maxBandwidth = device_traits::max_iq_bandwidth(decimationFactor);
+
     if(autoBandwidth) {
-        bandwidth = max_bw_table[decimationFactor];
+        bandwidth = maxBandwidth;
+    } else {
+        if(bandwidth > maxBandwidth) {
+            bandwidth = maxBandwidth;
+        }
     }
 }
 
@@ -375,6 +330,7 @@ void IQSweep::CalculateReceiverStats()
     // Temp buffers, storing offset removed modulations
     std::vector<float> temp, temp2;
     std::vector<double> audioRate; // Downsampled audio
+    int downsampledRate = descriptor.sampleRate / 8;
 
     temp.resize(fm.size());
     temp2.resize(fm.size());
@@ -413,8 +369,8 @@ void IQSweep::CalculateReceiverStats()
     stats.fmRMS = sqrt(stats.fmRMS / (temp2.size() - 1024));
 
     downsample(temp2, audioRate, 8);
-    stats.fmSINAD = 10.0 * log10(CalculateSINAD(audioRate, 39062.5, stats.fmAudioFreq));
-    stats.fmTHD = CalculateTHD(audioRate, 39062.5, stats.fmAudioFreq);
+    stats.fmSINAD = 10.0 * log10(CalculateSINAD(audioRate, downsampledRate/*39062.5*/, stats.fmAudioFreq));
+    stats.fmTHD = CalculateTHD(audioRate, downsampledRate/*39062.5*/, stats.fmAudioFreq);
 
     // AM
     double invAvg = 0.0;
@@ -445,8 +401,8 @@ void IQSweep::CalculateReceiverStats()
 
     audioRate.clear();
     downsample(temp, audioRate, 8);
-    stats.amSINAD = 10.0 * log10(CalculateSINAD(audioRate, 39062.5, stats.amAudioFreq));
-    stats.amTHD = CalculateTHD(audioRate, 39062.5, stats.amAudioFreq);
+    stats.amSINAD = 10.0 * log10(CalculateSINAD(audioRate, downsampledRate/*39062.5*/, stats.amAudioFreq));
+    stats.amTHD = CalculateTHD(audioRate, downsampledRate/*39062.5*/, stats.amAudioFreq);
 }
 
 // Returns dB ratio of the average power of the waveform over the average

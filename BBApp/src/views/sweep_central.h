@@ -48,8 +48,8 @@ private:
 
     ComboBox *waterfall_combo;
     QCheckBox *persistence_check;
-    QPushButton *persistence_clear;
-    QPushButton *single_sweep, *continuous_sweep;
+    SHPushButton *persistence_clear;
+    SHPushButton *single_sweep, *continuous_sweep;
     QPushButton *preset_button;
 
     PlaybackToolBar *playback;

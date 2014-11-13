@@ -40,9 +40,11 @@ MainWindow::MainWindow(QWidget *parent)
                                  session->sweep_settings);
     sweep_panel->setObjectName("SweepSettingsPanel");
     connect(sweep_panel, SIGNAL(zeroSpanPressed()), this, SLOT(zeroSpanPressed()));
+
     measure_panel = new MeasurePanel(tr("Measurements"), this,
                                      session->trace_manager, session->sweep_settings);
     measure_panel->setObjectName("TraceMarkerPanel");
+
     demodPanel = new DemodPanel(tr("Demod Settings"), this, session->demod_settings);
     demodPanel->setObjectName("DemodSettingsPanel");
 
@@ -488,14 +490,10 @@ void MainWindow::deviceConnected(bool success)
         status_bar->SetDeviceType(session->device->GetDeviceString());
         status_bar->UpdateDeviceInfo(device_string);
 
+        session->LoadDefaults();
+
         ChangeMode(MODE_SWEEPING);
         centralStack->CurrentWidget()->changeMode(BB_SWEEPING);
-
-        if(session->device->DeviceType() == BB_DEVICE_BB60A) {
-            SweepSettings::maxRealTimeSpan = BB60A_MAX_RT_SPAN;
-        } else {
-            SweepSettings::maxRealTimeSpan = BB60C_MAX_RT_SPAN;
-        }
     } else {
         QMessageBox::information(this, tr("Connection Status"),
                                  tr("No device found. Use the file menu to"
@@ -670,7 +668,6 @@ void MainWindow::modeChanged(QAction *a)
 
 void MainWindow::ChangeMode(OperationalMode newMode)
 {
-    //this->removeToolBar(centralStack->CurrentWidget()->GetToolBar());
     centralStack->CurrentWidget()->GetToolBar()->hide();
     if(newMode == MODE_ZERO_SPAN) {
         centralStack->setCurrentWidget(demodCentral);
@@ -683,7 +680,7 @@ void MainWindow::ChangeMode(OperationalMode newMode)
         sweep_panel->show();
         measure_panel->show();
     }
-    //this->addToolBar(centralStack->CurrentWidget()->GetToolBar());
+
     centralStack->CurrentWidget()->GetToolBar()->show();
 }
 
@@ -719,7 +716,7 @@ void MainWindow::startAudioPlayer()
     AudioDialog *dlg = new AudioDialog(session->device, session->audio_settings);
 
     dlg->exec();
-    *session->audio_settings = *dlg->Configuration();
+    //*session->audio_settings = *dlg->Configuration();
     delete dlg;
 
     centralStack->CurrentWidget()->changeMode(temp_mode);

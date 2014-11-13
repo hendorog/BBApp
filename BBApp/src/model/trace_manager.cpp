@@ -131,9 +131,11 @@ void TraceManager::UpdateTraces(Trace *trace)
 
     Unlock();
 
-    // Place trace in our persist/waterfall buffer
-    normalize_trace(trace, *trace_buffer.Front(), QPoint(1280, 720));
-    trace_buffer.IncrementFront();
+    if(trace->IsFullSweep()) {
+        // Place trace in our persist/waterfall buffer
+        normalize_trace(trace, *trace_buffer.Front(), QPoint(1280, 720));
+        trace_buffer.IncrementFront();
+    }
 
     channel_power.Update(trace);
 

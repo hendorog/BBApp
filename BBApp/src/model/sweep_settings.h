@@ -43,8 +43,9 @@ public:
 
     Amplitude RefLevel() const { return refLevel; }
     double Div() const { return div; }
-    int Attenuation() const { return attenuation; }
+    int Atten() const { return attenuation; }
     int Gain() const { return gain; }
+    int Preamp() const { return preamp; }
 
     Time SweepTime() const { return sweepTime; }
     int ProcessingUnits() const { return processingUnits; }
@@ -75,9 +76,6 @@ public:
     // Returns true if settings fine for CP/OCBW
     bool IsAveragePower() const;
 
-    // Do not save with presets
-    static double maxRealTimeSpan;
-
 protected:
 
 private:
@@ -101,6 +99,7 @@ private:
     double div; // dB
     int attenuation;
     int gain; // From 0 -> 4, where 0 equals auto, 1-4 = levels
+    int preamp; // auto = 0, off = 1, on = 2
 
     Time sweepTime;
     int processingUnits;
@@ -142,6 +141,7 @@ public slots:
     void setDiv(double);
     void setAttenuation(int);
     void setGain(int);
+    void setPreAmp(int);
 
     void setSweepTime(Time);
     void setProcUnits(int);

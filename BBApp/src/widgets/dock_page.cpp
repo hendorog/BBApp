@@ -45,6 +45,17 @@ void DockPage::AddWidget(QWidget *new_widget)
     pageHeight += new_widget->height();
 }
 
+void DockPage::RemoveWidget(QWidget *widget)
+{
+    std::vector<QWidget*> li;
+    auto iter = std::find(list.begin(), list.end(), widget);
+    if(iter != list.end()) {
+        list.erase(iter);
+        widget->setParent(0);
+        pageHeight -= widget->height();
+    }
+}
+
 int DockPage::GetTotalHeight() const
 {
     int h = 0;

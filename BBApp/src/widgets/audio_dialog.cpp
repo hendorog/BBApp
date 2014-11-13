@@ -23,10 +23,10 @@ static WAVEHDR* waveBlocks;
 volatile int waveFreeBlockCount;
 static int waveCurrentBlock;
 
-AudioDialog::AudioDialog(const Device *device_ptr,
-                         const AudioSettings *settings_ptr) :
-    device_id(device_ptr->Handle()),
-    config(*settings_ptr),
+AudioDialog::AudioDialog(Device *device_ptr,
+                         AudioSettings *settings_ptr) :
+    device(device_ptr),
+    config(settings_ptr),
     running(true),
     update(false),
     low_limit(0.0),
@@ -46,13 +46,13 @@ AudioDialog::AudioDialog(const Device *device_ptr,
     // Indices must match API header defines
     types << "AM" << "FM" << "USB" << "LSB" << "CW";
     type_entry->setComboText(types);
-    type_entry->setComboIndex(config.AudioMode());
+    type_entry->setComboIndex(config->AudioMode());
 
-    frequency_entry = new FrequencyEntry("Center Freq", config.CenterFreq());
-    bandwidth_entry = new FrequencyEntry("Bandwidth", config.IFBandwidth());
-    low_pass_entry = new FrequencyEntry("Low Pass", config.LowPassFreq());
-    high_pass_entry = new FrequencyEntry("High Pass", config.HighPassFreq());
-    deemphasis = new NumericEntry("Deemphasis", config.FMDeemphasis(), "us");
+    frequency_entry = new FrequencyEntry("Center Freq", config->CenterFreq());
+    bandwidth_entry = new FrequencyEntry("Bandwidth", config->IFBandwidth());
+    low_pass_entry = new FrequencyEntry("Low Pass", config->LowPassFreq());
+    high_pass_entry = new FrequencyEntry("High Pass", config->HighPassFreq());
+    deemphasis = new NumericEntry("Deemphasis", config->FMDeemphasis(), "us");
 
     frequency_page->AddWidget(frequency_entry);
 
@@ -65,28 +65,28 @@ AudioDialog::AudioDialog(const Device *device_ptr,
     frequency_page->move(0, 0);
     bandwidth_page->move(MAX_DOCK_WIDTH, 0);
 
-    smallInc = new PushButton("+20 Hz", this);
+    smallInc = new SHPushButton("+20 Hz", this);
     smallInc->move(100, 75);
     smallInc->resize(100, 25);
     smallInc->setAutoRepeat(true);
     smallInc->setAutoRepeatDelay(300);
     smallInc->setAutoRepeatInterval(100);
     smallInc->setShortcut(QKeySequence(Qt::Key_Up));
-    smallDec = new PushButton("-20 Hz", this);
+    smallDec = new SHPushButton("-20 Hz", this);
     smallDec->move(100, 125);
     smallDec->resize(100, 25);
     smallDec->setAutoRepeat(true);
     smallDec->setAutoRepeatDelay(300);
     smallDec->setAutoRepeatInterval(100);
     smallDec->setShortcut(QKeySequence(Qt::Key_Down));
-    largeDec = new PushButton("-1 kHz", this);
+    largeDec = new SHPushButton("-1 kHz", this);
     largeDec->move(50, 100);
     largeDec->resize(100, 25);
     largeDec->setAutoRepeat(true);
     largeDec->setAutoRepeatDelay(300);
     largeDec->setAutoRepeatInterval(100);
     largeDec->setShortcut(QKeySequence(Qt::Key_Left));
-    largeInc = new PushButton("+1 kHz", this);
+    largeInc = new SHPushButton("+1 kHz", this);
     largeInc->move(150, 100);
     largeInc->resize(100, 25);
     largeInc->setAutoRepeat(true);
@@ -96,25 +96,25 @@ AudioDialog::AudioDialog(const Device *device_ptr,
 
     setFixedSize(MAX_DOCK_WIDTH * 2, bandwidth_page->GetTotalHeight() + 30);
 
-    okBtn = new PushButton(tr("OK"), this);
+    okBtn = new SHPushButton(tr("OK"), this);
     okBtn->resize(90, 30);
     okBtn->move(width() - 95, height() - 35);
     connect(okBtn, SIGNAL(clicked()), this, SLOT(accept()));
 
     connect(type_entry, SIGNAL(comboIndexChanged(int)),
-            &config, SLOT(setMode(int)));
+            config, SLOT(setMode(int)));
     connect(frequency_entry, SIGNAL(freqViewChanged(Frequency)),
-            &config, SLOT(setCenterFrequency(Frequency)));
+            config, SLOT(setCenterFrequency(Frequency)));
     connect(bandwidth_entry, SIGNAL(freqViewChanged(Frequency)),
-            &config, SLOT(setIFBandwidth(Frequency)));
+            config, SLOT(setIFBandwidth(Frequency)));
     connect(low_pass_entry, SIGNAL(freqViewChanged(Frequency)),
-            &config, SLOT(setLowPassFreq(Frequency)));
+            config, SLOT(setLowPassFreq(Frequency)));
     connect(high_pass_entry, SIGNAL(freqViewChanged(Frequency)),
-            &config, SLOT(setHighPassFreq(Frequency)));
+            config, SLOT(setHighPassFreq(Frequency)));
     connect(deemphasis, SIGNAL(valueChanged(double)),
-            &config, SLOT(setFMDeemphasis(double)));
+            config, SLOT(setFMDeemphasis(double)));
 
-    connect(&config, SIGNAL(updated(const AudioSettings*)),
+    connect(config, SIGNAL(updated(const AudioSettings*)),
             this, SLOT(configChanged()));
 
     connect(smallInc, SIGNAL(clicked()), SLOT(smallIncPressed()));
@@ -153,29 +153,14 @@ void AudioDialog::keyPressEvent(QKeyEvent *e)
 
 void AudioDialog::Reconfigure()
 {
-    bbStatus status;
-    status = bbConfigureDemod(
-        device_id,
-        config.AudioMode(),
-        config.CenterFreq(),
-        config.IFBandwidth(),
-        config.LowPassFreq(),
-        config.HighPassFreq(),
-        config.FMDeemphasis());
+    device->ConfigureAudio(*config);
 
-    if(config.CenterFreq() < low_limit || config.CenterFreq() > high_limit) {
-        bbInitiate(device_id, BB_AUDIO_DEMOD, 0);
-
-        low_limit = config.CenterFreq() - 1.75e6;
-        high_limit = config.CenterFreq() + 1.75e6;
-    }
-
-    frequency_entry->SetFrequency(config.CenterFreq());
-    type_entry->setComboIndex(config.AudioMode());
-    bandwidth_entry->SetFrequency(config.IFBandwidth());
-    low_pass_entry->SetFrequency(config.LowPassFreq());
-    high_pass_entry->SetFrequency(config.HighPassFreq());
-    deemphasis->SetValue(config.FMDeemphasis());
+    frequency_entry->SetFrequency(config->CenterFreq());
+    type_entry->setComboIndex(config->AudioMode());
+    bandwidth_entry->SetFrequency(config->IFBandwidth());
+    low_pass_entry->SetFrequency(config->LowPassFreq());
+    high_pass_entry->SetFrequency(config->HighPassFreq());
+    deemphasis->SetValue(config->FMDeemphasis());
 
     emit setAnonFocus();
 }
@@ -192,7 +177,7 @@ void AudioDialog::AudioThread()
     InitializeCriticalSection(&waveCriticalSection);
 
     // set up the WAVEFORMATEX structure.
-    wfx.nSamplesPerSec = 32000;
+    wfx.nSamplesPerSec = device_traits::audio_rate(); // 32000;
     wfx.wBitsPerSample = 16;         // sample size
     wfx.nChannels = 1;               // channels
     wfx.cbSize = 0;                  // size of _extra_ info
@@ -226,10 +211,11 @@ void AudioDialog::AudioThread()
             update = false;
         }
 
-        bbFetchAudio(device_id, from_device);
+        device->GetAudio(from_device);
 
-        for(int i = 0; i < 4096; i++)
+        for(int i = 0; i < 4096; i++) {
             buffer[i] = from_device[i] * 16000.0;
+        }
 
         writeAudio(hWaveOut, (char*)buffer, 8192);
     }
@@ -239,7 +225,7 @@ void AudioDialog::AudioThread()
 
 void AudioDialog::smallIncPressed()
 {
-    config.setCenterFrequency(config.CenterFreq() + 20.0 * factor);
+    config->setCenterFrequency(config->CenterFreq() + 20.0 * factor);
     incrementFactor();
     reset_timer.stop();
     reset_timer.start();
@@ -247,7 +233,7 @@ void AudioDialog::smallIncPressed()
 
 void AudioDialog::smallDecPressed()
 {
-    config.setCenterFrequency(config.CenterFreq() - 20.0 * factor);
+    config->setCenterFrequency(config->CenterFreq() - 20.0 * factor);
     incrementFactor();
     reset_timer.stop();
     reset_timer.start();
@@ -255,7 +241,7 @@ void AudioDialog::smallDecPressed()
 
 void AudioDialog::largeIncPressed()
 {
-    config.setCenterFrequency(config.CenterFreq() + 1.0e3 * factor);
+    config->setCenterFrequency(config->CenterFreq() + 1.0e3 * factor);
     incrementFactor();
     reset_timer.stop();
     reset_timer.start();
@@ -263,7 +249,7 @@ void AudioDialog::largeIncPressed()
 
 void AudioDialog::largeDecPressed()
 {
-    config.setCenterFrequency(config.CenterFreq() - 1.0e3 * factor);
+    config->setCenterFrequency(config->CenterFreq() - 1.0e3 * factor);
     incrementFactor();
     reset_timer.stop();
     reset_timer.start();

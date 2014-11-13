@@ -923,11 +923,18 @@ void TraceView::RenderOccupiedBandwidth()
     glLoadIdentity();
     glOrtho(0, grat_sz.x(), 0, grat_sz.y(), -1, 1);
 
+    DrawBackdrop(QPoint(info.leftMarker.xRatio() * grat_sz.x() - 35,
+                        info.leftMarker.yRatio() * grat_sz.y() - 10), QPoint(45, 20));
     DrawOCBWMarker(info.leftMarker.xRatio() * grat_sz.x(),
                    info.leftMarker.yRatio() * grat_sz.y(), true);
+
+    DrawBackdrop(QPoint(info.rightMarker.xRatio() * grat_sz.x() - 10,
+                        info.rightMarker.yRatio() * grat_sz.y() - 10), QPoint(45, 20));
     DrawOCBWMarker(info.rightMarker.xRatio() * grat_sz.x(),
                    info.rightMarker.yRatio() * grat_sz.y(), false);
 
+    DrawBackdrop(QPoint(1, 0), QPoint(400, textFont.GetTextHeight() * 2));
+    glColor3f(0.0, 0.0, 0.0);
     DrawString("Occupied Bandwidth " + info.bandwidth.GetFreqString(),
                textFont, 5, textFont.GetTextHeight(), LEFT_ALIGNED);
     DrawString("Total Power " + info.totalPower.GetString(),
@@ -994,6 +1001,35 @@ void TraceView::DrawLimitLines(const Trace *limitTrace, const GLVector &v)
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     glLineWidth(1.0);
+}
+
+void TraceView::DrawBackdrop(QPoint pos, QPoint size)
+{
+//    glMatrixMode(GL_MODELVIEW);
+//    glPushMatrix();
+//    glLoadIdentity();
+//    glMatrixMode(GL_PROJECTION);
+//    glPushMatrix();
+//    glLoadIdentity();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glPushAttrib(GL_COLOR_BUFFER_BIT);
+    glColor4f(1.0, 1.0, 1.0, 0.8);
+    glBegin(GL_QUADS);
+    glVertex2f(pos.x(), pos.y());
+    glVertex2f(pos.x() + size.x(), pos.y());
+    glVertex2f(pos.x() + size.x(), pos.y() + size.y());
+    glVertex2f(pos.x(), pos.y() + size.y());
+    glEnd();
+    glPopAttrib();
+
+    glDisable(GL_BLEND);
+
+//    glPopMatrix();
+//    glMatrixMode(GL_MODELVIEW);
+//    glPopMatrix();
 }
 
 void TraceView::AddToPersistence(const GLVector &v)
@@ -1156,6 +1192,25 @@ void TraceView::ClearWaterfall()
  */
 void TraceView::DrawWaterfall()
 {
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_DEPTH_TEST);
+    glBindTexture(GL_TEXTURE_2D, waterfall_tex);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glTranslatef(10, height() / 2 + 20, 0.0);
+    glScalef(grat_ll.x() - 15, height() / 2 - 40, 1.0);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0,0); glVertex2f(0,0);
+    glTexCoord2f(0,1); glVertex2f(0,1);
+    glTexCoord2f(1,1); glVertex2f(1,1);
+    glTexCoord2f(1,0); glVertex2f(1,0);
+    glEnd();
+
+    glPopMatrix();
+
     // Step 1 : Setup
     // Do Setup Based on waterfall mode
     //

@@ -5,8 +5,6 @@
 #include "lib/bb_api.h"
 #include "lib/device_traits.h"
 
-double SweepSettings::maxRealTimeSpan = BB60A_MAX_RT_SPAN;
-
 SweepSettings::SweepSettings()
 {
     LoadDefaults();    
@@ -37,6 +35,7 @@ SweepSettings& SweepSettings::operator=(const SweepSettings &other)
     div = other.div;
     attenuation = other.attenuation;
     gain = other.gain;
+    preamp = other.preamp;
 
     sweepTime = other.sweepTime;
     processingUnits = other.processingUnits;
@@ -68,6 +67,7 @@ bool SweepSettings::operator==(const SweepSettings &other) const
     if(div != other.div) return false;
     if(attenuation != other.attenuation) return false;
     if(gain != other.gain) return false;
+    if(preamp != other.preamp) return false;
 
     if(sweepTime != other.sweepTime) return false;
     if(processingUnits != other.processingUnits) return false;
@@ -87,34 +87,34 @@ void SweepSettings::LoadDefaults()
 {
     mode = MODE_SWEEPING;
 
-//    start = 11.0e6;
-//    stop = 6.0e9;
-    start = .8e9;
-    stop = 1.1e9;
+    start = device_traits::best_start_frequency();
+    stop = device_traits::max_frequency();
 
     span = (stop - start);
     center = (start + stop) / 2.0;
     step = 20.0e6;
 
-//    rbw = 300.0e3;
-//    vbw = 300.0e3;
-    rbw = 100.0e3;
-    vbw = 100.0e3;
-
     auto_rbw = true;
     auto_vbw = true;
     native_rbw = false;
+
+    AutoBandwidthAdjust(true);
+//    rbw = 300.0e3;
+//    vbw = 300.0e3;
+//    rbw = 100.0e3;
+//    vbw = 100.0e3;
 
     refLevel = Amplitude(-30.0, DBM);
     div = 10.0;
     attenuation = 0;
     gain = 0;
+    preamp = 0;
 
     // Standard sweep only, real-time sweep time in prefs
     sweepTime = 0.001;
     processingUnits = BB_POWER;
     detector = BB_AVERAGE;
-    rejection = false;
+    rejection = device_traits::default_spur_reject();
 
     //emit updated(this);
 }
@@ -138,8 +138,9 @@ bool SweepSettings::Load(QSettings &s)
 
     refLevel = s.value("Sweep/RefLevel", RefLevel().Val()).toDouble();
     div = s.value("Sweep/Division", Div()).toDouble();
-    attenuation = s.value("Sweep/Attenuation", Attenuation()).toInt();
+    attenuation = s.value("Sweep/Attenuation", Atten()).toInt();
     gain = s.value("Sweep/Gain", Gain()).toInt();
+    preamp = s.value("Sweep/Preamp", Preamp()).toInt();
 
     sweepTime = s.value("Sweep/SweepTime", SweepTime().Val()).toDouble();
     processingUnits = s.value("Sweep/ProcessingUnits", ProcessingUnits()).toInt();
@@ -170,6 +171,7 @@ bool SweepSettings::Save(QSettings &s) const
     s.setValue("Sweep/Division", div);
     s.setValue("Sweep/Attenuation", attenuation);
     s.setValue("Sweep/Gain", gain);
+    s.setValue("Sweep/Preamp", preamp);
 
     s.setValue("Sweep/SweepTime", sweepTime.Val());
     s.setValue("Sweep/ProcessingUnits", processingUnits);
@@ -201,13 +203,15 @@ void SweepSettings::AutoBandwidthAdjust(bool force)
         vbw = rbw;
     }
 
+    // VBW should not be over 1000 times less than RBW
     if(rbw > vbw * 1000.0) {
         vbw = rbw / 1000.0;
     }
 
     if(mode == BB_REAL_TIME) {
         double clamped = rbw;
-        bb_lib::clamp(clamped, BB_MIN_RT_RBW, BB_MAX_RT_RBW);
+        bb_lib::clamp(clamped, device_traits::min_real_time_rbw(),
+                      device_traits::max_real_time_rbw());
         rbw = clamped;
         vbw = rbw;
     }
@@ -216,6 +220,7 @@ void SweepSettings::AutoBandwidthAdjust(bool force)
 void SweepSettings::setMode(OperationalMode new_mode)
 {
     mode = new_mode;
+    double maxRealTimeSpan = device_traits::max_real_time_span();
 
     if(mode == BB_REAL_TIME) {
         native_rbw = true;
@@ -228,7 +233,8 @@ void SweepSettings::setMode(OperationalMode new_mode)
         }
 
         AutoBandwidthAdjust(true);
-        //emit updated(this);
+        // Force settings panel to update?
+        emit updated(this);
     }
 }
 
@@ -238,14 +244,14 @@ void SweepSettings::setMode(OperationalMode new_mode)
 void SweepSettings::setStart(Frequency f)
 {   
     bool valid = false;
-    Frequency min_start = bb_lib::max2(f.Val(), BB60_MIN_FREQ);
+    Frequency min_start = bb_lib::max2(f.Val(), device_traits::min_frequency());
 
     // Only change if room
-    if(min_start < (stop - BB_MIN_SPAN)) {
+    if(min_start < (stop - device_traits::min_span())) {
         // Special case in real-time
         if(mode == MODE_REAL_TIME) {
-            if((stop - min_start) <= maxRealTimeSpan &&
-                    (stop - min_start) >= BB_MIN_RT_SPAN) {
+            if((stop - min_start) <= device_traits::max_real_time_span() &&
+                    (stop - min_start) >= device_traits::min_real_time_span()) {
                 valid = true;
             }
         } else { // Other mode
@@ -271,13 +277,13 @@ void SweepSettings::setStop(Frequency f)
 {
     bool valid = false;
     double max_freq = device_traits::max_frequency();
-    Frequency max_stop = bb_lib::min2(f.Val(), BB60_MAX_FREQ);
+    Frequency max_stop = bb_lib::min2(f.Val(), device_traits::max_frequency());
 
     // Only change if room
-    if(max_stop > (start + BB_MIN_SPAN)) {
+    if(max_stop > (start + device_traits::min_span())) {
         if(mode == MODE_REAL_TIME) {
-            if((max_stop - start) <= maxRealTimeSpan &&
-                    (max_stop - start) >= BB_MIN_RT_SPAN) {
+            if((max_stop - start) <= device_traits::max_real_time_span() &&
+                    (max_stop - start) >= device_traits::min_real_time_span()) {
                 valid = true;
             }
         } else { // other mode
@@ -298,14 +304,14 @@ void SweepSettings::setStop(Frequency f)
 void SweepSettings::setCenter(Frequency f)
 {
     // Is the center even possible?
-    if(f < (BB60_MIN_FREQ + BB_MIN_SPAN * 2.0) ||
-            f > (BB60_MAX_FREQ - BB_MIN_SPAN * 2.0)) {
+    if(f < (device_traits::min_real_time_rbw() + device_traits::min_span() * 2.0) ||
+            f > (device_traits::max_frequency() - device_traits::min_span() * 2.0)) {
         // Do nothing
     } else {
         center = f;
         span = bb_lib::min3(span.Val(),
-                            (center - BB60_MIN_FREQ) * 2.0,
-                            (BB60_MAX_FREQ - center) * 2.0);
+                            (center - device_traits::min_frequency()) * 2.0,
+                            (device_traits::max_frequency() - center) * 2.0);
         start = center - span / 2.0;
         stop = center + span / 2.0;
     }
@@ -325,21 +331,22 @@ void SweepSettings::increaseCenter(bool inc)
 
 void SweepSettings::setSpan(Frequency f)
 {
-    if(f < BB_MIN_SPAN) {
-        f = BB_MIN_SPAN;
+    if(f < device_traits::min_span()) {
+        f = device_traits::min_span();
     }
 
     if(Mode() == MODE_REAL_TIME || Mode() == MODE_TIME_GATE) {
-        bb_lib::clamp(f, Frequency(BB_MIN_RT_SPAN), Frequency(maxRealTimeSpan));
+        bb_lib::clamp(f, Frequency(device_traits::min_real_time_span()),
+                      Frequency(device_traits::max_real_time_span()));
     }
 
     // Fit new span to device freq range
-    if((center - f / 2.0) < BB60_MIN_FREQ) {
-        start = BB60_MIN_FREQ;
-        stop = bb_lib::min2((start + f).Val(), BB60_MAX_FREQ);
-    } else if((center + f / 2.0) > BB60_MAX_FREQ) {
-        stop = BB60_MAX_FREQ;
-        start = bb_lib::max2((stop - f).Val(), BB60_MIN_FREQ);
+    if((center - f / 2.0) < device_traits::min_frequency()) {
+        start = device_traits::min_frequency();
+        stop = bb_lib::min2((start + f).Val(), device_traits::max_frequency());
+    } else if((center + f / 2.0) > device_traits::max_frequency()) {
+        stop = device_traits::max_frequency();
+        start = bb_lib::max2((stop - f).Val(), device_traits::min_frequency());
     } else {
         start = center - f / 2.0;
         stop = center + f / 2.0;
@@ -367,8 +374,8 @@ void SweepSettings::setStep(Frequency f)
 
 void SweepSettings::setFullSpan()
 {
-    start = 10.0e6;
-    stop = 6.0e9;
+    start = device_traits::best_start_frequency();
+    stop = device_traits::max_frequency();
     center = (stop + start) / 2.0;
     span = stop - start;
 
@@ -508,6 +515,12 @@ void SweepSettings::setAttenuation(int atten_ix)
 void SweepSettings::setGain(int gain_ix)
 {
     gain = gain_ix;
+    emit updated(this);
+}
+
+void SweepSettings::setPreAmp(int preamp_ix)
+{
+    preamp = preamp_ix;
     emit updated(this);
 }
 

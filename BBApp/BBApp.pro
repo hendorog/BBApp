@@ -47,7 +47,9 @@ SOURCES += src/main.cpp \
     src/views/demod_sweep_plot.cpp \
     src/widgets/measuring_receiver_dialog.cpp \
     src/model/device_sa.cpp \
-    src/lib/device_traits.cpp
+    src/lib/device_traits.cpp \
+    src/views/harmonics_central.cpp \
+    src/views/gl_sub_view.cpp
 
 HEADERS += src/mainwindow.h \
     src/lib/frequency.h \
@@ -96,7 +98,9 @@ HEADERS += src/mainwindow.h \
     src/widgets/measuring_receiver_dialog.h \
     src/model/device_sa.h \
     src/lib/sa_api.h \
-    src/lib/device_traits.h
+    src/lib/device_traits.h \
+    src/views/harmonics_central.h \
+    src/views/harmonics_spectrum.h
 
 OTHER_FILES += \
     style_sheet.css \

@@ -10,24 +10,26 @@ public:
     DeviceSA(const Preferences *preferences);
     virtual ~DeviceSA();
 
-    bool OpenDevice();
-    bool CloseDevice();
-    bool Abort();
-    bool Preset();
+    virtual bool OpenDevice();
+    virtual bool CloseDevice();
+    virtual bool Abort();
+    virtual bool Preset();
     // Sweep
-    bool Reconfigure(const SweepSettings *s, Trace *t);
-    bool GetSweep(const SweepSettings *s, Trace *t);
+    virtual bool Reconfigure(const SweepSettings *s, Trace *t);
+    virtual bool GetSweep(const SweepSettings *s, Trace *t);
     // Stream
-    bool Reconfigure(const DemodSettings *s, IQDescriptor *iqc);
-    bool GetIQ(IQCapture *iqc);
-    bool GetIQFlush(IQCapture *iqc, bool sync);
-    bool ConfigureForTRFL(double center, int atten, int gain, IQDescriptor &desc);
+    virtual bool Reconfigure(const DemodSettings *s, IQDescriptor *iqc);
+    virtual bool GetIQ(IQCapture *iqc);
+    virtual bool GetIQFlush(IQCapture *iqc, bool sync);
+    virtual bool ConfigureForTRFL(double center, int atten, int gain, IQDescriptor &desc);
+    virtual bool ConfigureAudio(const AudioSettings &as);
+    virtual bool GetAudio(float *audio);
 
-    QString GetDeviceString() const;
-    void UpdateDiagnostics();
+    virtual QString GetDeviceString() const;
+    virtual void UpdateDiagnostics();
 
-    bool IsPowered() const;
-    bool NeedsTempCal() const;
+    virtual bool IsPowered() const;
+    virtual bool NeedsTempCal() const;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DeviceSA)
