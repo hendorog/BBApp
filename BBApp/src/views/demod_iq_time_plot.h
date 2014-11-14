@@ -21,10 +21,6 @@ private:
     void DrawTrace(const GLVector &v);
     void DrawPlotText();
 
-    QPoint grat_sz, grat_ul, grat_ll;
-    GLVector grat, gratBorder;
-    GLuint gratVBO, gratBorderVBO;
-
     // I/Q traces
     GLVector traces[2];
     GLuint traceVBO;

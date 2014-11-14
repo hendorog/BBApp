@@ -49,7 +49,8 @@ SOURCES += src/main.cpp \
     src/model/device_sa.cpp \
     src/lib/device_traits.cpp \
     src/views/harmonics_central.cpp \
-    src/views/gl_sub_view.cpp
+    src/views/gl_sub_view.cpp \
+    src/views/harmonics_spectrum.cpp
 
 HEADERS += src/mainwindow.h \
     src/lib/frequency.h \

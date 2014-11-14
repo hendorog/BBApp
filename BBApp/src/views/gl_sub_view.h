@@ -9,7 +9,21 @@
 #include "lib/bb_lib.h"
 #include "model/session.h"
 
-// Cache Metrics with Font
+class Rect {
+    Rect() :
+        left(0), bottom(0), width(0), height(0) {}
+    Rect(int left, int bottom, int width, int height) :
+        left(left), bottom(bottom), width(width), height(height) {}
+    Rect(QPoint bottomLeft, QPoint size) :
+        left(bottomLeft.x()), bottom(bottomLeft.y()), width(size.x()), height(size.y()) {}
+
+
+
+private:
+    int left, bottom, width, height;
+};
+
+// Convenience wrapper of Font and Metrics for OpenGL rasterization
 class GLFont {
 public:
     GLFont(int size, const QString &family = "Arial", int weight = -1, bool italic = false) :
@@ -55,16 +69,16 @@ protected:
                     QPoint p, TextAlignment alignment);
     void DrawString(const QString &s, const GLFont &f,
                     int x, int y, TextAlignment alignment);
-    void SetGraticuleDimensions(QPoint pos, QPoint size)
+    void SetGraticuleDimensions(QPoint bottomLeft, QPoint size)
     {
-        grat_ll = pos;
+        grat_ll = bottomLeft;
         grat_sz = size;
         grat_ul.setX(grat_ll.x());
         grat_ul.setY(grat_ll.y() + grat_sz.y());
     }
-    void SetGraticuleDimensions(int posX, int posY, int width, int height)
+    void SetGraticuleDimensions(int left, int bottom, int width, int height)
     {
-        SetGraticuleDimensions(QPoint(posX, posY), QPoint(width, height));
+        SetGraticuleDimensions(QPoint(left, bottom), QPoint(width, height));
     }
     void DrawGraticule();
 

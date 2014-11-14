@@ -23,7 +23,8 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
 
     toolBar = new QToolBar();
     toolBar->setObjectName("DemodToolBar");
-    toolBar->setMovable(false);
+    //toolBar->setMovable(false);
+    toolBar->setAllowedAreas(Qt::TopToolBarArea | Qt::BottomToolBarArea);
     toolBar->setFloatable(false);
     toolBar->layout()->setContentsMargins(0, 0, 0, 0);
     toolBar->layout()->setSpacing(0);
@@ -451,11 +452,7 @@ void DemodCentral::updateSettings(const DemodSettings *ds)
 
 void DemodCentral::singlePressed()
 {
-    if(captureCount < 0) {
-        captureCount = 1;
-    } else {
-        captureCount++;
-    }
+    captureCount = 1;
 }
 
 void DemodCentral::autoPressed()

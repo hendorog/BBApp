@@ -38,10 +38,6 @@ private:
     void DrawDeltaMarker(int x, int y, int num);
     void DrawModAnalysisReport();
 
-    QPoint grat_sz, grat_ul, grat_ll;
-    GLVector grat, gratBorder;
-    GLuint gratVBO, gratBorderVBO;
-
     GLFont textFont, divFont;
 
     // Waveform paired with x-position values

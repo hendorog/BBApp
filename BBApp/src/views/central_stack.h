@@ -34,7 +34,7 @@ public slots:
 
 inline CentralWidget::~CentralWidget() {}
 
-
+// Holds all the
 class CentralStack : public QStackedWidget {
     Q_OBJECT
 

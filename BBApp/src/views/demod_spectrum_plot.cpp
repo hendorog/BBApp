@@ -22,9 +22,7 @@ DemodSpectrumPlot::DemodSpectrumPlot(Session *sPtr, QWidget *parent) :
 DemodSpectrumPlot::~DemodSpectrumPlot()
 {
     makeCurrent();
-
     glDeleteBuffers(1, &traceVBO);
-
     doneCurrent();
 }
 

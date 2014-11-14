@@ -13,31 +13,6 @@ DemodSweepPlot::DemodSweepPlot(Session *session, QWidget *parent) :
     markerOn(false),
     deltaOn(false)
 {
-    for(int i = 0; i < 11; i++) {
-        grat.push_back(0.0);
-        grat.push_back(0.1 * i);
-        grat.push_back(1.0);
-        grat.push_back(0.1 * i);
-    }
-
-    for(int i = 0; i < 11; i++) {
-        grat.push_back(0.1 * i);
-        grat.push_back(0.0);
-        grat.push_back(0.1 * i);
-        grat.push_back(1.0);
-    }
-
-    gratBorder.push_back(0.0);
-    gratBorder.push_back(0.0);
-    gratBorder.push_back(1.0);
-    gratBorder.push_back(0.0);
-    gratBorder.push_back(1.0);
-    gratBorder.push_back(1.0);
-    gratBorder.push_back(0.0);
-    gratBorder.push_back(1.0);
-    gratBorder.push_back(0.0);
-    gratBorder.push_back(0.0);
-
     makeCurrent();
 
     glShadeModel(GL_SMOOTH);
@@ -48,15 +23,6 @@ DemodSweepPlot::DemodSweepPlot(Session *session, QWidget *parent) :
     context()->format().setDoubleBuffer(true);
 
     glGenBuffers(1, &traceVBO);
-    glGenBuffers(1, &gratVBO);
-    glGenBuffers(1, &gratBorderVBO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, gratVBO);
-    glBufferData(GL_ARRAY_BUFFER, grat.size()*sizeof(float),
-                 &grat[0], GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, gratBorderVBO);
-    glBufferData(GL_ARRAY_BUFFER, gratBorder.size()*sizeof(float),
-                 &gratBorder[0], GL_STATIC_DRAW);
 
     doneCurrent();
 }
@@ -64,19 +30,14 @@ DemodSweepPlot::DemodSweepPlot(Session *session, QWidget *parent) :
 DemodSweepPlot::~DemodSweepPlot()
 {
     makeCurrent();
-
     glDeleteBuffers(1, &traceVBO);
-    glDeleteBuffers(1, &gratVBO);
-    glDeleteBuffers(1, &gratBorderVBO);
-
     doneCurrent();
 }
 
 void DemodSweepPlot::resizeEvent(QResizeEvent *)
 {
-    grat_ll.setX(60);
-    grat_ul.setX(60);
-    grat_sz.setX(width() - 80);
+    SetGraticuleDimensions(QPoint(60, 50),
+                           QPoint(width() - 80, height() - 100));
 }
 
 void DemodSweepPlot::mousePressEvent(QMouseEvent *e)
@@ -97,10 +58,8 @@ void DemodSweepPlot::paintEvent(QPaintEvent *)
 
     if(GetSession()->demod_settings->MAEnabled()) {
         grat_sz.setX(width() / 2 - 80);
-        //grat_sz = QPoint(width()/2 - 80, height() - 100);
     } else {
         grat_sz.setX(width() - 80);
-        //grat_sz = QPoint(width() - 80, height() - 100);
     }
 
     glQClearColor(GetSession()->colors.background);
@@ -119,55 +78,12 @@ void DemodSweepPlot::paintEvent(QPaintEvent *)
     }
 
     int textHeight = textFont.GetTextHeight() + 2;
-    grat_ll.setY(textHeight * 1);
-    grat_ul.setY(height() - (textHeight*1.5));
-    grat_sz.setY(height() - (textHeight*2.5));
+    SetGraticuleDimensions(QPoint(60, textHeight*2),
+                           QPoint(width() - 80, height() - textHeight*4));
 
     glViewport(0, 0, width(), height());
 
-    // Model view for graticule
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-    glTranslatef(grat_ll.x(), grat_ll.y(), 0);
-    glScalef(grat_sz.x(), grat_sz.y(), 1.0);
-
-    // Projection for graticule
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0, size().width(), 0, size().height(), -1, 1);
-
-    glLineWidth(GetSession()->prefs.graticule_width);
-    glQColor(GetSession()->colors.graticule);
-
-    // Draw inner grat
-    if(GetSession()->prefs.graticule_stipple) {
-        glLineStipple(1, 0x8888);
-        glEnable(GL_LINE_STIPPLE);
-    }
-
-    glBindBuffer(GL_ARRAY_BUFFER, gratVBO);
-    glVertexPointer(2, GL_FLOAT, 0, INDEX_OFFSET(0));
-    glDrawArrays(GL_LINES, 0, grat.size()/2);
-
-    if(GetSession()->prefs.graticule_stipple) {
-        glDisable(GL_LINE_STIPPLE);
-    }
-
-    // Border
-    glBindBuffer(GL_ARRAY_BUFFER, gratBorderVBO);
-    glVertexPointer(2, GL_FLOAT, 0, INDEX_OFFSET(0));
-    glDrawArrays(GL_LINE_STRIP, 0, gratBorder.size()/2);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-
-    glLineWidth(1.0);
-
+    DrawGraticule();
     DemodAndDraw();
 
     glDisable(GL_DEPTH_TEST);

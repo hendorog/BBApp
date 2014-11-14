@@ -13,7 +13,23 @@ public:
     HarmonicsCentral(Session *sPtr, QWidget *parent = 0, Qt::WindowFlags f = 0);
     ~HarmonicsCentral();
 
+    virtual void GetViewImage(QImage &image);
+    virtual void StartStreaming();
+    virtual void StopStreaming();
+    virtual void ResetView();
+
+    virtual Frequency GetCurrentCenterFreq() const;
+
+public slots:
+    virtual void changeMode(int newState);
+
 private:
+    void Reconfigure();
+    void SweepThread();
+
+    std::thread sweepThreadHandle;
+    bool streaming;
+
     Session *session_ptr;
 
 private:
