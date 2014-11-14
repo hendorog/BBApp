@@ -20,7 +20,9 @@
 // Fixed width for positioning
 class FixedSpacer : public QWidget {
 public:
-    FixedSpacer(QSize size, QWidget *parent = 0) : QWidget(parent) {
+    FixedSpacer(QSize size, QWidget *parent = 0) :
+        QWidget(parent)
+    {
         setFixedSize(size);
     }
 };

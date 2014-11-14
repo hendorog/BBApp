@@ -208,6 +208,8 @@ void Trace::Update(const Trace &other)
         Copy(other);
     }
 
+    Q_ASSERT(other.UpdateStop() <= Length());
+
     _start = other._start;
     _binSize = other._binSize;
     _updateStart = other._updateStart;

@@ -57,6 +57,7 @@ bool PlaybackFile::GetSweep(Trace *trace)
     //std::lock_guard<std::mutex> lg(buffer_mutex);
 
     trace->SetSize(header.trace_len);
+    trace->SetUpdateRange(0, trace->Length());
     trace->SetFreq(header.bin_size, header.trace_start_freq);
 
     file_handle.seek(data_start + step_size * trace_pos);

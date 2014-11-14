@@ -312,7 +312,7 @@ QComboBox::down-arrow#SH_ComboBox {
 QComboBox QAbstractItemView {
   background-color: rgb(231,232,236);
   border: 1px solid rgb(219,221,230);
-  padding: px;
+  padding: 1px;
   color: black;
   outline: none;
 /*  selection-background-color: rgb(85,170,255);*/
