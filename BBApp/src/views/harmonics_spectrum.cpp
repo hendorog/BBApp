@@ -20,7 +20,7 @@ HarmonicsSpectrumPlot::HarmonicsSpectrumPlot(Session *sPtr, QWidget *parent) :
 HarmonicsSpectrumPlot::~HarmonicsSpectrumPlot()
 {
     makeCurrent();
-    glDeleteBuffers(1, &traceVBO);
+    //glDeleteBuffers(1, &traceVBO);
     doneCurrent();
 }
 
@@ -39,6 +39,8 @@ void HarmonicsSpectrumPlot::paintEvent(QPaintEvent *)
 
     glEnable(GL_DEPTH_TEST);
     glEnableClientState(GL_VERTEX_ARRAY);
+
+    DrawGraticule();
 
     swapBuffers();
     doneCurrent();

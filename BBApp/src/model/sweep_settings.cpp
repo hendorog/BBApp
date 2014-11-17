@@ -335,7 +335,7 @@ void SweepSettings::setSpan(Frequency f)
         f = device_traits::min_span();
     }
 
-    if(Mode() == MODE_REAL_TIME || Mode() == MODE_TIME_GATE) {
+    if(Mode() == MODE_REAL_TIME) {
         bb_lib::clamp(f, Frequency(device_traits::min_real_time_span()),
                       Frequency(device_traits::max_real_time_span()));
     }

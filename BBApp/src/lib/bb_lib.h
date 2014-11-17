@@ -55,8 +55,7 @@ enum OperationalMode {
     MODE_SWEEPING = 0,
     MODE_REAL_TIME = 1,
     MODE_ZERO_SPAN = 2,
-    MODE_TIME_GATE = 3,
-    MODE_AUDIO = 7
+    MODE_HARMONICS = 3
 };
 
 enum Setting {

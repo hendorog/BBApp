@@ -67,10 +67,11 @@ private:
 class DemodCentral : public CentralWidget {
     Q_OBJECT
 
-    static const int TOOLBAR_HEIGHT = 30;
-
 public:
-    DemodCentral(Session *sPtr, QWidget *parent = 0, Qt::WindowFlags f = 0);
+    DemodCentral(Session *sPtr,
+                 QToolBar *mainToolBar,
+                 QWidget *parent = 0,
+                 Qt::WindowFlags f = 0);
     ~DemodCentral();
 
     void StartStreaming();
@@ -125,7 +126,6 @@ private slots:
 
 signals:
     void updateViews();
-    void presetDevice();
     void showRecordingDialog(bool);
 
 private:

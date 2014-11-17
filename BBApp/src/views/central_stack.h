@@ -3,6 +3,7 @@
 
 #include <QStackedWidget>
 #include <QToolBar>
+#include <QAction>
 
 #include "lib/frequency.h"
 
@@ -13,7 +14,7 @@ class CentralWidget : public QWidget {
 
 public:
     CentralWidget(QWidget *parent = 0, Qt::WindowFlags f = 0) :
-        QWidget(parent, f), toolBar(0) {}
+        QWidget(parent, f) {}
     virtual ~CentralWidget() = 0;
 
     virtual void GetViewImage(QImage &image) = 0;
@@ -23,10 +24,15 @@ public:
 
     virtual Frequency GetCurrentCenterFreq() const = 0;
 
-    QToolBar* GetToolBar() const { return toolBar; }
+    void EnableToolBarActions(bool enable)
+    {
+        for(QAction *a : tools) {
+            a->setVisible(enable);
+        }
+    }
 
 protected:
-    QToolBar *toolBar;
+    QList<QAction*> tools;
 
 public slots:
     virtual void changeMode(int newState) = 0;

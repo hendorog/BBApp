@@ -6,7 +6,10 @@
 
 #include <QXmlStreamWriter>
 
-DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
+DemodCentral::DemodCentral(Session *sPtr,
+                           QToolBar *toolBar,
+                           QWidget *parent,
+                           Qt::WindowFlags f) :
     CentralWidget(parent, f),
     sessionPtr(sPtr),
     reconfigure(false),
@@ -21,14 +24,6 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     recordDialog.setStandardButtons(QMessageBox::NoButton);
     recordDialog.setDefaultButton(QMessageBox::NoButton);
 
-    toolBar = new QToolBar();
-    toolBar->setObjectName("DemodToolBar");
-    //toolBar->setMovable(false);
-    toolBar->setAllowedAreas(Qt::TopToolBarArea | Qt::BottomToolBarArea);
-    toolBar->setFloatable(false);
-    toolBar->layout()->setContentsMargins(0, 0, 0, 0);
-    toolBar->layout()->setSpacing(0);
-
     ComboBox *demodSelect = new ComboBox();
     QStringList comboString;
     comboString << "AM Demod" << "FM Demod" << "PM Demod";
@@ -42,40 +37,13 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     markerDelta = new SHPushButton("Marker Delta");
     markerDelta->setFixedSize(120, 30-4);
 
-    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
-    toolBar->addWidget(demodSelect);
-    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
-    toolBar->addSeparator();
-    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
-    toolBar->addWidget(markerOff);
-    toolBar->addWidget(markerDelta);
-
-    QWidget *spacer = new QWidget();
-    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    toolBar->addWidget(spacer);
-
-    SHPushButton *singleSweep, *autoSweep;
-    singleSweep = new SHPushButton("Single", toolBar);
-    singleSweep->setFixedSize(120, TOOLBAR_HEIGHT - 4);
-    connect(singleSweep, SIGNAL(clicked()), this, SLOT(singlePressed()));
-
-    autoSweep = new SHPushButton("Auto", toolBar);
-    autoSweep->setFixedSize(120, TOOLBAR_HEIGHT - 4);
-    connect(autoSweep, SIGNAL(clicked()), this, SLOT(autoPressed()));
-
-    QPushButton *presetBtn;
-    presetBtn = new QPushButton("Preset", toolBar);
-    presetBtn->setObjectName("BBPresetButton");
-    presetBtn->setFixedSize(120, TOOLBAR_HEIGHT - 4);
-    connect(presetBtn, SIGNAL(clicked()), this, SIGNAL(presetDevice()));
-
-    toolBar->addWidget(singleSweep);
-    toolBar->addWidget(autoSweep);
-    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
-    toolBar->addSeparator();
-    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
-    toolBar->addWidget(presetBtn);
-    toolBar->addWidget(new FixedSpacer(QSize(10, 30)));
+    tools.push_back(toolBar->addWidget(new FixedSpacer(QSize(10, 30))));
+    tools.push_back(toolBar->addWidget(demodSelect));
+    tools.push_back(toolBar->addWidget(new FixedSpacer(QSize(10, 30))));
+    tools.push_back(toolBar->addSeparator());
+    tools.push_back(toolBar->addWidget(new FixedSpacer(QSize(10, 30))));
+    tools.push_back(toolBar->addWidget(markerOff));
+    tools.push_back(toolBar->addWidget(markerDelta));
 
     recordToolBar = new QToolBar(this);
     recordToolBar->setMovable(false);
@@ -132,7 +100,7 @@ DemodCentral::DemodCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f) :
     connect(recordLenEntry, SIGNAL(entryUpdated()), this, SLOT(recordLengthChanged()));
     connect(recordButton, SIGNAL(clicked()), this, SLOT(recordPressed()));
 
-    spacer = new QWidget();
+    QWidget *spacer = new QWidget();
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     recordToolBar->addWidget(spacer);
 

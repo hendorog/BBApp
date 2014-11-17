@@ -14,6 +14,7 @@
 #include "views/central_stack.h"
 #include "views/sweep_central.h"
 #include "views/demod_central.h"
+#include "views/harmonics_central.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -62,6 +63,7 @@ private:
     CentralStack *centralStack;
     SweepCentral *sweepCentral;
     DemodCentral *demodCentral;
+    HarmonicsCentral *harmonicCentral;
 
     static BBStatusBar *status_bar;
 

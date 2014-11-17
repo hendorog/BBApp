@@ -57,22 +57,61 @@ MainWindow::MainWindow(QWidget *parent)
 
     InitMenuBar();
 
+    QToolBar *toolBar = new QToolBar();
+    toolBar->setObjectName("SweepToolBar");
+    toolBar->setMovable(true);
+    toolBar->setAllowedAreas(Qt::TopToolBarArea | Qt::BottomToolBarArea);
+    toolBar->setFloatable(false);
+    toolBar->layout()->setContentsMargins(0, 0, 0, 0);
+    toolBar->layout()->setSpacing(0);
+
     centralStack = new CentralStack(this);
     setCentralWidget(centralStack);
 
-    sweepCentral = new SweepCentral(session);
-    addToolBar(sweepCentral->GetToolBar());
-    sweepCentral->GetToolBar()->hide();
-    connect(sweepCentral, SIGNAL(presetDevice()), this, SLOT(presetDevice()));
+    sweepCentral = new SweepCentral(session, toolBar);
+    sweepCentral->EnableToolBarActions(false);
     centralStack->AddWidget(sweepCentral);
 
-    demodCentral = new DemodCentral(session);
-    addToolBar(demodCentral->GetToolBar());
-    demodCentral->GetToolBar()->hide();
-    connect(demodCentral, SIGNAL(presetDevice()), this, SLOT(presetDevice()));
+    demodCentral = new DemodCentral(session, toolBar);
+    demodCentral->EnableToolBarActions(false);
     centralStack->AddWidget(demodCentral);
 
+    harmonicCentral = new HarmonicsCentral(session, toolBar);
+    centralStack->AddWidget(harmonicCentral);
+
+    // Add Single/continuous/preset button to toolbar
+    QWidget *spacer = new QWidget();
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    toolBar->addWidget(spacer);
+    SHPushButton *single_sweep = new SHPushButton(tr("Single"), toolBar);
+    single_sweep->setFixedSize(120, TOOLBAR_H - 4);
+    toolBar->addWidget(single_sweep);
+    SHPushButton *continuous_sweep = new SHPushButton(tr("Continuous"), toolBar);
+    continuous_sweep->setFixedSize(120, TOOLBAR_H - 4);
+    toolBar->addWidget(continuous_sweep);
+
+    connect(single_sweep, SIGNAL(clicked()), sweepCentral, SLOT(singleSweepPressed()));
+    connect(single_sweep, SIGNAL(clicked()), demodCentral, SLOT(singlePressed()));
+    connect(continuous_sweep, SIGNAL(clicked()), sweepCentral, SLOT(continuousSweepPressed()));
+    connect(continuous_sweep, SIGNAL(clicked()), demodCentral, SLOT(autoPressed()));
+
+    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
+    toolBar->addSeparator();
+    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
+
+    QPushButton *preset_button = new QPushButton(tr("Preset"), toolBar);
+    preset_button->setObjectName("BBPresetButton");
+    preset_button->setFixedSize(120, TOOLBAR_H - 4);
+    toolBar->addWidget(preset_button);
+
+    connect(preset_button, SIGNAL(clicked()), this, SLOT(presetDevice()));
+
+    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
+
+    addToolBar(toolBar);
     RestoreState();
+    toolBar->show();
+
     ChangeMode(MODE_SWEEPING);
 
     connect(session->device, SIGNAL(connectionIssues()), this, SLOT(forceDisconnectDevice()));
@@ -227,6 +266,11 @@ void MainWindow::InitMenuBar()
 
     mode_action = mode_menu->addAction(tr("Zero-Span"));
     mode_action->setData(MODE_ZERO_SPAN);
+    mode_action->setCheckable(true);
+    mode_action_group->addAction(mode_action);
+
+    mode_action = mode_menu->addAction("Harmonics Viewer");
+    mode_action->setData(MODE_HARMONICS);
     mode_action->setCheckable(true);
     mode_action_group->addAction(mode_action);
 
@@ -576,9 +620,7 @@ void MainWindow::saveAsDefaultColorScheme()
 void MainWindow::loadDefaultSettings()
 {
     centralStack->CurrentWidget()->StopStreaming();
-
     session->LoadDefaults();
-
     centralStack->CurrentWidget()->StartStreaming();
 }
 
@@ -668,12 +710,18 @@ void MainWindow::modeChanged(QAction *a)
 
 void MainWindow::ChangeMode(OperationalMode newMode)
 {
-    centralStack->CurrentWidget()->GetToolBar()->hide();
+    centralStack->CurrentWidget()->EnableToolBarActions(false);
+
     if(newMode == MODE_ZERO_SPAN) {
         centralStack->setCurrentWidget(demodCentral);
         sweep_panel->hide();
         measure_panel->hide();
         demodPanel->show();
+    } else if(newMode == MODE_HARMONICS) {
+        centralStack->setCurrentWidget(harmonicCentral);
+        sweep_panel->show();
+        measure_panel->hide();
+        demodPanel->hide();
     } else {
         centralStack->setCurrentWidget(sweepCentral);
         demodPanel->hide();
@@ -681,7 +729,7 @@ void MainWindow::ChangeMode(OperationalMode newMode)
         measure_panel->show();
     }
 
-    centralStack->CurrentWidget()->GetToolBar()->show();
+    centralStack->CurrentWidget()->EnableToolBarActions(true);
 }
 
 // Function gets called when the zero-span button is pressed on the sweep panel
@@ -695,12 +743,6 @@ void MainWindow::zeroSpanPressed()
     session->demod_settings->setCenterFreq(currentCenter);
 
     ChangeMode(MODE_ZERO_SPAN);
-//    // Hide sweep panels, show zero-span ones
-//    centralStack->setCurrentWidget(demodCentral);
-//    sweep_panel->hide();
-//    measure_panel->hide();
-//    demodPanel->show();
-
     centralStack->CurrentWidget()->changeMode(MODE_ZERO_SPAN);
 }
 

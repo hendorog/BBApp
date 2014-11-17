@@ -16,7 +16,6 @@ protected:
 
 private:
 
-
 private:
     Q_DISABLE_COPY(HarmonicsSpectrumPlot)
 };

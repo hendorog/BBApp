@@ -17,9 +17,11 @@ class WaterfallView;
 class SweepCentral : public CentralWidget {
     Q_OBJECT
 
-    const static int TOOLBAR_H = 30;
 public:
-    SweepCentral(Session *sPtr, QWidget *parent = 0, Qt::WindowFlags f = 0);
+    SweepCentral(Session *sPtr,
+                 QToolBar *mainToolBar,
+                 QWidget *parent = 0,
+                 Qt::WindowFlags f = 0);
     ~SweepCentral();
 
     void StartStreaming();
@@ -49,8 +51,6 @@ private:
     ComboBox *waterfall_combo;
     QCheckBox *persistence_check;
     SHPushButton *persistence_clear;
-    SHPushButton *single_sweep, *continuous_sweep;
-    QPushButton *preset_button;
 
     PlaybackToolBar *playback;
 
@@ -63,7 +63,6 @@ private:
 
 signals:
     void updateView();
-    void presetDevice();
 
 public slots:
     void changeMode(int newState);

@@ -218,8 +218,6 @@ void TraceView::resizeEvent(QResizeEvent *)
     grat_ll.setX(60);
     grat_ul.setX(60);
     grat_sz.setX(width() - 80);
-
-    //QGLWidget::resize(size());
 }
 
 /*

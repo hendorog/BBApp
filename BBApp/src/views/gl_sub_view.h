@@ -9,20 +9,6 @@
 #include "lib/bb_lib.h"
 #include "model/session.h"
 
-class Rect {
-    Rect() :
-        left(0), bottom(0), width(0), height(0) {}
-    Rect(int left, int bottom, int width, int height) :
-        left(left), bottom(bottom), width(width), height(height) {}
-    Rect(QPoint bottomLeft, QPoint size) :
-        left(bottomLeft.x()), bottom(bottomLeft.y()), width(size.x()), height(size.y()) {}
-
-
-
-private:
-    int left, bottom, width, height;
-};
-
 // Convenience wrapper of Font and Metrics for OpenGL rasterization
 class GLFont {
 public:
@@ -65,6 +51,12 @@ protected:
         CENTER_ALIGNED
     };
 
+    enum GraticuleType {
+        LINEAR_GRATICULE,
+        LOG_GRATICULE,
+        HARMONICS_GRATICULE
+    };
+
     void DrawString(const QString &s, const GLFont &f,
                     QPoint p, TextAlignment alignment);
     void DrawString(const QString &s, const GLFont &f,
@@ -80,6 +72,8 @@ protected:
     {
         SetGraticuleDimensions(QPoint(left, bottom), QPoint(width, height));
     }
+
+    void LoadGraticule();
     void DrawGraticule();
 
     QPoint grat_ll;

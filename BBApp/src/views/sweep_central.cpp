@@ -14,7 +14,10 @@
 #include "../widgets/entry_widgets.h"
 #include "../widgets/audio_dialog.h"
 
-SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
+SweepCentral::SweepCentral(Session *sPtr,
+                           QToolBar *toolBar,
+                           QWidget *parent,
+                           Qt::WindowFlags f)
     : CentralWidget(parent, f),
       session_ptr(sPtr),
       trace(true)
@@ -22,43 +25,35 @@ SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
     trace_view = new TraceView(session_ptr, this);
     connect(this, SIGNAL(updateView()), trace_view, SLOT(update()));
 
-    toolBar = new QToolBar();
-    toolBar->setObjectName("SweepToolBar");
-    //toolBar->setMovable(false);
-    toolBar->setAllowedAreas(Qt::TopToolBarArea | Qt::BottomToolBarArea);
-    toolBar->setFloatable(false);
-    toolBar->layout()->setContentsMargins(0, 0, 0, 0);
-    toolBar->layout()->setSpacing(0);
-    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
-
+    tools.push_back(toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H))));
     Label *waterfall_label = new Label(tr("Spectrogram"), toolBar);
     waterfall_label->resize(100, 25);
-    toolBar->addWidget(waterfall_label);
-    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
+    tools.push_back(toolBar->addWidget(waterfall_label));
+    tools.push_back(toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H))));
 
     waterfall_combo = new ComboBox(toolBar);
     waterfall_combo->setFixedSize(150, 25);
     QStringList spectrogram_list;
     spectrogram_list << tr("Off") << tr("2-D") << tr("3-D");
     waterfall_combo->insertItems(0, spectrogram_list);
-    toolBar->addWidget(waterfall_combo);
+    tools.push_back(toolBar->addWidget(waterfall_combo));
     connect(waterfall_combo, SIGNAL(currentIndexChanged(int)),
             trace_view, SLOT(enableWaterfall(int)));
 
-    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
-    toolBar->addSeparator();
-    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
+    tools.push_back(toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H))));
+    tools.push_back(toolBar->addSeparator());
+    tools.push_back(toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H))));
 
     persistence_check = new QCheckBox(tr("Persistence"));
     persistence_check->setObjectName("SH_CheckBox");
     persistence_check->setFixedSize(120, 25);
-    toolBar->addWidget(persistence_check);
+    tools.push_back(toolBar->addWidget(persistence_check));
     connect(persistence_check, SIGNAL(stateChanged(int)),
             trace_view, SLOT(enablePersistence(int)));
 
     persistence_clear = new SHPushButton(tr("Clear"), toolBar);
     persistence_clear->setFixedSize(100, TOOLBAR_H - 4);
-    toolBar->addWidget(persistence_clear);
+    tools.push_back(toolBar->addWidget(persistence_clear));
     connect(persistence_clear, SIGNAL(clicked()), trace_view, SLOT(clearPersistence()));
 
     if(!trace_view->HasOpenGL3()) {
@@ -67,34 +62,6 @@ SweepCentral::SweepCentral(Session *sPtr, QWidget *parent, Qt::WindowFlags f)
         persistence_clear->setEnabled(false);
         persistence_clear->setToolTip(tr("Persistence requires OpenGL version 3.0 or greater"));
     }
-
-    QWidget *spacer = new QWidget();
-    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    toolBar->addWidget(spacer);
-
-    single_sweep = new SHPushButton(tr("Single Trig"), toolBar);
-    single_sweep->setFixedSize(120, TOOLBAR_H - 4);
-    toolBar->addWidget(single_sweep);
-
-    continuous_sweep = new SHPushButton(tr("Continuous"), toolBar);
-    continuous_sweep->setFixedSize(120, TOOLBAR_H - 4);
-    toolBar->addWidget(continuous_sweep);
-
-    connect(single_sweep, SIGNAL(clicked()), SLOT(singleSweepPressed()));
-    connect(continuous_sweep, SIGNAL(clicked()), SLOT(continuousSweepPressed()));
-
-    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
-    toolBar->addSeparator();
-    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
-
-    preset_button = new QPushButton(tr("Preset"), toolBar);
-    preset_button->setObjectName("BBPresetButton");
-    preset_button->setFixedSize(120, TOOLBAR_H - 4);
-    toolBar->addWidget(preset_button);
-
-    connect(preset_button, SIGNAL(clicked()), this, SIGNAL(presetDevice()));
-
-    toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
 
     trace_view->move(0, 0);
     trace_view->resize(size().width(), size().height() - 32);
@@ -150,12 +117,6 @@ void SweepCentral::StartStreaming()
     }
 
     thread_handle = std::thread(&SweepCentral::SweepThread, this);
-
-//    if(mode_to_start == BB_SWEEPING) {
-//        thread_handle = std::thread(&SweepCentral::SweepThread, this);
-//    } else if(mode_to_start == BB_REAL_TIME) {
-//        thread_handle = std::thread(&SweepCen)
-//    }
 }
 
 void SweepCentral::StopStreaming()
@@ -179,9 +140,9 @@ void SweepCentral::GetViewImage(QImage &image)
 
 void SweepCentral::resizeEvent(QResizeEvent *)
 {
-    trace_view->resize(size().width(), size().height() - 32);
+    trace_view->resize(width(), height() - 32);
     playback->move(0, trace_view->height());
-    playback->resize(size().width(), 32);
+    playback->resize(width(), 32);
 }
 
 void SweepCentral::keyPressEvent(QKeyEvent *e)

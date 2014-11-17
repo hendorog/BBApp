@@ -6,6 +6,8 @@
 #define TRACE_COUNT (6)
 #define PRESET_COUNT (9)
 
+#define TOOLBAR_H (30)
+
 #define MAX_DOCK_WIDTH (326) // Width of whole dock panel
 #define MIN_DOCK_WIDTH (226)
 
