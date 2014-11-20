@@ -2,9 +2,11 @@
 
 #include "sa_api.h"
 #include "bb_api.h"
+#include "bb_lib.h"
 
 #include <QtGlobal>
 
+// I/Q max bandwidth per decimation
 static double max_bw_table_bb[] = {
     27.0e6,
     17.8e6,
@@ -16,6 +18,7 @@ static double max_bw_table_bb[] = {
     0.25e6
 };
 
+// I/Q max bandwidth per decimation
 static double max_bw_table_sa[] = {
     250.0e3,
     225.0e3,
@@ -46,7 +49,7 @@ double device_traits::min_span()
 double device_traits::min_frequency()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return SA_MIN_FREQ;
+    case DeviceTypeSA44: case DeviceTypeSA124: return 1.0; //SA_MIN_FREQ;
     case DeviceTypeBB60A: case DeviceTypeBB60C: return BB60_MIN_FREQ;
     }
     return BB60_MIN_FREQ;
@@ -78,6 +81,26 @@ double device_traits::max_frequency()
     case DeviceTypeBB60A: case DeviceTypeBB60C: return 6.0e9;
     }
     return 6.0e9;
+}
+
+double device_traits::adjust_rbw_on_span(const SweepSettings *ss)
+{
+    switch(type) {
+    case DeviceTypeSA44: case DeviceTypeSA124:
+        return bb_lib::sa_adjust_rbw_on_span(ss);
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return bb_lib::adjust_rbw_on_span(ss);
+    }
+}
+
+double device_traits::get_best_rbw(const SweepSettings *ss)
+{
+    switch(type) {
+    case DeviceTypeSA44: case DeviceTypeSA124:
+        return bb_lib::sa_get_best_rbw(ss);
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return bb_lib::get_best_rbw(ss);
+    }
 }
 
 double device_traits::min_real_time_rbw()

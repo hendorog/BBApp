@@ -45,6 +45,18 @@ bool DeviceSA::OpenDevice()
     return true;
 }
 
+bool DeviceSA::AttachTG()
+{
+
+    return false;
+}
+
+bool DeviceSA::IsTGAttached()
+{
+
+    return false;
+}
+
 bool DeviceSA::CloseDevice()
 {
     saCloseDevice(id);
@@ -224,8 +236,10 @@ bool DeviceSA::GetAudio(float *audio)
 
 QString DeviceSA::GetDeviceString() const
 {
-    if(device_type == SA_DEVICE_SA44B) return "SA44";
-    if(device_type == SA_DEVICE_SA124B) return "SA124";
+    if(device_type == SA_DEVICE_SA44) return "SA44";
+    if(device_type == SA_DEVICE_SA44B) return "SA44B";
+    if(device_type == SA_DEVICE_SA124A) return "SA124A";
+    if(device_type == SA_DEVICE_SA124B) return "SA124B";
 
     return "No Device Open";
 }

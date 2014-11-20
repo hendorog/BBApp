@@ -194,9 +194,9 @@ void SweepSettings::AutoBandwidthAdjust(bool force)
     }
 
     if(auto_rbw || force) {
-        rbw = bb_lib::get_best_rbw(span, native_rbw);
+        rbw = device_traits::get_best_rbw(this);
     } else {
-        bb_lib::adjust_rbw_on_span(rbw, span, native_rbw);
+        rbw = device_traits::adjust_rbw_on_span(this);
     }
 
     if(auto_vbw || vbw > rbw || mode == BB_REAL_TIME) {

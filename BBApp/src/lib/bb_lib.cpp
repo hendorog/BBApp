@@ -121,6 +121,23 @@ span_to_bandwidth auto_bw_lut[] = {
 const int auto_bw_lut_sz =
         sizeof(auto_bw_lut) / sizeof(span_to_bandwidth);
 
+sa_span_to_bandwidth sa_auto_bw_lut[] = {
+    { 1.0e9,   1.0e5 },
+    { 500.0e6, 1.0e5 },
+    { 200.0e6, 1.0e5 },
+    { 100.0e6, 3.0e4 },
+    { 50.0e6,  3.0e4 },
+    { 20.0e6,  1.0e4 },
+    { 10.0e6,  1.0e4 },
+    { 5.0e6,   3.0e3 },
+    { 2.0e6,   1.0e3 },
+    { 1.0e6,   1.0e3 },
+    { 0.5e6,   3.0e2 },
+    { 0.2e6,   1.0e2 }
+};
+const int sa_auto_bw_lut_sz =
+        sizeof(sa_auto_bw_lut) / sizeof(sa_span_to_bandwidth);
+
 GLShader::GLShader(GLShaderType type, char *file_name)
     : compiled(GL_FALSE),
       shader_source(nullptr),
@@ -428,42 +445,101 @@ double bb_lib::sequence_span(double span, bool increase)
     return span;
 }
 
-bool bb_lib::adjust_rbw_on_span(Frequency &rbw, double span, bool native_rbw)
+double bb_lib::adjust_rbw_on_span(const SweepSettings *ss)
 {
-    bool adjusted = false;
+    double rbw = ss->RBW();
 
-    while((span / rbw) > 500000) {
-        adjusted = true;
-        rbw = sequence_bw(rbw, native_rbw, true);
+    while((ss->Span() / rbw) > 500000) {
+        rbw = sequence_bw(rbw, ss->NativeRBW(), true);
     }
 
-    while((span / rbw) < 1.0) {
-        adjusted = true;
-        rbw = sequence_bw(rbw, native_rbw, false);
+    while((ss->Span() / rbw) < 1.0) {
+        rbw = sequence_bw(rbw, ss->NativeRBW(), false);
     }
 
-    return adjusted;
+    return rbw;
+}
+
+double bb_lib::sa_adjust_rbw_on_span(const SweepSettings *ss)
+{
+    double rbw = ss->RBW();
+
+    if(rbw > 100.0e3) {
+        if(rbw > 150.0e3) {
+            rbw = 250.0e3;
+        } else {
+            rbw = 100.0e3;
+        }
+    }
+
+    while((ss->Span() / rbw) > 50000) {
+        rbw = sequence_bw(rbw, false, true);
+    }
+
+    while((ss->Span() / rbw) < 1.0) {
+        rbw = sequence_bw(rbw, false, false);
+    }
+
+    if(ss->Span() > 98.0e6 && rbw < 6.5e3) {
+        rbw = 6.5e3;
+    }
+
+    if(ss->Start() < 16.0e6 && ss->Span() > 200.0e3) {
+        if(rbw < 6.5e3) {
+            rbw = 6.5e3;
+        }
+    }
+
+    if(rbw < 1.0) {
+        rbw = 1.0;
+    }
+
+    return rbw;
 }
 
 // Auto RBW based on span
-double bb_lib::get_best_rbw(double span, bool native_rbw)
+double bb_lib::get_best_rbw(const SweepSettings *ss)
 {
     int best_ix = 0;
-    double best_diff = fabs(span - auto_bw_lut[0].span);
+    double best_diff = fabs(ss->Span() - auto_bw_lut[0].span);
 
     for(int i = 1; i < auto_bw_lut_sz; i++) {
-        double d = fabs(span - auto_bw_lut[i].span);
+        double d = fabs(ss->Span() - auto_bw_lut[i].span);
         if(d < best_diff) {
             best_diff = d;
             best_ix = i;
         }
     }
 
-    if(native_rbw) {
+    if(ss->NativeRBW()) {
         return auto_bw_lut[best_ix].nbw;
     }
 
     return auto_bw_lut[best_ix].nnbw;
+}
+
+double bb_lib::sa_get_best_rbw(const SweepSettings *ss)
+{
+    int best_ix = 0;
+    double best_diff = fabs(ss->Span() - sa_auto_bw_lut[0].span);
+
+    for(int i = 1; i < sa_auto_bw_lut_sz; i++) {
+        double d = fabs(ss->Span() - sa_auto_bw_lut[i].span);
+        if(d < best_diff) {
+            best_diff = d;
+            best_ix = i;
+        }
+    }
+
+    double rbw = sa_auto_bw_lut[best_ix].rbw;
+
+    if(ss->Start() < 16.0e6 && ss->Span() > 200.0e3) {
+        if(rbw < 6.5e3) {
+            return 6.5e3;
+        }
+    }
+
+    return rbw;
 }
 
 // Get Users MyDocuments path, append application directory

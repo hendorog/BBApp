@@ -6,6 +6,8 @@
 #include <QTextStream>
 #include <QDialog>
 
+#include <iostream>
+
 Trace::Trace(bool active, int size)
 {
     _active = active;
@@ -107,6 +109,12 @@ void Trace::GetSignalPeak(double *freq, double *amp) const
 //        return;
 //    }
 
+    if(_size == 0) {
+        if(freq) *freq = 0.0;
+        if(amp) *amp = 0.0;
+        return;
+    }
+
     double max = -1000.0;
     int maxIndex = 0;
 
@@ -196,7 +204,7 @@ void Trace::GetPeakList(std::vector<int> &peak_index_list) const
         }
     }
 }
-#include <iostream>
+
 void Trace::Update(const Trace &other)
 {
     if(!_update) {

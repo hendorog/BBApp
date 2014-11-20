@@ -51,12 +51,6 @@ protected:
         CENTER_ALIGNED
     };
 
-    enum GraticuleType {
-        LINEAR_GRATICULE,
-        LOG_GRATICULE,
-        HARMONICS_GRATICULE
-    };
-
     void DrawString(const QString &s, const GLFont &f,
                     QPoint p, TextAlignment alignment);
     void DrawString(const QString &s, const GLFont &f,
@@ -73,18 +67,18 @@ protected:
         SetGraticuleDimensions(QPoint(left, bottom), QPoint(width, height));
     }
 
-    void LoadGraticule();
     void DrawGraticule();
 
     QPoint grat_ll;
     QPoint grat_ul;
     QPoint grat_sz;
 
-private:
-    Session *sessionPtr;
-
     GLuint gratVBO;
     GLuint gratBorderVBO;
+    int innerGratPoints, borderGratPoints;
+
+private:
+    Session *sessionPtr;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(GLSubView)

@@ -25,7 +25,8 @@ protected:
     const Preferences *prefs;
 
 public:
-    Device(const Preferences *preferences) : prefs(preferences)
+    Device(const Preferences *preferences) :
+        prefs(preferences)
     {
         current_temp = 0.0;
         voltage = 0.0;
@@ -46,6 +47,10 @@ public:
     virtual bool ConfigureForTRFL(double center, int atten, int gain, IQDescriptor &desc) = 0;
     virtual bool ConfigureAudio(const AudioSettings &as) = 0;
     virtual bool GetAudio(float *audio) = 0;
+
+    virtual bool IsCompatibleWithTg() const { return false; }
+    virtual bool AttachTg() { return false; }
+    virtual bool IsTgAttached() { return false; }
 
     bool IsOpen() const { return open; }
     int Handle() const { return id; }

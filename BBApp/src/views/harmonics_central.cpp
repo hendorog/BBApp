@@ -9,10 +9,14 @@ HarmonicsCentral::HarmonicsCentral(Session *sPtr,
       session_ptr(sPtr)
 {
     sweeping = false;
+    reconfigure = true;
 
     plot = new HarmonicsSpectrumPlot(session_ptr, this);
     plot->move(0, 0);
     connect(this, SIGNAL(updateView()), plot, SLOT(update()));
+
+    connect(session_ptr->sweep_settings, SIGNAL(updated(const SweepSettings*)),
+            this, SLOT(settingsChanged(const SweepSettings*)));
 }
 
 HarmonicsCentral::~HarmonicsCentral()
@@ -58,23 +62,34 @@ void HarmonicsCentral::changeMode(int newState)
 {
     StopStreaming();
 
+    session_ptr->sweep_settings->setMode(MODE_HARMONICS);
+
     StartStreaming();
 }
 
-void HarmonicsCentral::Reconfigure()
+void HarmonicsCentral::Reconfigure(SweepSettings &ss)
 {
-
+    ss = *session_ptr->sweep_settings;
+    reconfigure = false;
 }
 
 void HarmonicsCentral::SweepThread()
 {
     // Special harmonic sweep settings and trace
-    SweepSettings hss = *session_ptr->sweep_settings;
+    SweepSettings hss;
     Trace ht;
-    Frequency center = hss.Center();
+    Frequency center;
 
     while(sweeping) {
+        if(reconfigure) {
+            Reconfigure(hss);
+            center = hss.Center();
+        }
+
         for(int i = 0; i < 5; i++) {
+            if(!sweeping || reconfigure) {
+                break;
+            }
             Frequency hCenter = center * (i+1);
             if(hCenter > device_traits::max_frequency()) {
                 continue;
@@ -85,10 +100,18 @@ void HarmonicsCentral::SweepThread()
             hss.setAutoVbw(true);
             hss.setAutoRbw(true);
 
+//            plot->traceLock[i].lock();
             session_ptr->device->Reconfigure(&hss, &ht);
             session_ptr->device->GetSweep(&hss, &ht);
-        }
+            plot->harmonics[i].Update(ht);
+//            plot->traceLock[i].unlock();
 
-        emit updateView();
+            emit updateView();
+        }
     }
+}
+
+void HarmonicsCentral::settingsChanged(const SweepSettings *ss)
+{
+    reconfigure = true;
 }

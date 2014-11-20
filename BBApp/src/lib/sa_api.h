@@ -10,9 +10,10 @@
 #define SA_MAX_DEVICES 8
 
 #define SA_DEVICE_NONE (0x0);
-#define SA_DEVICE_SA44B (0x1)
-#define SA_DEVICE_SA124A (0x2)
-#define SA_DEVICE_SA124B (0x3)
+#define SA_DEVICE_SA44 (0x1)
+#define SA_DEVICE_SA44B (0x2)
+#define SA_DEVICE_SA124A (0x3)
+#define SA_DEVICE_SA124B (0x4)
 
 // Limits
 #define SA_MIN_FREQ (0.01)

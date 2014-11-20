@@ -31,14 +31,18 @@ public slots:
     virtual void changeMode(int newState);
 
 private:
-    void Reconfigure();
+    void Reconfigure(SweepSettings &ss);
     void SweepThread();
 
     std::thread sweepThreadHandle;
     bool sweeping;
+    bool reconfigure;
 
     Session *session_ptr;
     HarmonicsSpectrumPlot *plot;
+
+private slots:
+    void settingsChanged(const SweepSettings *ss);
 
 signals:
     void updateView();

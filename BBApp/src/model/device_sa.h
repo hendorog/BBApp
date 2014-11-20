@@ -31,6 +31,10 @@ public:
     virtual bool IsPowered() const;
     virtual bool NeedsTempCal() const;
 
+    virtual bool IsCompatibleWithTg() const { return true; }
+    virtual bool AttachTG();
+    virtual bool IsTGAttached();
+
 private:
     DISALLOW_COPY_AND_ASSIGN(DeviceSA)
 };

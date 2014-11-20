@@ -40,6 +40,8 @@ extern bandwidth_lut native_bw_lut[];
 
 struct span_to_bandwidth { double span, nbw, nnbw; };
 extern span_to_bandwidth auto_bw_lut[];
+struct sa_span_to_bandwidth { double span, rbw; };
+extern sa_span_to_bandwidth sa_auto_bw_lut[];
 
 // Must correspond to combo-box indices
 enum WaterfallState { WaterfallOFF = 0, Waterfall2D = 1, Waterfall3D = 2 };
@@ -469,11 +471,13 @@ inline int get_flattop_bandwidth(double rbw) {
 
 // Adjust rbw to prevent small(<1) and large(>1.2m) sweep sizes
 // Return true if adjustment made
-bool adjust_rbw_on_span(Frequency &rbw, double span, bool native_rbw);
+double adjust_rbw_on_span(const SweepSettings *ss);
+double sa_adjust_rbw_on_span(const SweepSettings *ss);
 
 // Retrieve the 'best' possible rbw based on span
 // 'best' is determined by the auto_bw_lut[]
-double get_best_rbw(double span, bool native_rbw);
+double get_best_rbw(const SweepSettings *ss);
+double sa_get_best_rbw(const SweepSettings *ss);
 
 QString get_my_documents_path();
 

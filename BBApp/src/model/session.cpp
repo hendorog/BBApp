@@ -4,10 +4,10 @@ QString Session::title;
 
 Session::Session()
 {
-    device = new DeviceBB60A(&prefs);
-    device_traits::set_device_type(DeviceTypeBB60C);
-//    device = new DeviceSA(&prefs);
-//    device_traits::set_device_type(DeviceTypeSA44);
+//    device = new DeviceBB60A(&prefs);
+//    device_traits::set_device_type(DeviceTypeBB60C);
+    device = new DeviceSA(&prefs);
+    device_traits::set_device_type(DeviceTypeSA44);
 
     sweep_settings = new SweepSettings();
     trace_manager = new TraceManager();

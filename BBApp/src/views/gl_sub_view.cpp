@@ -1,6 +1,6 @@
 #include "gl_sub_view.h"
 
-static const float innerGratPoints[] =
+static const float linearInnerPoints[] =
 {
     0.0, 0.0, 1.0, 0.0,
     0.0, 0.1, 1.0, 0.1,
@@ -27,18 +27,17 @@ static const float innerGratPoints[] =
     1.0, 0.0, 1.0, 1.0
 };
 
-static const size_t innerGratPointCount = sizeof(innerGratPoints) / sizeof(float);
+static const size_t linearInnerCount = sizeof(linearInnerPoints) / sizeof(float);
 
-static const float borderGratPoints[] =
+static const float linearBorderPoints[] =
 {
-    0.0, 0.0,
-    1.0, 0.0,
-    1.0, 1.0,
-    0.0, 1.0,
-    0.0, 0.0
+    0.0, 0.0, 1.0, 0.0,
+    1.0, 0.0, 1.0, 1.0,
+    1.0, 1.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 0.0
 };
 
-static const size_t borderGratPointCount = sizeof(borderGratPoints) / sizeof(float);
+static const size_t linearBorderCount = sizeof(linearBorderPoints) / sizeof(float);
 
 GLSubView::GLSubView(Session *sPtr, QWidget *parent) :
     QGLWidget(parent),
@@ -52,11 +51,14 @@ GLSubView::GLSubView(Session *sPtr, QWidget *parent) :
     glGenBuffers(1, &gratBorderVBO);
 
     glBindBuffer(GL_ARRAY_BUFFER, gratVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(innerGratPoints),
-                 innerGratPoints, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(linearInnerPoints),
+                 linearInnerPoints, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, gratBorderVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(borderGratPoints),
-                 borderGratPoints, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(linearBorderPoints),
+                 linearBorderPoints, GL_DYNAMIC_DRAW);
+
+    innerGratPoints = linearInnerCount;
+    borderGratPoints = linearBorderCount;
 
     doneCurrent();
 
@@ -124,7 +126,7 @@ void GLSubView::DrawGraticule()
 
     glBindBuffer(GL_ARRAY_BUFFER, gratVBO);
     glVertexPointer(2, GL_FLOAT, 0, INDEX_OFFSET(0));
-    glDrawArrays(GL_LINES, 0, innerGratPointCount / 2);
+    glDrawArrays(GL_LINES, 0, innerGratPoints / 2);
 
     if(GetSession()->prefs.graticule_stipple) {
         glDisable(GL_LINE_STIPPLE);
@@ -133,7 +135,7 @@ void GLSubView::DrawGraticule()
     // Border
     glBindBuffer(GL_ARRAY_BUFFER, gratBorderVBO);
     glVertexPointer(2, GL_FLOAT, 0, INDEX_OFFSET(0));
-    glDrawArrays(GL_LINE_STRIP, 0, borderGratPointCount / 2);
+    glDrawArrays(GL_LINES, 0, borderGratPoints / 2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glMatrixMode(GL_MODELVIEW);

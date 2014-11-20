@@ -54,12 +54,56 @@ QPushButton:hover#BBFlatButton {
 /********
  * Ordinary Push Buttons
  ********/
-QPushButton#SH_PushButton {
+ QPushButton#SH_PushButton {
+   border: 1px solid rgb(133,145,162);
+   background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
+     stop: 0 rgb(244,244,244), stop: 1.0 rgb(232,232,232));
+   border-radius: 1px;
+   font-family: arial-black;
+   color: black;
+   margin: 1px;
+   font-size: 12px;
+   text-align: center;
+   font-weight: normal;
+   padding-left: 5px;
+   padding-top: 0px;
+ }
+
+ QPushButton#SH_PushButton:hover:!pressed {
+   background-color: rgb(255,244,191);
+   border: 1px solid rgb(238,211,132);
+   border-radius: 1px;
+/*   font-family: arial-black;
+   color: blue;
+   margin: 1px;
+   font-size: 12px;
+   text-align: center;
+   font-weight: normal;
+   padding-left: 5px;*/
+ }
+
+ QPushButton:pressed#SH_PushButton {
+   background: rgb(230,195,101);
+   border: 0px;
+   border-radius: 1px;
+   font-family: arial-black;
+   color: black;
+   font-size: 12px;
+   text-align: center;
+   font-weight: normal;
+   padding-left: 7px;
+   padding-top: 1px;
+ }
+
+/*QPushButton#SH_PushButton {
   background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
-    stop: 0 rgb(234,236,249), stop: 0.1 rgb(204,206,219),
-    stop: 0.9 rgb(194,196,209), stop: 1 rgb(154,156,169));
+    stop: 0 rgb(234,236,249), stop: 0.05 rgb(204,206,219),
+    stop: 0.95 rgb(194,196,209), stop: 1 rgb(154,156,169));
+  background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
+    stop: 0 white, stop: 0.05 rgb(240,240,240),
+    stop: 0.95 rgb(240,240,240), stop: 1 rgb(154,156,169));
   border-radius: 1px;
-  border: 2px rgb(154,156,169);
+  border: 1px rgb(154,156,169);
   border-style: outset;
   margin: 1px;
   color: black;
@@ -68,9 +112,9 @@ QPushButton#SH_PushButton {
   text-align: center;
   font-weight: normal;
   padding-left: 5px;
-}
+}*/
 
-QPushButton:pressed#SH_PushButton {
+/*QPushButton:pressed#SH_PushButton {
   background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
     stop: 0 rgb(234,236,249), stop: 0.1 rgb(204,206,219),
     stop: 0.9 rgb(194,196,209), stop: 1 rgb(154,156,169));
@@ -86,12 +130,12 @@ QPushButton:pressed#SH_PushButton {
   padding-left: 5px;
   margin-left: 3px;
   margin-top: 2px;
-}
+}*/
 
 /********
  * Same as 'pressed', for checkable buttons
  ********/
-QPushButton:checked#SH_PushButton {
+/*QPushButton:checked#SH_PushButton {
   background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
     stop: 0 rgb(234,236,249), stop: 0.1 rgb(204,206,219),
     stop: 0.9 rgb(194,196,209), stop: 1 rgb(154,156,169));
@@ -107,18 +151,19 @@ QPushButton:checked#SH_PushButton {
   padding-left: 5px;
   margin-left: 3px;
   margin-top: 2px;
-}
+}*/
 
 /********
 * Preset Button
 ********/
 QPushButton#BBPresetButton {
+  border: 1px solid white;
   background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
+    stop: 0.0 rgb(22,126,67), stop: 1.0 rgb(22,116,67));
+/*  background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
     stop: 0 rgb(141,192,163), stop: 0.15 rgb(22,126,67),
-    stop: 0.85 rgb(22,126,67), stop: 1 rgb(0,78,31));
+    stop: 0.85 rgb(22,126,67), stop: 1 rgb(0,78,31)); */
   border-radius: 2px;
-  border: 1px rgb(204,206,219);
-  border-style: outset;
   margin: 1px;
   color: white;
   font-family: arial-black;
@@ -192,7 +237,7 @@ QDockWidget {
 }
 
 QDockWidget::title {
-  background-color: rgb(77,96,130);
+  background-color: rgb(41,56,85);
   padding-left: 5px;
   padding-top: 3px;
   border: 1px solid white;
@@ -333,8 +378,8 @@ QComboBox QAbstractItemView::item:selected {
  * Collapsible Page Buttons, icon and tab text
  ********/
 QCheckBox#SH_PageTab {
-  background: rgb(204,206,219);
-  color: black;
+  background: rgb(77,96,129);
+  color: white;
   border: 0px solid rgb(55,55,55);
   border-style: outset;
   border-radius: 0px;
@@ -346,7 +391,7 @@ QCheckBox#SH_PageTab {
 }
 
 QCheckBox:hover#SH_PageTab {
-  background: rgb(184,186,199);
+  background: rgb(67,86,119);
 }
 
 QCheckBox#SH_PageTab::indicator {
@@ -354,11 +399,11 @@ QCheckBox#SH_PageTab::indicator {
   height: 20px;
   border: 0px solid;
   background-color: transparent;
-  image: url(:icons/collapse-right-light.png);
+  image: url(:icons/collapse-right.png);
 }
 
 QCheckBox#SH_PageTab::indicator:checked {
-  image: url(:icons/collapse-down-light.png);
+  image: url(:icons/collapse-down.png);
 }
 
 /*QCheckBox#SH_CheckBox {
@@ -545,7 +590,7 @@ QGroupBox#SH_PrefGroupBox::title {
 QPushButton#SH_ColorButton {
   border-width: 2px;
   border-style: solid;
-  border-radius: 4px;
+  border-radius: 2px;
   border-color: rgb(231,232,236);
   margin: 2px;
 }
@@ -572,95 +617,59 @@ QLineEdit#SH_LineEntry:hover {
 }
 
 /********
- * Numeric Entry Button N/A
- ********/
-QPushButton#NumberButton {
-  background: qlineargradient(x1:0.5, y1:0, x2:.5, y2:1,
-    stop: 0 rgb(220,220,220), stop: 0.1 rgb(139,137,137),
-    stop: 0.9 rgb(129,127,127), stop: 1 rgb(89,87,87));
-  border-radius: 4px;
-  border: 1px rgb(55,55,55);
-  border-style: outset;
-  margin: 1px;
-  color: white;
-  font-family: arial-black;
-  font-size: 14px;
-  text-align: center;
-  font-weight: normal;
-  padding-left: 5px;
-}
-
-QPushButton:pressed#NumberButton {
-  background: qlineargradient(x1:0.5, y1:0, x2:.5, y2:1,
-  stop: 0 rgb(220,220,220), stop: 0.1 rgb(139,137,137),
-  stop: 0.9 rgb(129,127,127), stop: 1 rgb(89,87,87));
-  border-radius: 4px;
-  border: 1px rgb(55,55,55);
-  border-style: inset;
-  margin: 1px;
-  color: white;
-  font-family: arial-black;
-  font-size: 14px;
-  text-align: center;
-  font-weight: normal;
-  padding-left: 5px;
-  margin-left: 3px;
-  margin-top: 2px;
-}
-
-/********
  * Increment/Decrement buttons
  ********/
  QPushButton#Increment {
+   border: 1px solid rgb(133,145,162);
    background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
-     stop: 0 rgb(234,236,249), stop: 0.1 rgb(204,206,219),
-     stop: 0.9 rgb(194,196,209), stop: 1 rgb(154,156,169));
+     stop: 0 rgb(244,244,244), stop: 1.0 rgb(232,232,232));
    border-radius: 1px;
-   border: 2px rgb(154,156,169);
-   border-style: outset;
-   padding: 1px;
+   padding-left: 1px;
+   padding-top: 0px;
    image-position: left;
    margin: 1px;
-   qproperty-icon: url(:icons/plus-light.png);
+   qproperty-icon: url(:icons/up-arrow-light.png);
+ }
+
+ QPushButton#Increment:hover:!pressed {
+   background-color: rgb(255,244,191);
+   border: 1px solid rgb(238,211,132);
+   border-radius: 1px;
  }
 
  QPushButton:pressed#Increment {
-   background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
-     stop: 0 rgb(234,236,249), stop: 0.1 rgb(204,206,219),
-     stop: 0.9 rgb(194,196,209), stop: 1 rgb(154,156,169));
+   background: rgb(230,195,101);
+   border: 0px;
    border-radius: 1px;
-   border: 2px rgb(154,156,169);
-   border-style: inset;
-   padding: 0px;
-   margin-left: 2px;
-   margin-top: 1px;
+   padding-left: 2px;
+   padding-top: 1px;
  }
 
  QPushButton#Decrement {
+   border: 1px solid rgb(133,145,162);
    background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
-     stop: 0 rgb(234,236,249), stop: 0.1 rgb(204,206,219),
-     stop: 0.9 rgb(194,196,209), stop: 1 rgb(154,156,169));
+     stop: 0 rgb(244,244,244), stop: 1.0 rgb(232,232,232));
    border-radius: 1px;
-   border: 2px rgb(154,156,169);
-   border-style: outset;
-   padding: 1px;
+   padding-left: 1px;
+   padding-top: 0px;
    image-position: left;
    margin: 1px;
-   qproperty-icon: url(:icons/minus-light.png);
+   qproperty-icon: url(:icons/down-arrow-light.png);
+ }
+
+ QPushButton#Decrement:hover:!pressed {
+   background-color: rgb(255,244,191);
+   border: 1px solid rgb(238,211,132);
+   border-radius: 1px;
  }
 
  QPushButton:pressed#Decrement {
-   background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
-     stop: 0 rgb(234,236,249), stop: 0.1 rgb(204,206,219),
-     stop: 0.9 rgb(194,196,209), stop: 1 rgb(154,156,169));
+   background: rgb(230,195,101);
+   border: 0px;
    border-radius: 1px;
-   border: 2px rgb(154,156,169);
-   border-style: inset;
-   padding: 0px;
-   margin-left: 2px;
-   margin-top: 1px;
+   padding-left: 2px;
+   padding-top: 1px;
  }
-
 
 /********
 * StatusBar

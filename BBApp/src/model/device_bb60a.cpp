@@ -117,6 +117,20 @@ bool DeviceBB60A::Reconfigure(const SweepSettings *s, Trace *t)
         break;
     }
 
+    OperationalMode op = s->Mode();
+    int mode;
+    switch(op) {
+    case MODE_SWEEPING: case MODE_HARMONICS:
+        mode = BB_SWEEPING;
+        break;
+    case MODE_REAL_TIME:
+        mode = BB_REAL_TIME;
+        break;
+    default:
+        Q_ASSERT(0);
+        return false;
+    }
+
     STATUS_CHECK(bbConfigureIO(id, port_one_mask, 0x0));
 
     // Scale based on amp unit type
@@ -129,7 +143,7 @@ bool DeviceBB60A::Reconfigure(const SweepSettings *s, Trace *t)
     STATUS_CHECK(bbConfigureProcUnits(id, s->ProcessingUnits()));
     STATUS_CHECK(bbConfigureGain(id, s->Gain() - 1));
 
-    STATUS_CHECK(bbInitiate(id, s->Mode(), 0));
+    STATUS_CHECK(bbInitiate(id, mode, 0));
 
     unsigned int traceSize;
     double binSize, startFreq;

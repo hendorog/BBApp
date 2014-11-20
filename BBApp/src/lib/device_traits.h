@@ -1,6 +1,8 @@
 #ifndef DEVICE_TRAITS_H
 #define DEVICE_TRAITS_H
 
+class SweepSettings;
+
 enum DeviceType {
     DeviceTypeSA44,
     DeviceTypeSA124,
@@ -18,6 +20,8 @@ public:
     static double min_iq_frequency();
     static double best_start_frequency();
     static double max_frequency();
+    static double adjust_rbw_on_span(const SweepSettings *ss);
+    static double get_best_rbw(const SweepSettings *ss);
     static double min_real_time_rbw();
     static double max_real_time_rbw();
     static double min_real_time_span();
