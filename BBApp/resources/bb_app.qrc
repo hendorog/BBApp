@@ -25,5 +25,7 @@
         <file>icons/plus-light.png</file>
         <file>icons/up-arrow-light.png</file>
         <file>style_sheet_blue.css</file>
+        <file>icons/icon_continuous.png</file>
+        <file>icons/icon_single.png</file>
     </qresource>
 </RCC>

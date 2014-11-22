@@ -83,11 +83,15 @@ MainWindow::MainWindow(QWidget *parent)
     QWidget *spacer = new QWidget();
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     toolBar->addWidget(spacer);
-    SHPushButton *single_sweep = new SHPushButton(tr("Single"), toolBar);
-    single_sweep->setFixedSize(120, TOOLBAR_H - 4);
+    SHPushButton *single_sweep = new SHPushButton(tr("   Single"), toolBar);
+    single_sweep->setObjectName("SH_SCButton");
+    single_sweep->setIcon(QIcon(":/icons/icon_single"));
+    single_sweep->setFixedSize(100, TOOLBAR_H - 4);
     toolBar->addWidget(single_sweep);
-    SHPushButton *continuous_sweep = new SHPushButton(tr("Continuous"), toolBar);
-    continuous_sweep->setFixedSize(120, TOOLBAR_H - 4);
+    SHPushButton *continuous_sweep = new SHPushButton(tr("    Auto"), toolBar);
+    continuous_sweep->setIcon(QIcon(":/icons/icon_continuous"));
+    continuous_sweep->setObjectName("SH_SCButton");
+    continuous_sweep->setFixedSize(100, TOOLBAR_H - 4);
     toolBar->addWidget(continuous_sweep);
 
     connect(single_sweep, SIGNAL(clicked()), sweepCentral, SLOT(singleSweepPressed()));
