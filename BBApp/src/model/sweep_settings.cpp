@@ -5,6 +5,30 @@
 #include "lib/bb_api.h"
 #include "lib/device_traits.h"
 
+double TG_STEP_SIZES[14] = {
+    1.0e3,
+    2.0e3,
+    5.0e3,
+    1.0e4,
+    2.0e4,
+    5.0e4,
+    1.0e5,
+    2.0e5,
+    5.0e5,
+    1.0e6,
+    2.0e6,
+    5.0e6,
+    1.0e7,
+    2.0e7
+};
+
+static double get_tg_step_size(int &index) {
+    if(index < 0) index = 0;
+    if(index >= 14) index = 13;
+
+    return TG_STEP_SIZES[index];
+}
+
 SweepSettings::SweepSettings()
 {
     LoadDefaults();    
@@ -43,7 +67,7 @@ SweepSettings& SweepSettings::operator=(const SweepSettings &other)
     rejection = other.rejection;
 
     // Assuming this is needed for now ?
-    emit updated(this);
+    UpdateProgram();
 
     return *this;
 }
@@ -99,10 +123,6 @@ void SweepSettings::LoadDefaults()
     native_rbw = false;
 
     AutoBandwidthAdjust(true);
-//    rbw = 300.0e3;
-//    vbw = 300.0e3;
-//    rbw = 100.0e3;
-//    vbw = 100.0e3;
 
     refLevel = Amplitude(-30.0, DBM);
     div = 10.0;
@@ -115,6 +135,9 @@ void SweepSettings::LoadDefaults()
     processingUnits = BB_POWER;
     detector = BB_AVERAGE;
     rejection = device_traits::default_spur_reject();
+
+    tgStepSizeIx = 0;
+    tgPassiveDevice = true;
 
     //emit updated(this);
 }
@@ -147,7 +170,7 @@ bool SweepSettings::Load(QSettings &s)
     detector = s.value("Sweep/Detector", Detector()).toInt();
     rejection = s.value("Sweep/Rejection", Rejection()).toBool();
 
-    emit updated(this);
+    UpdateProgram();
     return true;
 }
 
@@ -217,6 +240,25 @@ void SweepSettings::AutoBandwidthAdjust(bool force)
     }
 }
 
+void SweepSettings::UpdateProgram()
+{
+    if(mode == MODE_NETWORK_ANALYZER) {
+        int steps = Span() / get_tg_step_size(tgStepSizeIx);
+        if(steps < 10 || steps > 500) {
+            while((Span() / get_tg_step_size(tgStepSizeIx)) > 500
+                  && tgStepSizeIx < 13) {
+                tgStepSizeIx++;
+            }
+            while((Span() / get_tg_step_size(tgStepSizeIx)) < 100
+                  && tgStepSizeIx > 0) {
+                tgStepSizeIx--;
+            }
+        }
+    }
+
+    emit updated(this);
+}
+
 void SweepSettings::setMode(OperationalMode new_mode)
 {
     mode = new_mode;
@@ -234,8 +276,9 @@ void SweepSettings::setMode(OperationalMode new_mode)
 
         AutoBandwidthAdjust(true);
         // Force settings panel to update?
-        emit updated(this);
+        UpdateProgram();
     }
+    UpdateProgram();
 }
 
 /*
@@ -267,7 +310,7 @@ void SweepSettings::setStart(Frequency f)
     }
 
     AutoBandwidthAdjust(false);
-    emit updated(this);
+    UpdateProgram();
 }
 
 /*
@@ -298,7 +341,7 @@ void SweepSettings::setStop(Frequency f)
 }
 
     AutoBandwidthAdjust(false);
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::setCenter(Frequency f)
@@ -317,7 +360,7 @@ void SweepSettings::setCenter(Frequency f)
     }
 
     AutoBandwidthAdjust(false);
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::increaseCenter(bool inc)
@@ -356,7 +399,7 @@ void SweepSettings::setSpan(Frequency f)
     span = stop - start;
 
     AutoBandwidthAdjust(false);
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::increaseSpan(bool inc)
@@ -369,7 +412,7 @@ void SweepSettings::setStep(Frequency f)
 {
     step = f;
 
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::setFullSpan()
@@ -383,7 +426,7 @@ void SweepSettings::setFullSpan()
     auto_vbw = true;
 
     AutoBandwidthAdjust(false);
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::setRBW(Frequency f)
@@ -402,7 +445,7 @@ void SweepSettings::setRBW(Frequency f)
 //        vbw = rbw;
 //    }
 
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::setVBW(Frequency f)
@@ -415,7 +458,7 @@ void SweepSettings::setVBW(Frequency f)
 
     auto_vbw = false;
     AutoBandwidthAdjust(false);
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::rbwIncrease(bool inc)
@@ -426,7 +469,7 @@ void SweepSettings::rbwIncrease(bool inc)
     auto_rbw = false;
 
     AutoBandwidthAdjust(false);
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::vbwIncrease(bool inc)
@@ -439,7 +482,7 @@ void SweepSettings::vbwIncrease(bool inc)
     vbw = new_vbw;
 
     AutoBandwidthAdjust(false);
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::setAutoRbw(bool new_auto)
@@ -447,7 +490,7 @@ void SweepSettings::setAutoRbw(bool new_auto)
     auto_rbw = new_auto;
 
     AutoBandwidthAdjust(false);
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::setAutoVbw(bool new_auto)
@@ -458,7 +501,7 @@ void SweepSettings::setAutoVbw(bool new_auto)
         vbw = rbw;
     }
 
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::setNativeRBW(bool native)
@@ -467,7 +510,7 @@ void SweepSettings::setNativeRBW(bool native)
     auto_rbw = true;
 
     AutoBandwidthAdjust(true);
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::setRefLevel(Amplitude new_ref)
@@ -475,7 +518,7 @@ void SweepSettings::setRefLevel(Amplitude new_ref)
     new_ref.Clamp(Amplitude(-100, DBM), Amplitude(20.0, DBM));
 
     refLevel = new_ref;
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::shiftRefLevel(bool inc)
@@ -488,14 +531,14 @@ void SweepSettings::shiftRefLevel(bool inc)
         else refLevel = Amplitude(refLevel.Val() * 0.8, AmpUnits::MV);
     }
 
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::setDiv(double new_div)
 {
     bb_lib::clamp(new_div, 0.1, 30.0);
     div = new_div;
-    emit updated(this);
+    UpdateProgram();
 }
 
 /*
@@ -505,7 +548,7 @@ void SweepSettings::setDiv(double new_div)
 void SweepSettings::setAttenuation(int atten_ix)
 {
     attenuation = atten_ix;
-    emit updated(this);
+    UpdateProgram();
 }
 
 /*
@@ -515,20 +558,20 @@ void SweepSettings::setAttenuation(int atten_ix)
 void SweepSettings::setGain(int gain_ix)
 {
     gain = gain_ix;
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::setPreAmp(int preamp_ix)
 {
     preamp = preamp_ix;
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::setDetector(int new_detector)
 {
     if(detector != new_detector) {
         detector = new_detector;
-        emit updated(this);
+        UpdateProgram();
     }
 }
 
@@ -536,7 +579,7 @@ void SweepSettings::setProcUnits(int new_units)
 {
     if(processingUnits != new_units) {
         processingUnits = new_units;
-        emit updated(this);
+        UpdateProgram();
     }
 }
 
@@ -544,13 +587,29 @@ void SweepSettings::setSweepTime(Time new_sweep_time)
 {    
     sweepTime = new_sweep_time;
 
-    emit updated(this);
+    UpdateProgram();
 }
 
 void SweepSettings::setRejection(bool image_reject)
 {
     if(rejection != image_reject) {
         rejection = image_reject;
-        emit updated(this);
+        UpdateProgram();
     }
+}
+
+void SweepSettings::setTgStepSizeIx(int newTgStepIndex)
+{
+    tgStepSizeIx = newTgStepIndex;
+    UpdateProgram();
+}
+
+void SweepSettings::setTgPassiveDevice(int isPassive)
+{
+    if(isPassive == 0) {
+        tgPassiveDevice = true;
+    } else {
+        tgPassiveDevice = false;
+    }
+    UpdateProgram();
 }

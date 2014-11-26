@@ -103,6 +103,8 @@ public slots:
         timebase_reference = new_val;
         reconfigure_on_next = true;
     }
+    virtual void TgStoreThrough() {}
+    virtual void TgStoreThroughPad() {}
 
 signals:
     void connectionIssues();

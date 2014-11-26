@@ -3,17 +3,28 @@
 
 #include "dock_panel.h"
 #include "entry_widgets.h"
+#include "lib/bb_lib.h"
 
 class SweepSettings;
+class Device;
 
 class SweepPanel : public DockPanel {
     Q_OBJECT
 
 public:
-    SweepPanel(const QString &title, QWidget *parent, const SweepSettings *settings);
+    SweepPanel(const QString &title, QWidget *parent, const SweepSettings *settings,
+               Device *device);
     ~SweepPanel();
 
 private:
+    DockPage *tg_page;
+    DockPage *frequency_page, *amplitude_page;
+    DockPage *bandwidth_page, *acquisition_page;
+
+    ComboEntry *tgStepSize;
+    ComboEntry *tgSweepType;
+    DualButtonEntry *tgStoreThru;
+
     FreqShiftEntry *center;
     FreqShiftEntry *span;
     FrequencyEntry *start;
@@ -39,6 +50,7 @@ private:
 
 public slots:
     void updatePanel(const SweepSettings *settings);
+    void setMode(OperationalMode mode);
     void enableManualGainAtten(bool enable) {
         gain->setEnabled(enable);
         atten->setEnabled(enable);

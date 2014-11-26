@@ -17,7 +17,9 @@ public:
               QWidget *parent);
     ~DockPanel() {}
 
-    void AddPage(DockPage *page);
+    void PrependPage(DockPage *page);
+    void AppendPage(DockPage *page);
+    void RemovePage(DockPage *page);
     QScrollArea* GetPanelWidget() { return scrollArea; }
 
     // Save and restore the collapsed state of the DockPages
@@ -32,7 +34,7 @@ protected:
 private:
     QScrollArea *scrollArea;
     QWidget *scrollWidget;
-    QVector<DockPage*> tabs;
+    std::vector<DockPage*> tabs;
 
 public slots:
     void tabsChanged();

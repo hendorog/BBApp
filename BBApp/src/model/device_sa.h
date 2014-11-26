@@ -32,8 +32,12 @@ public:
     virtual bool NeedsTempCal() const;
 
     virtual bool IsCompatibleWithTg() const { return true; }
-    virtual bool AttachTG();
-    virtual bool IsTGAttached();
+    virtual bool AttachTg();
+    virtual bool IsTgAttached();
+
+public slots:
+    virtual void TgStoreThrough();
+    virtual void TgStoreThroughPad();
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DeviceSA)

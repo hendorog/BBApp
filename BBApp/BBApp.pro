@@ -50,7 +50,9 @@ SOURCES += src/main.cpp \
     src/lib/device_traits.cpp \
     src/views/harmonics_central.cpp \
     src/views/gl_sub_view.cpp \
-    src/views/harmonics_spectrum.cpp
+    src/views/harmonics_spectrum.cpp \
+    src/views/tg_central.cpp \
+    src/views/tg_trace_view.cpp
 
 HEADERS += src/mainwindow.h \
     src/lib/frequency.h \
@@ -101,7 +103,9 @@ HEADERS += src/mainwindow.h \
     src/lib/sa_api.h \
     src/lib/device_traits.h \
     src/views/harmonics_central.h \
-    src/views/harmonics_spectrum.h
+    src/views/harmonics_spectrum.h \
+    src/views/tg_central.h \
+    src/views/tg_trace_view.h
 
 OTHER_FILES += \
     style_sheet.css \

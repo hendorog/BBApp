@@ -69,6 +69,29 @@
 #define SA_AUDIO_LSB (0x3)
 #define SA_AUDIO_CW  (0x4)
 
+// TG Notify Flags
+#define TG_THRU_0DB  (0x1)
+#define TG_THRU_20DB  (0x2)
+
+enum tgStepSize
+{
+    tg_step_1k = 0,
+    tg_step_2k,
+    tg_step_5k,
+    tg_step_10k,
+    tg_step_20k,
+    tg_step_50k,
+    tg_step_100k,
+    tg_step_200k,
+    tg_step_500k,
+    tg_step_1M,
+    tg_step_2M,
+    tg_step_5M,
+    tg_step_10M,
+    tg_step_20M
+};
+
+
 // Return values
 enum saStatus {
     saUnknownErr = -666,
@@ -91,6 +114,7 @@ enum saStatus {
     saUSBCommErr = -10,
 
     // General configuration errors
+    saTrackingGeneratorNotFound = 10,
     saDeviceNotIdleErr = -9,
     saDeviceNotFoundErr = -8,
     saInvalidModeErr = -7,
@@ -117,7 +141,6 @@ extern "C" {
 SA_API saStatus saGetSerialNumberList(int serialNumbers[8], int *deviceCount);
 SA_API saStatus saOpenDeviceBySerialNumber(int *device, int serialNumber);
 SA_API saStatus saOpenDevice(int *device);
-SA_API saStatus saAttachTrackingGenerator(int device);
 SA_API saStatus saCloseDevice(int device);
 SA_API saStatus saPreset(int device);
 
@@ -134,7 +157,6 @@ SA_API saStatus saConfigIQ(int device, int decimation, double bandwidth);
 SA_API saStatus saConfigAudio(int device, int audioType, double centerFreq,
                               double bandwidth, double audioLowPassFreq,
                               double audioHighPassFreq, double fmDeemphasis);
-SA_API saStatus saConfigTG(int device, int stepSize, double outputAmplitude);
 
 SA_API saStatus saInitiate(int device, int mode, int flag);
 SA_API saStatus saAbort(int device);
@@ -151,6 +173,11 @@ SA_API saStatus saGetIQ_64f(int device, double *iq);
 SA_API saStatus saGetAudio(int device, float *audio);
 SA_API saStatus saQueryTemperature(int device, float *temp);
 SA_API saStatus saQueryDiagnostics(int device, float *voltage, float *current);
+
+SA_API saStatus saAttachTg(int device);
+SA_API saStatus saIsTgAttached(int device, bool *attached);
+SA_API saStatus saStoreTGThru(int device, int flags);
+SA_API saStatus saConfigTG(int device, tgStepSize stepSize, bool isPassiveDUT);
 
 SA_API const char* saGetErrorString(saStatus code);
 

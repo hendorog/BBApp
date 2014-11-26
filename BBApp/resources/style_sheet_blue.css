@@ -97,7 +97,6 @@ QPushButton:hover#BBFlatButton {
 
 /* Single/Continuous Push Buttons */
  QPushButton#SH_SCButton {
-   image-position-absolute: left;
    border: 1px solid rgb(133,145,162);
    background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
      stop: 0 rgb(244,244,244), stop: 1.0 rgb(232,232,232));

@@ -42,7 +42,7 @@ MeasurePanel::MeasurePanel(const QString &title,
     trace_page->AddWidget(trace_updating);
     trace_page->AddWidget(export_clear);
 
-    AddPage(trace_page);
+    AppendPage(trace_page);
 
     connect(trace_select, SIGNAL(comboIndexChanged(int)),
             this, SLOT(updateTraceView(int)));
@@ -83,7 +83,7 @@ MeasurePanel::MeasurePanel(const QString &title,
     marker_page->AddWidget(to_center_ref);
     marker_page->AddWidget(peak_left_right);
 
-    AddPage(marker_page);
+    AppendPage(marker_page);
 
     connect(marker_select, SIGNAL(comboIndexChanged(int)),
             this, SLOT(updateMarkerView(int)));
@@ -112,7 +112,7 @@ MeasurePanel::MeasurePanel(const QString &title,
 
     offset_page->AddWidget(ref_offset);
 
-    AddPage(offset_page);
+    AppendPage(offset_page);
 
     connect(ref_offset, SIGNAL(valueChanged(double)),
             trace_manager_ptr, SLOT(setRefOffset(double)));
@@ -126,7 +126,7 @@ MeasurePanel::MeasurePanel(const QString &title,
     channel_power_page->AddWidget(channel_spacing);
     channel_power_page->AddWidget(channel_power_enabled);
 
-    AddPage(channel_power_page);
+    AppendPage(channel_power_page);
 
     connect(channel_width, SIGNAL(freqViewChanged(Frequency)),
             this, SLOT(channelPowerUpdated()));
@@ -142,7 +142,7 @@ MeasurePanel::MeasurePanel(const QString &title,
     occupied_bandwidth_page->AddWidget(ocbw_enabled);
     occupied_bandwidth_page->AddWidget(percentPower);
 
-    AddPage(occupied_bandwidth_page);
+    AppendPage(occupied_bandwidth_page);
 
     connect(ocbw_enabled, SIGNAL(clicked(bool)), SLOT(occupiedBandwidthUpdated()));
     connect(percentPower, SIGNAL(valueChanged(double)), SLOT(occupiedBandwidthUpdated()));

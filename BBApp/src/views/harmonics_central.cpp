@@ -4,9 +4,9 @@
 HarmonicsCentral::HarmonicsCentral(Session *sPtr,
                                    QToolBar *toolBar,
                                    QWidget *parent,
-                                   Qt::WindowFlags f)
-    : CentralWidget(parent, f),
-      session_ptr(sPtr)
+                                   Qt::WindowFlags f) :
+    CentralWidget(parent, f),
+    session_ptr(sPtr)
 {
     sweeping = false;
     reconfigure = true;

@@ -37,6 +37,13 @@ void DockPage::SetOpen(bool new_state)
     tab->setChecked(new_state);
 }
 
+void DockPage::SetPageEnabled(bool enabled)
+{
+    for(QWidget *w : list) {
+        w->setEnabled(enabled);
+    }
+}
+
 void DockPage::AddWidget(QWidget *new_widget)
 {
     new_widget->setParent(this);

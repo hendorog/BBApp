@@ -22,6 +22,16 @@ SweepCentral::SweepCentral(Session *sPtr,
       session_ptr(sPtr),
       trace(true)
 {
+//    SHPushButton *st = new SHPushButton("Store Thru");
+//    st->setFixedSize(100, 26);
+//    toolBar->addWidget(st);
+//    connect(st, SIGNAL(clicked()), this, SLOT(storeThru()));
+//    SHPushButton *stp = new SHPushButton("Store Thru Pad");
+//    stp->setFixedSize(100, 26);
+//    toolBar->addWidget(stp);
+//    connect(stp, SIGNAL(clicked()), this, SLOT(storeThroughPad()));
+
+
     trace_view = new TraceView(session_ptr, this);
     connect(this, SIGNAL(updateView()), trace_view, SLOT(update()));
 

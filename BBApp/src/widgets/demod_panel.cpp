@@ -70,9 +70,9 @@ DemodPanel::DemodPanel(const QString &title,
     maPage->AddWidget(maEnabledEntry);
     maPage->AddWidget(maLowPass);
 
-    AddPage(demodPage);
-    AddPage(triggerPage);
-    AddPage(maPage);
+    AppendPage(demodPage);
+    AppendPage(triggerPage);
+    AppendPage(maPage);
 
     updatePanel(settings);
 

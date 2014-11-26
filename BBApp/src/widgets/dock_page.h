@@ -39,6 +39,7 @@ public:
 
     bool TabIsOpen() const;
     void SetOpen(bool _open);
+    void SetPageEnabled(bool enabled);
 
     // Add entry widget to the page
     void AddWidget(QWidget *new_widget);

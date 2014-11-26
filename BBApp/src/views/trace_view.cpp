@@ -663,9 +663,6 @@ void TraceView::DrawTrace(const Trace *t, const GLVector &v)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-/*
- * RenderMarkers()
- */
 void TraceView::RenderMarkers()
 {
     SweepSettings *s = GetSession()->sweep_settings;

@@ -1,16 +1,37 @@
 #include "sweep_panel.h"
 
-#include "../model/sweep_settings.h"
+#include "model/sweep_settings.h"
+#include "model/device.h"
 
 SweepPanel::SweepPanel(const QString &title,
                        QWidget *parent,
-                       const SweepSettings *settings)
+                       const SweepSettings *settings,
+                       Device *device)
     : DockPanel(title, parent)
 {
-    DockPage *frequency_page = new DockPage(tr("Frequency"));
-    DockPage *amplitude_page = new DockPage(tr("Amplitude"));
-    DockPage *bandwidth_page = new DockPage(tr("Bandwidth"));
-    DockPage *acquisition_page = new DockPage(tr("Acquisition"));
+    tg_page = new DockPage("Tracking Generator");
+    frequency_page = new DockPage(tr("Frequency"));
+    amplitude_page = new DockPage(tr("Amplitude"));
+    bandwidth_page = new DockPage(tr("Bandwidth"));
+    acquisition_page = new DockPage(tr("Acquisition"));
+
+    tgStepSize = new ComboEntry("Step Size");
+    QStringList stepSize_sl;
+    stepSize_sl << "1kHz" << "2kHz" << "5kHz" << "10kHz" << "20kHz"
+                   << "50kHz" << "100kHz" << "200kHz" << "500kHz"
+                      << "1MHz" << "2MHz" << "5MHz" << "10MHz" << "20MHz";
+    tgStepSize->setComboText(stepSize_sl);
+
+    tgSweepType = new ComboEntry("Sweep Type");
+    QStringList sweepType_sl;
+    sweepType_sl << "Active Device" << "Passive Device";
+    tgSweepType->setComboText(sweepType_sl);
+
+    tgStoreThru = new DualButtonEntry("Store Thru", "Store 20dB Pad");
+    connect(tgStoreThru, SIGNAL(leftPressed()),
+            device, SLOT(TgStoreThrough()));
+    connect(tgStoreThru, SIGNAL(rightPressed()),
+            device, SLOT(TgStoreThroughPad()));
 
     center = new FreqShiftEntry(tr("Center"), 0.0);
     span = new FreqShiftEntry(tr("Span"), 0.0);
@@ -60,6 +81,10 @@ SweepPanel::SweepPanel(const QString &title,
 
     sweep_time = new TimeEntry(tr("Swp Time"), Time(0.0), MILLISECOND);
 
+    tg_page->AddWidget(tgStepSize);
+    tg_page->AddWidget(tgSweepType);
+    tg_page->AddWidget(tgStoreThru);
+
     frequency_page->AddWidget(span);
     frequency_page->AddWidget(center);
     frequency_page->AddWidget(start);
@@ -83,16 +108,22 @@ SweepPanel::SweepPanel(const QString &title,
     acquisition_page->AddWidget(detector);
     acquisition_page->AddWidget(sweep_time);
 
-    AddPage(frequency_page);
-    AddPage(amplitude_page);
-    AddPage(bandwidth_page);
-    AddPage(acquisition_page);
+    AppendPage(tg_page);
+    AppendPage(frequency_page);
+    AppendPage(amplitude_page);
+    AppendPage(bandwidth_page);
+    AppendPage(acquisition_page);
 
     // Set panel and connect here
     updatePanel(settings);
 
     connect(settings, SIGNAL(updated(const SweepSettings*)),
             this, SLOT(updatePanel(const SweepSettings*)));
+
+    connect(tgStepSize, SIGNAL(comboIndexChanged(int)),
+            settings, SLOT(setTgStepSizeIx(int)));
+    connect(tgSweepType, SIGNAL(comboIndexChanged(int)),
+            settings, SLOT(setTgPassiveDevice(int)));
 
     connect(center, SIGNAL(freqViewChanged(Frequency)),
             settings, SLOT(setCenter(Frequency)));
@@ -150,10 +181,14 @@ SweepPanel::SweepPanel(const QString &title,
 SweepPanel::~SweepPanel()
 {
     // Don't delete widgets on pages
+    delete tg_page;
 }
 
 void SweepPanel::updatePanel(const SweepSettings *settings)
 {
+    tgSweepType->setComboIndex(settings->tgPassiveDevice ? 0 : 1);
+    tgStepSize->setComboIndex(settings->tgStepSizeIx);
+
     center->SetFrequency(settings->Center());
     span->SetFrequency(settings->Span());
     start->SetFrequency(settings->Start());
@@ -175,4 +210,18 @@ void SweepPanel::updatePanel(const SweepSettings *settings)
     video_units->setComboIndex(settings->ProcessingUnits());
     detector->setComboIndex(settings->Detector());
     sweep_time->SetTime(settings->SweepTime());
+}
+
+void SweepPanel::setMode(OperationalMode mode)
+{
+    bool pagesEnabled = true;
+    if(mode == MODE_NETWORK_ANALYZER) {
+        pagesEnabled = false;
+        PrependPage(tg_page);
+    } else {
+        RemovePage(tg_page);
+    }
+
+    bandwidth_page->SetPageEnabled(pagesEnabled);
+    acquisition_page->SetPageEnabled(pagesEnabled);
 }

@@ -29,13 +29,39 @@ DockPanel::DockPanel(const QString &title,
                     Qt::LeftDockWidgetArea);
 }
 
-void DockPanel::AddPage(DockPage *page)
+void DockPanel::PrependPage(DockPage *page)
+{
+    connect(page, SIGNAL(tabUpdated()),
+            this, SLOT(tabsChanged()));
+
+    tabs.insert(tabs.begin(), page);
+    page->setParent(scrollArea->widget());
+
+    tabsChanged();
+}
+
+void DockPanel::AppendPage(DockPage *page)
 {
     connect(page, SIGNAL(tabUpdated()),
             this, SLOT(tabsChanged()));
 
     tabs.push_back(page);
     page->setParent(scrollArea->widget());
+
+    tabsChanged();
+}
+
+void DockPanel::RemovePage(DockPage *page)
+{
+    auto iter = std::find(tabs.begin(), tabs.end(), page);
+    if(iter == tabs.end()) {
+        return;
+    }
+
+    disconnect(page, SIGNAL(tabUpdated()),
+               this, SLOT(tabsChanged()));
+    tabs.erase(iter);
+    page->setParent(0);
 
     tabsChanged();
 }
@@ -76,6 +102,7 @@ void DockPanel::tabsChanged()
         }
         tabs[i]->resize(viewportWidth, pageHeight);
         tabs[i]->move(0, height);
+        tabs[i]->show();
         height += pageHeight + 1;
     }
 

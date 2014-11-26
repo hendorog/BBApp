@@ -29,6 +29,8 @@ protected:
 
 public slots:
     virtual void changeMode(int newState);
+    void singlePressed() { if(sweepCount <= 0) sweepCount = 1; }
+    void continuousPressed() { sweepCount = -1; }
 
 private:
     void Reconfigure(SweepSettings &ss);
@@ -37,6 +39,7 @@ private:
     std::thread sweepThreadHandle;
     bool sweeping;
     bool reconfigure;
+    std::atomic<int> sweepCount;
 
     Session *session_ptr;
     HarmonicsSpectrumPlot *plot;

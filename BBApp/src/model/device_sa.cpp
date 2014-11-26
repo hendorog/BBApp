@@ -45,16 +45,30 @@ bool DeviceSA::OpenDevice()
     return true;
 }
 
-bool DeviceSA::AttachTG()
+bool DeviceSA::AttachTg()
+{
+    saStatus status = saAttachTg(id);
+    if(status != saNoError) {
+        return false;
+    }
+
+    return true;
+}
+
+bool DeviceSA::IsTgAttached()
 {
 
     return false;
 }
 
-bool DeviceSA::IsTGAttached()
+void DeviceSA::TgStoreThrough()
 {
+    saStoreTGThru(id, TG_THRU_0DB);
+}
 
-    return false;
+void DeviceSA::TgStoreThroughPad()
+{
+    saStoreTGThru(id, TG_THRU_20DB);
 }
 
 bool DeviceSA::CloseDevice()
@@ -80,7 +94,7 @@ bool DeviceSA::Preset()
 }
 
 bool DeviceSA::Reconfigure(const SweepSettings *s, Trace *t)
-{
+{   
     int atten = (s->Atten() == 0) ? SA_AUTO_ATTEN : s->Atten() - 1;
     int gain = (s->Gain() == 0) ? SA_AUTO_GAIN : s->Gain() - 1;
     int preamp = (s->Preamp() == 0) ? SA_PREAMP_AUTO : s->Preamp() - 1;
@@ -99,6 +113,10 @@ bool DeviceSA::Reconfigure(const SweepSettings *s, Trace *t)
 
     int init_mode = SA_SWEEPING;
     if(s->Mode() == BB_REAL_TIME) init_mode = SA_REAL_TIME;
+    if(s->Mode() == MODE_NETWORK_ANALYZER) {
+        saConfigTG(id, (tgStepSize)s->tgStepSizeIx, s->tgPassiveDevice);
+        init_mode = SA_TG_SWEEP;
+    }
 
     saInitiate(id, init_mode, 0);
 

@@ -76,10 +76,14 @@ public:
     // Returns true if settings fine for CP/OCBW
     bool IsAveragePower() const;
 
+    int tgStepSizeIx;
+    bool tgPassiveDevice;
+
 protected:
 
 private:
     void AutoBandwidthAdjust(bool force);
+    void UpdateProgram();
 
     OperationalMode mode;
 
@@ -147,6 +151,9 @@ public slots:
     void setProcUnits(int);
     void setDetector(int);
     void setRejection(bool);
+
+    void setTgStepSizeIx(int);
+    void setTgPassiveDevice(int);
 };
 
 #endif // SWEEP_SETTINGS_H

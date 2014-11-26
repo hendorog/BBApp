@@ -37,7 +37,7 @@ MainWindow::MainWindow(QWidget *parent)
     setTabPosition(Qt::LeftDockWidgetArea, QTabWidget::West);
 
     sweep_panel = new SweepPanel(tr("Sweep Settings"), this,
-                                 session->sweep_settings);
+                                 session->sweep_settings, session->device);
     sweep_panel->setObjectName("SweepSettingsPanel");
     connect(sweep_panel, SIGNAL(zeroSpanPressed()), this, SLOT(zeroSpanPressed()));
 
@@ -79,16 +79,19 @@ MainWindow::MainWindow(QWidget *parent)
     harmonicCentral = new HarmonicsCentral(session, toolBar);
     centralStack->AddWidget(harmonicCentral);
 
+    tgCentral = new TGCentral(session, toolBar);
+    centralStack->AddWidget(tgCentral);
+
     // Add Single/continuous/preset button to toolbar
     QWidget *spacer = new QWidget();
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     toolBar->addWidget(spacer);
-    SHPushButton *single_sweep = new SHPushButton(tr("   Single"), toolBar);
+    SHPushButton *single_sweep = new SHPushButton(tr("    Single"), toolBar);
     single_sweep->setObjectName("SH_SCButton");
     single_sweep->setIcon(QIcon(":/icons/icon_single"));
     single_sweep->setFixedSize(100, TOOLBAR_H - 4);
     toolBar->addWidget(single_sweep);
-    SHPushButton *continuous_sweep = new SHPushButton(tr("    Auto"), toolBar);
+    SHPushButton *continuous_sweep = new SHPushButton(tr("     Auto"), toolBar);
     continuous_sweep->setIcon(QIcon(":/icons/icon_continuous"));
     continuous_sweep->setObjectName("SH_SCButton");
     continuous_sweep->setFixedSize(100, TOOLBAR_H - 4);
@@ -96,8 +99,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(single_sweep, SIGNAL(clicked()), sweepCentral, SLOT(singleSweepPressed()));
     connect(single_sweep, SIGNAL(clicked()), demodCentral, SLOT(singlePressed()));
+    connect(single_sweep, SIGNAL(clicked()), harmonicCentral, SLOT(singlePressed()));
+    connect(single_sweep, SIGNAL(clicked()), tgCentral, SLOT(singlePressed()));
     connect(continuous_sweep, SIGNAL(clicked()), sweepCentral, SLOT(continuousSweepPressed()));
     connect(continuous_sweep, SIGNAL(clicked()), demodCentral, SLOT(autoPressed()));
+    connect(continuous_sweep, SIGNAL(clicked()), harmonicCentral, SLOT(continuousPressed()));
+    connect(continuous_sweep, SIGNAL(clicked()), tgCentral, SLOT(continuousPressed()));
 
     toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
     toolBar->addSeparator();
@@ -278,6 +285,11 @@ void MainWindow::InitMenuBar()
     mode_action->setCheckable(true);
     mode_action_group->addAction(mode_action);
 
+    mode_action = mode_menu->addAction("Scalar Network Analyzer");
+    mode_action->setData(MODE_NETWORK_ANALYZER);
+    mode_action->setCheckable(true);
+    mode_action_group->addAction(mode_action);
+
     connect(mode_action_group, SIGNAL(triggered(QAction*)),
             this, SLOT(modeChanged(QAction*)));
     connect(mode_menu, SIGNAL(aboutToShow()),
@@ -415,10 +427,20 @@ void MainWindow::aboutToShowSettingsMenu()
 void MainWindow::aboutToShowModeMenu()
 {
     int current_mode = session->sweep_settings->Mode();
+    bool isOpen = session->device->IsOpen();
 
     QList<QAction*> a_list = mode_menu->actions();
+
+    // Set all enabled/disabled
     for(QAction *a : a_list) {
-        a->setEnabled(session->device->IsOpen());
+        a->setEnabled(isOpen);
+    }
+
+    // Additional checks/manipulations
+    for(QAction *a : a_list) {
+        if(a->data() == MODE_NETWORK_ANALYZER) {
+            a->setEnabled(session->device->IsCompatibleWithTg());
+        }
 
         if(a->data() == current_mode) {
             a->setChecked(true);
@@ -706,7 +728,18 @@ void MainWindow::modeChanged(QAction *a)
 {
     centralStack->CurrentWidget()->StopStreaming();
 
-    int newMode = a->data().toInt();
+    OperationalMode newMode = (OperationalMode)a->data().toInt();
+
+    // Ensure the TG is connected before switching into network analysis
+    if(newMode == MODE_NETWORK_ANALYZER) {
+        if(!session->device->AttachTg()) {
+            newMode = session->sweep_settings->Mode();
+            QMessageBox::warning(0, "Tracking Generator Not Found",
+                                 "Tracking Generator Not Found\n"
+                                 "Please ensure tracking generator is connected to your PC");
+        }
+    }
+
     ChangeMode((OperationalMode)newMode);
 
     centralStack->CurrentWidget()->changeMode(newMode);
@@ -715,6 +748,8 @@ void MainWindow::modeChanged(QAction *a)
 void MainWindow::ChangeMode(OperationalMode newMode)
 {
     centralStack->CurrentWidget()->EnableToolBarActions(false);
+
+    sweep_panel->setMode(newMode);
 
     if(newMode == MODE_ZERO_SPAN) {
         centralStack->setCurrentWidget(demodCentral);
@@ -725,6 +760,11 @@ void MainWindow::ChangeMode(OperationalMode newMode)
         centralStack->setCurrentWidget(harmonicCentral);
         sweep_panel->show();
         measure_panel->hide();
+        demodPanel->hide();
+    } else if(newMode == MODE_NETWORK_ANALYZER) {
+        centralStack->setCurrentWidget(tgCentral);
+        sweep_panel->show();
+        measure_panel->show();
         demodPanel->hide();
     } else {
         centralStack->setCurrentWidget(sweepCentral);

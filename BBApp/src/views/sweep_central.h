@@ -68,6 +68,9 @@ public slots:
     void changeMode(int newState);
     void settingsChanged(const SweepSettings *ss);
 
+//    void storeThru() { session_ptr->device->TgStoreThrough(true); }
+//    void storeThroughPad() { session_ptr->device->TgStoreThrough(false); }
+
 private slots:
     void singleSweepPressed();
     void continuousSweepPressed();
