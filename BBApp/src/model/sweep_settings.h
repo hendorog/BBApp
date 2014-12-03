@@ -76,7 +76,8 @@ public:
     // Returns true if settings fine for CP/OCBW
     bool IsAveragePower() const;
 
-    int tgStepSizeIx;
+    int tgSweepSize;
+    bool tgHighRangeSweep;
     bool tgPassiveDevice;
 
 protected:
@@ -152,7 +153,8 @@ public slots:
     void setDetector(int);
     void setRejection(bool);
 
-    void setTgStepSizeIx(int);
+    void setTgSweepSize(double);
+    void setTgHighRange(bool);
     void setTgPassiveDevice(int);
 };
 

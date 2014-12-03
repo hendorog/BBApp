@@ -9,6 +9,7 @@
 #include "widgets/measure_panel.h"
 #include "widgets/sweep_panel.h"
 #include "widgets/demod_panel.h"
+#include "widgets/tg_panel.h"
 #include "widgets/status_bar.h"
 #include "widgets/progress_dialog.h"
 #include "views/central_stack.h"
@@ -60,6 +61,7 @@ private:
     SweepPanel *sweep_panel;
     MeasurePanel *measure_panel;
     DemodPanel *demodPanel;
+    TgCtrlPanel *tgPanel;
 
     CentralStack *centralStack;
     SweepCentral *sweepCentral;

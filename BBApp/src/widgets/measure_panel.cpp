@@ -14,8 +14,8 @@ MeasurePanel::MeasurePanel(const QString &title,
     DockPage *trace_page = new DockPage("Traces");
     DockPage *marker_page = new DockPage("Markers");
     DockPage *offset_page = new DockPage("Offsets");
-    DockPage *channel_power_page = new DockPage("Channel Power");
-    DockPage *occupied_bandwidth_page = new DockPage("Occupied Bandwidth");
+    channel_power_page = new DockPage("Channel Power");
+    occupied_bandwidth_page = new DockPage("Occupied Bandwidth");
 
     QStringList string_list;
 
@@ -214,6 +214,14 @@ void MeasurePanel::updateMarkerView(int new_ix)
     on_trace_select->setComboIndex(m->OnTrace());
     marker_update->SetChecked(m->Updating());
     marker_active->SetChecked(m->Active());
+}
+
+void MeasurePanel::setMode(OperationalMode mode)
+{
+    bool pagesEnabled = !(mode == MODE_NETWORK_ANALYZER);
+
+    channel_power_page->setEnabled(pagesEnabled);
+    occupied_bandwidth_page->setEnabled(pagesEnabled);
 }
 
 void MeasurePanel::channelPowerUpdated()

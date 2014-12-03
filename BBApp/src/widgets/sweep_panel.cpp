@@ -15,16 +15,12 @@ SweepPanel::SweepPanel(const QString &title,
     bandwidth_page = new DockPage(tr("Bandwidth"));
     acquisition_page = new DockPage(tr("Acquisition"));
 
-    tgStepSize = new ComboEntry("Step Size");
-    QStringList stepSize_sl;
-    stepSize_sl << "1kHz" << "2kHz" << "5kHz" << "10kHz" << "20kHz"
-                   << "50kHz" << "100kHz" << "200kHz" << "500kHz"
-                      << "1MHz" << "2MHz" << "5MHz" << "10MHz" << "20MHz";
-    tgStepSize->setComboText(stepSize_sl);
+    tgSweepSize = new NumericEntry("Sweep Size", 100, "pts");
+    tgHighDynamicRange = new CheckBoxEntry("High Range");
 
     tgSweepType = new ComboEntry("Sweep Type");
     QStringList sweepType_sl;
-    sweepType_sl << "Active Device" << "Passive Device";
+    sweepType_sl << "Passive Device" << "Active Device";
     tgSweepType->setComboText(sweepType_sl);
 
     tgStoreThru = new DualButtonEntry("Store Thru", "Store 20dB Pad");
@@ -81,8 +77,9 @@ SweepPanel::SweepPanel(const QString &title,
 
     sweep_time = new TimeEntry(tr("Swp Time"), Time(0.0), MILLISECOND);
 
-    tg_page->AddWidget(tgStepSize);
+    tg_page->AddWidget(tgSweepSize);
     tg_page->AddWidget(tgSweepType);
+    tg_page->AddWidget(tgHighDynamicRange);
     tg_page->AddWidget(tgStoreThru);
 
     frequency_page->AddWidget(span);
@@ -120,8 +117,10 @@ SweepPanel::SweepPanel(const QString &title,
     connect(settings, SIGNAL(updated(const SweepSettings*)),
             this, SLOT(updatePanel(const SweepSettings*)));
 
-    connect(tgStepSize, SIGNAL(comboIndexChanged(int)),
-            settings, SLOT(setTgStepSizeIx(int)));
+    connect(tgSweepSize, SIGNAL(valueChanged(double)),
+            settings, SLOT(setTgSweepSize(double)));
+    connect(tgHighDynamicRange, SIGNAL(clicked(bool)),
+            settings, SLOT(setTgHighRange(bool)));
     connect(tgSweepType, SIGNAL(comboIndexChanged(int)),
             settings, SLOT(setTgPassiveDevice(int)));
 
@@ -186,8 +185,10 @@ SweepPanel::~SweepPanel()
 
 void SweepPanel::updatePanel(const SweepSettings *settings)
 {
+    tgSweepSize->SetValue(settings->tgSweepSize);
+    tgHighDynamicRange->SetChecked(settings->tgHighRangeSweep);
     tgSweepType->setComboIndex(settings->tgPassiveDevice ? 0 : 1);
-    tgStepSize->setComboIndex(settings->tgStepSizeIx);
+    tgStoreThru->RightButton()->setEnabled(settings->tgPassiveDevice);
 
     center->SetFrequency(settings->Center());
     span->SetFrequency(settings->Span());

@@ -34,7 +34,14 @@ bool DeviceSA::OpenDevice()
     char fs[16];
     saGetFirmwareString(id, fs);
     firmware_string = fs;
-    saGetDeviceType(id, &device_type);
+
+    saGetDeviceType(id, &saDeviceType);
+
+    if(saDeviceType == SA_DEVICE_SA44 || saDeviceType == SA_DEVICE_SA44B) {
+        device_type = DeviceTypeSA44;
+    } else if(saDeviceType == SA_DEVICE_SA124A || saDeviceType == SA_DEVICE_SA124B) {
+        device_type = DeviceTypeSA124;
+    }
 
     saQueryTemperature(id, &current_temp);
     QString diagnostics;
@@ -63,12 +70,12 @@ bool DeviceSA::IsTgAttached()
 
 void DeviceSA::TgStoreThrough()
 {
-    saStoreTGThru(id, TG_THRU_0DB);
+    saStoreTgThru(id, TG_THRU_0DB);
 }
 
 void DeviceSA::TgStoreThroughPad()
 {
-    saStoreTGThru(id, TG_THRU_20DB);
+    saStoreTgThru(id, TG_THRU_20DB);
 }
 
 bool DeviceSA::CloseDevice()
@@ -114,7 +121,8 @@ bool DeviceSA::Reconfigure(const SweepSettings *s, Trace *t)
     int init_mode = SA_SWEEPING;
     if(s->Mode() == BB_REAL_TIME) init_mode = SA_REAL_TIME;
     if(s->Mode() == MODE_NETWORK_ANALYZER) {
-        saConfigTG(id, (tgStepSize)s->tgStepSizeIx, s->tgPassiveDevice);
+        //saConfigTG(id, (tgStepSize)s->tgStepSizeIx, s->tgPassiveDevice);
+        saConfigTgSweep(id, s->tgSweepSize, s->tgHighRangeSweep, s->tgPassiveDevice);
         init_mode = SA_TG_SWEEP;
     }
 
@@ -254,10 +262,10 @@ bool DeviceSA::GetAudio(float *audio)
 
 QString DeviceSA::GetDeviceString() const
 {
-    if(device_type == SA_DEVICE_SA44) return "SA44";
-    if(device_type == SA_DEVICE_SA44B) return "SA44B";
-    if(device_type == SA_DEVICE_SA124A) return "SA124A";
-    if(device_type == SA_DEVICE_SA124B) return "SA124B";
+    if(saDeviceType == SA_DEVICE_SA44) return "SA44";
+    if(saDeviceType == SA_DEVICE_SA44B) return "SA44B";
+    if(saDeviceType == SA_DEVICE_SA124A) return "SA124A";
+    if(saDeviceType == SA_DEVICE_SA124B) return "SA124B";
 
     return "No Device Open";
 }
@@ -275,4 +283,14 @@ bool DeviceSA::IsPowered() const
 bool DeviceSA::NeedsTempCal() const
 {
     return false;
+}
+
+bool DeviceSA::SetTg(Frequency freq, double amp)
+{
+    saStatus stat = saSetTg(id, freq, amp);
+    if(stat != saNoError) {
+        return false;
+    }
+
+    return true;
 }

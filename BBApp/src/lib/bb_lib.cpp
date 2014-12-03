@@ -577,8 +577,21 @@ QString bb_lib::getUserDirectory(const QString &path)
     return QFileDialog::getExistingDirectory(0, "FFF", path);
 }
 
-// Normalize frequency domain trace
 void normalize_trace(const Trace *t, GLVector &v, QPoint grat_size)
+{
+    normalize_trace(t,
+                    v,
+                    grat_size,
+                    t->GetSettings()->RefLevel(),
+                    t->GetSettings()->Div());
+}
+
+// Normalize frequency domain trace
+void normalize_trace(const Trace *t,
+                     GLVector &v,
+                     QPoint grat_size,
+                     Amplitude refLevel,
+                     double dBdiv)
 {
     v.clear();
 
@@ -587,16 +600,13 @@ void normalize_trace(const Trace *t, GLVector &v, QPoint grat_size)
     }
 
     // Data needed to transform sweep into a screen trace
-    int currentPix = 0;                                   // Step through all pixels
+    int currentPix = 0;                                    // Step through all pixels
     double currentStep = 0.0;                              // Our curr step
     double step = (float)(grat_size.x()) / ( t->Length() - 1 );   // Step size
     double ref;                       // Value representing the top of graticule
     double botRef;                    // Value representing bottom of graticule
-    double xScale = 1.0 / (float)grat_size.x();
+    double xScale = 1.0 / (double)grat_size.x();
     double yScale;
-    double dBdiv = t->GetSettings()->Div();
-
-    Amplitude refLevel = t->GetSettings()->RefLevel();
 
     if(refLevel.IsLogScale()) {
         ref = refLevel.ConvertToUnits(AmpUnits::DBM);
@@ -607,16 +617,6 @@ void normalize_trace(const Trace *t, GLVector &v, QPoint grat_size)
         botRef = 0.0;
         yScale = (1.0 / ref);
     }
-
-//    ref = t->GetSettings()->RefLevel().Val();
-//    botRef = ref - 10.0 * dBdiv;
-//    yScale = 1.0 / (10.0 * dBdiv);
-//    xScale = 1.0 / (float)grat_size.x();
-
-//    if(!t->GetSettings()->RefLevel().IsLogScale()) {
-//        botRef = 0.0;
-//        yScale = (1.0 / ref);
-//    }
 
     v.reserve(grat_size.x() * 4);
 

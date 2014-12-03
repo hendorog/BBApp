@@ -48,9 +48,13 @@ MainWindow::MainWindow(QWidget *parent)
     demodPanel = new DemodPanel(tr("Demod Settings"), this, session->demod_settings);
     demodPanel->setObjectName("DemodSettingsPanel");
 
+    tgPanel = new TgCtrlPanel("Tracking Generator Controls", this, session);
+
     addDockWidget(Qt::RightDockWidgetArea, sweep_panel);
     addDockWidget(Qt::LeftDockWidgetArea, measure_panel);
     addDockWidget(Qt::RightDockWidgetArea, demodPanel);
+    addDockWidget(Qt::LeftDockWidgetArea, tgPanel);
+    tgPanel->setVisible(false);
 
     status_bar = new BBStatusBar();
     setStatusBar(status_bar);
@@ -298,6 +302,7 @@ void MainWindow::InitMenuBar()
     utilities_menu = main_menu->addMenu(tr("Utilities"));
     utilities_menu->addAction(tr("Audio Player"), this, SLOT(startAudioPlayer()));
     utilities_menu->addAction(tr("Measuring Receiever"), this, SLOT(startMeasuringReceiever()));
+    utilities_menu->addAction(tgPanel->toggleViewAction());
     connect(utilities_menu, SIGNAL(aboutToShow()), this, SLOT(aboutToShowUtilitiesMenu()));
 
     help_menu = main_menu->addMenu(tr("Help"));
@@ -560,6 +565,7 @@ void MainWindow::deviceConnected(bool success)
         status_bar->SetDeviceType(session->device->GetDeviceString());
         status_bar->UpdateDeviceInfo(device_string);
 
+        device_traits::set_device_type(session->device->GetDeviceType());
         session->LoadDefaults();
 
         ChangeMode(MODE_SWEEPING);
@@ -750,6 +756,7 @@ void MainWindow::ChangeMode(OperationalMode newMode)
     centralStack->CurrentWidget()->EnableToolBarActions(false);
 
     sweep_panel->setMode(newMode);
+    measure_panel->setMode(newMode);
 
     if(newMode == MODE_ZERO_SPAN) {
         centralStack->setCurrentWidget(demodCentral);

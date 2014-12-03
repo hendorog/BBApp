@@ -21,7 +21,8 @@ private:
     DockPage *frequency_page, *amplitude_page;
     DockPage *bandwidth_page, *acquisition_page;
 
-    ComboEntry *tgStepSize;
+    NumericEntry *tgSweepSize;
+    CheckBoxEntry *tgHighDynamicRange;
     ComboEntry *tgSweepType;
     DualButtonEntry *tgStoreThru;
 

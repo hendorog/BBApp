@@ -34,6 +34,7 @@ private:
     // Controls whether or not we need to reinitialize the device when
     //   setting a new audio configuration
     double last_audio_freq;
+    int bbDeviceType;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DeviceBB60A)

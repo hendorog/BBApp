@@ -521,6 +521,9 @@ public:
                     QWidget *parent = 0);
     ~DualButtonEntry() {}
 
+    SHPushButton* LeftButton() const { return left_button; }
+    SHPushButton* RightButton() const { return right_button; }
+
 protected:
     void resizeEvent(QResizeEvent *);
 

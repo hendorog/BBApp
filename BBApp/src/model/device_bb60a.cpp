@@ -41,7 +41,14 @@ bool DeviceBB60A::OpenDevice()
     int fv;
     bbGetFirmwareVersion(id, &fv);
     firmware_string.sprintf("%d", fv);
-    bbGetDeviceType(id, &device_type);
+
+    bbGetDeviceType(id, &bbDeviceType);
+
+    if(bbDeviceType == BB_DEVICE_BB60A) {
+        device_type = DeviceTypeBB60A;
+    } else if(bbDeviceType == BB_DEVICE_BB60C) {
+        device_type = DeviceTypeBB60C;
+    }
 
     open = true;
     return true;
@@ -58,7 +65,7 @@ bool DeviceBB60A::CloseDevice()
 
     id = -1;
     open = false;
-    device_type = BB_DEVICE_NONE;
+    device_type = DeviceTypeBB60C;
     serial_number = 0;
 
     return true;
@@ -372,9 +379,9 @@ void DeviceBB60A::UpdateDiagnostics()
 }
 
 QString DeviceBB60A::GetDeviceString() const {
-    if(device_type == BB_DEVICE_NONE) return "No Device Open";
-    if(device_type == BB_DEVICE_BB60A) return "BB60A";
-    if(device_type == BB_DEVICE_BB60C) return "BB60C";
+    if(bbDeviceType == BB_DEVICE_NONE) return "No Device Open";
+    if(bbDeviceType == BB_DEVICE_BB60A) return "BB60A";
+    if(bbDeviceType == BB_DEVICE_BB60C) return "BB60C";
     return "No Device Open";
 }
 

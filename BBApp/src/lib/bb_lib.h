@@ -518,6 +518,8 @@ inline QString get_time_string(int64_t ms_since_epoch) {
 } // namespace bb_lib
 
 void normalize_trace(const Trace *t, GLVector &vector, QPoint grat_size);
+void normalize_trace(const Trace *t, GLVector &vector, QPoint grat_size,
+                     Amplitude refLevel, double div);
 //void normalize_trace(const Trace *t, LineList &ll, QSize grat_size);
 
 void build_blackman_window(float *dst, int len);

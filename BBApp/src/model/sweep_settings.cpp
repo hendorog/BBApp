@@ -66,6 +66,10 @@ SweepSettings& SweepSettings::operator=(const SweepSettings &other)
     detector = other.detector;
     rejection = other.rejection;
 
+    tgSweepSize = other.tgSweepSize;
+    tgHighRangeSweep = other.tgHighRangeSweep;
+    tgPassiveDevice = other.tgPassiveDevice;
+
     // Assuming this is needed for now ?
     UpdateProgram();
 
@@ -97,6 +101,10 @@ bool SweepSettings::operator==(const SweepSettings &other) const
     if(processingUnits != other.processingUnits) return false;
     if(detector != other.detector) return false;
     if(rejection != other.rejection) return false;
+
+    if(tgSweepSize != other.tgSweepSize) return false;
+    if(tgHighRangeSweep != other.tgHighRangeSweep) return false;
+    if(tgPassiveDevice != other.tgPassiveDevice) return false;
 
     return true;
 }
@@ -136,7 +144,8 @@ void SweepSettings::LoadDefaults()
     detector = BB_AVERAGE;
     rejection = device_traits::default_spur_reject();
 
-    tgStepSizeIx = 0;
+    tgSweepSize = 100;
+    tgHighRangeSweep = true;
     tgPassiveDevice = true;
 
     //emit updated(this);
@@ -242,19 +251,19 @@ void SweepSettings::AutoBandwidthAdjust(bool force)
 
 void SweepSettings::UpdateProgram()
 {
-    if(mode == MODE_NETWORK_ANALYZER) {
-        int steps = Span() / get_tg_step_size(tgStepSizeIx);
-        if(steps < 10 || steps > 500) {
-            while((Span() / get_tg_step_size(tgStepSizeIx)) > 500
-                  && tgStepSizeIx < 13) {
-                tgStepSizeIx++;
-            }
-            while((Span() / get_tg_step_size(tgStepSizeIx)) < 100
-                  && tgStepSizeIx > 0) {
-                tgStepSizeIx--;
-            }
-        }
-    }
+//    if(mode == MODE_NETWORK_ANALYZER) {
+//        int steps = Span() / get_tg_step_size(tgStepSizeIx);
+//        if(steps < 10 || steps > 500) {
+//            while((Span() / get_tg_step_size(tgStepSizeIx)) > 500
+//                  && tgStepSizeIx < 13) {
+//                tgStepSizeIx++;
+//            }
+//            while((Span() / get_tg_step_size(tgStepSizeIx)) < 100
+//                  && tgStepSizeIx > 0) {
+//                tgStepSizeIx--;
+//            }
+//        }
+//    }
 
     emit updated(this);
 }
@@ -516,9 +525,11 @@ void SweepSettings::setNativeRBW(bool native)
 void SweepSettings::setRefLevel(Amplitude new_ref)
 {
     new_ref.Clamp(Amplitude(-100, DBM), Amplitude(20.0, DBM));
-
     refLevel = new_ref;
-    UpdateProgram();
+
+    if(mode != MODE_NETWORK_ANALYZER) {
+        UpdateProgram();
+    }
 }
 
 void SweepSettings::shiftRefLevel(bool inc)
@@ -531,14 +542,18 @@ void SweepSettings::shiftRefLevel(bool inc)
         else refLevel = Amplitude(refLevel.Val() * 0.8, AmpUnits::MV);
     }
 
-    UpdateProgram();
+    if(mode != MODE_NETWORK_ANALYZER) {
+        UpdateProgram();
+    }
 }
 
 void SweepSettings::setDiv(double new_div)
 {
     bb_lib::clamp(new_div, 0.1, 30.0);
     div = new_div;
-    UpdateProgram();
+    if(mode != MODE_NETWORK_ANALYZER) {
+        UpdateProgram();
+    }
 }
 
 /*
@@ -598,9 +613,15 @@ void SweepSettings::setRejection(bool image_reject)
     }
 }
 
-void SweepSettings::setTgStepSizeIx(int newTgStepIndex)
+void SweepSettings::setTgSweepSize(double sweepSize)
 {
-    tgStepSizeIx = newTgStepIndex;
+    tgSweepSize = (int)sweepSize;
+    UpdateProgram();
+}
+
+void SweepSettings::setTgHighRange(bool highRange)
+{
+    tgHighRangeSweep = highRange;
     UpdateProgram();
 }
 

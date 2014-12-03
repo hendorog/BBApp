@@ -11,6 +11,8 @@ public:
     TGPlot(Session *sPtr, QWidget *parent = 0);
     ~TGPlot();
 
+    void SetStepSize(double stepSize) { tgStepSize = stepSize; }
+
 protected:
     void resizeEvent(QResizeEvent *);
     void mousePressEvent(QMouseEvent *);
@@ -35,6 +37,7 @@ private:
     GLuint traceVBO;
     GLFont textFont, divFont;
     GLVector traces[TRACE_COUNT];
+    double tgStepSize;
 
 private:
     Q_DISABLE_COPY(TGPlot)

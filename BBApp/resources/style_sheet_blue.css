@@ -9,6 +9,10 @@ QLabel#SH_Label {
   color: black;
 }
 
+QLabel#SH_Label:disabled {
+  color: gray;
+}
+
 /********
  * Tool Bar
  ********/
@@ -69,17 +73,14 @@ QPushButton:hover#BBFlatButton {
    padding-top: 0px;
  }
 
- QPushButton#SH_PushButton:hover:!pressed {
-   background-color: rgb(255,244,191);
-   border: 1px solid rgb(238,211,132);
-   border-radius: 1px;
-/*   font-family: arial-black;
-   color: blue;
-   margin: 1px;
-   font-size: 12px;
-   text-align: center;
-   font-weight: normal;
-   padding-left: 5px;*/
+QPushButton#SH_PushButton:disabled {
+  color: gray;
+}
+
+QPushButton#SH_PushButton:hover:!pressed {
+  background-color: rgb(255,244,191);
+  border: 1px solid rgb(238,211,132);
+  border-radius: 1px;
  }
 
  QPushButton:pressed#SH_PushButton {

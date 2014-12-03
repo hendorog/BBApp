@@ -6,7 +6,8 @@
 TGPlot::TGPlot(Session *sPtr, QWidget *parent) :
     GLSubView(sPtr, parent),
     textFont(12),
-    divFont(12)
+    divFont(12),
+    tgStepSize(0)
 {
     makeCurrent();
 
@@ -125,7 +126,15 @@ void TGPlot::BuildGraticule()
         0.0, 0.0, 1.0, 0.0
     };
 
-    border[17] = border[19] = 0.8;
+    double ref = GetSession()->sweep_settings->RefLevel().Val();
+    double div = GetSession()->sweep_settings->Div();
+    double grat_bottom = ref - 10.0*div;
+
+    float pos = (0.0 - grat_bottom) / (ref - grat_bottom);
+    if(pos < 0.0) pos = 0.0;
+    if(pos > 1.0) pos = 1.0;
+
+    border[17] = border[19] = pos;
 
     glBindBuffer(GL_ARRAY_BUFFER, gratBorderVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(border),
@@ -136,6 +145,7 @@ void TGPlot::BuildGraticule()
 void TGPlot::DrawTraces()
 {
     TraceManager *manager = GetSession()->trace_manager;
+    SweepSettings *settings = GetSession()->sweep_settings;
 
     // Prep viewport
     glPushAttrib(GL_VIEWPORT_BIT);
@@ -168,7 +178,8 @@ void TGPlot::DrawTraces()
         const Trace *trace = manager->GetTrace(i);
 
         if(trace->Active()) {
-            normalize_trace(trace, traces[i], grat_sz);
+            normalize_trace(trace, traces[i], grat_sz,
+                            settings->RefLevel(), settings->Div());
             DrawTrace(trace, traces[i], traceVBO);
         }
     }
@@ -260,12 +271,11 @@ void TGPlot::RenderText()
                grat_ll.x()+5, grat_ul.y()+textHeight, LEFT_ALIGNED);
     str.sprintf("Div %.1f", div);
     DrawString(str, textFont, grat_ul.x()+5, grat_ul.y()+2 , LEFT_ALIGNED);
-    DrawString("RBW " + s->RBW().GetFreqString(), textFont,
+    DrawString("Step " + Frequency(tgStepSize).GetFreqString(), textFont,
                grat_ll.x() + grat_sz.x()/2, grat_ul.y()+textHeight, CENTER_ALIGNED);
-    s->GetAttenString(str);
-    DrawString(str, textFont, grat_ll.x() + grat_sz.x()/2, grat_ul.y()+2, CENTER_ALIGNED);
-    DrawString("VBW " + s->VBW().GetFreqString(), textFont,
-               grat_ul.x()+grat_sz.x()-5, grat_ul.y()+textHeight, RIGHT_ALIGNED);
+    DrawString("Atten --", textFont, grat_ll.x() + grat_sz.x()/2, grat_ul.y()+2, CENTER_ALIGNED);
+    DrawString("VBW --", textFont, grat_ul.x()+grat_sz.x()-5,
+               grat_ul.y()+textHeight, RIGHT_ALIGNED);
 
     // y-axis labels
     for(int i = 0; i <= 8; i += 2) {

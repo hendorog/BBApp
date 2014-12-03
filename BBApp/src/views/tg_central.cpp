@@ -96,7 +96,7 @@ void TGCentral::SweepThread()
             session_ptr->trace_manager->UpdateTraces(&trace);
             emit updateView();
 
-            if(sweepCount > 0) {
+            if(sweepCount > 0 && trace.IsFullSweep()) {
                 sweepCount--;
             }
         }

@@ -52,7 +52,8 @@ SOURCES += src/main.cpp \
     src/views/gl_sub_view.cpp \
     src/views/harmonics_spectrum.cpp \
     src/views/tg_central.cpp \
-    src/views/tg_trace_view.cpp
+    src/views/tg_trace_view.cpp \
+    src/widgets/tg_panel.cpp
 
 HEADERS += src/mainwindow.h \
     src/lib/frequency.h \
@@ -105,7 +106,8 @@ HEADERS += src/mainwindow.h \
     src/views/harmonics_central.h \
     src/views/harmonics_spectrum.h \
     src/views/tg_central.h \
-    src/views/tg_trace_view.h
+    src/views/tg_trace_view.h \
+    src/widgets/tg_panel.h
 
 OTHER_FILES += \
     style_sheet.css \

@@ -3,6 +3,7 @@
 
 #include "dock_panel.h"
 #include "entry_widgets.h"
+#include "lib/bb_lib.h"
 
 class TraceManager;
 class SweepSettings;
@@ -18,6 +19,9 @@ public:
     ~MeasurePanel();
 
 private:
+    DockPage *channel_power_page;
+    DockPage *occupied_bandwidth_page;
+
     // Trace Widgets
     ComboEntry *trace_select;
     ComboEntry *trace_type;
@@ -55,11 +59,9 @@ public slots:
     void updateTraceView(int);
     void updateMarkerView();
     void updateMarkerView(int);
+    void setMode(OperationalMode mode);
 
 private slots:
-//    void tryEnableChannelPower();
-//    void tryEnableOccupiedBandwidth();
-
     void channelPowerUpdated();
     void occupiedBandwidthUpdated();
 

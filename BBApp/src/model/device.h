@@ -6,6 +6,7 @@
 #include "lib/bb_lib.h"
 #include "lib/bb_api.h"
 #include "lib/macros.h"
+#include "lib/device_traits.h"
 
 #include "sweep_settings.h"
 #include "demod_settings.h"
@@ -31,6 +32,7 @@ public:
         current_temp = 0.0;
         voltage = 0.0;
         current = 0.0;
+        device_type = DeviceTypeBB60C;
     }
     virtual ~Device() = 0;
 
@@ -51,6 +53,7 @@ public:
     virtual bool IsCompatibleWithTg() const { return false; }
     virtual bool AttachTg() { return false; }
     virtual bool IsTgAttached() { return false; }
+    virtual bool SetTg(Frequency freq, double amp) { return false; }
 
     bool IsOpen() const { return open; }
     int Handle() const { return id; }
@@ -62,7 +65,7 @@ public:
     bbStatus GetLastStatus() const { return lastStatus; }
     const char* GetStatusString(bbStatus status) const { return bbGetErrorString(status); }
 
-    int DeviceType() const { return device_type; }
+    DeviceType GetDeviceType() const { return device_type; }
     int SerialNumber() const { return serial_number; }
     QString SerialString() const { return serial_string; }
     QString FirmwareString() const { return firmware_string; }
@@ -88,7 +91,7 @@ protected:
     //
     bool update_diagnostics_string;
 
-    int device_type;
+    DeviceType device_type;
     int serial_number;
     QString serial_string;
     QString firmware_string;

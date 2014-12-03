@@ -34,6 +34,10 @@ public:
     virtual bool IsCompatibleWithTg() const { return true; }
     virtual bool AttachTg();
     virtual bool IsTgAttached();
+    virtual bool SetTg(Frequency freq, double amp);
+
+private:
+    int saDeviceType;
 
 public slots:
     virtual void TgStoreThrough();
