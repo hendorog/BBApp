@@ -6,6 +6,61 @@
 
 #include <QXmlStreamWriter>
 
+CircularBuffer::CircularBuffer()
+{
+
+}
+
+CircularBuffer::~CircularBuffer()
+{
+
+}
+
+void CircularBuffer::Resize(int captureSize)
+{
+    bufferLock.lock();
+    buffer.resize(captureSize * TOTAL_PACKETS);
+    packetLen = captureSize;
+    available = 0;
+    storeIx = 0;
+    retreiveIx = 0;
+    bufferLock.unlock();
+}
+
+void CircularBuffer::Store(std::vector<complex_f> &src)
+{
+    bufferLock.lock();
+    std::copy(src.begin(), src.end(), buffer.begin() + storeIx);
+    bufferLock.unlock();
+
+    available += packetLen;
+    packetRecieved.notify();
+    storeIx += packetLen;
+    if(storeIx >= TOTAL_PACKETS * packetLen) storeIx = 0;
+}
+
+void CircularBuffer::GetCapture(IQSweep &sweep)
+{
+    retreiveIx = storeIx;
+    available = 0;
+    auto iter = sweep.iq.begin();
+
+    int toGet = sweep.sweepLen;
+    while(toGet > 0) {
+        packetRecieved.wait();
+        size_t toCopy = std::min(toGet, packetLen);
+        toCopy = std::min(toCopy, buffer.size() - retreiveIx);
+        if(toCopy > available) continue;
+        iter = std::copy(buffer.begin() + retreiveIx,
+                         buffer.begin() + retreiveIx + toCopy,
+                         iter);
+        toGet -= toCopy;
+        available -= toCopy;
+        retreiveIx += toCopy;
+        if(retreiveIx >= buffer.size()) retreiveIx = 0;
+    }
+}
+
 DemodCentral::DemodCentral(Session *sPtr,
                            QToolBar *toolBar,
                            QWidget *parent,
@@ -367,6 +422,76 @@ void DemodCentral::RecordIQCapture(const IQSweep &sweep, IQCapture &capture, Dev
 
     recordNext = false;
 }
+
+void DemodCentral::CollectThread(Device *device, int captureLen)
+{
+    IQCapture packet;
+    packet.capture.resize(captureLen);
+    //circularBuffer.Resize(captureLen);
+
+    while(!reconfigure) {
+        device->GetIQ(&packet);
+        //circularBuffer.Store(packet.capture);
+    }
+}
+
+//void DemodCentral::StreamThread()
+//{
+//    std::thread collectThreadHandle;
+//    IQCapture iqc;
+//    IQSweep sweep;
+
+//    Reconfigure(sessionPtr->demod_settings, &iqc, sweep);
+//    circularBuffer.Resize(sweep.descriptor.returnLen);
+//    collectThreadHandle = std::thread(&DemodCentral::CollectThread, this,
+//                                      sessionPtr->device, sweep.descriptor.returnLen);
+
+//    while(streaming) {
+//        if(captureCount) {
+//            if(reconfigure) {
+//                collectThreadHandle.join();
+//                Reconfigure(sessionPtr->demod_settings, &iqc, sweep);
+//                circularBuffer.Resize(sweep.descriptor.returnLen);
+//                collectThreadHandle = std::thread(&DemodCentral::CollectThread, this,
+//                                                  sessionPtr->device, sweep.descriptor.returnLen);
+//            }
+//            qint64 start = bb_lib::get_ms_since_epoch();
+
+//            circularBuffer.GetCapture(sweep);
+
+////            GetCapture(sessionPtr->demod_settings, iqc, sweep, sessionPtr->device);
+////            if(recordNext && sweep.triggered) {
+////                RecordIQCapture(sweep, iqc, sessionPtr->device);
+////            }
+
+//            if(demodArea->viewLock.try_lock()) {
+//                sweep.Demod();
+//                if(sweep.settings.MAEnabled()) {
+//                    sweep.CalculateReceiverStats();
+//                }
+//                sessionPtr->iq_capture = sweep;
+//                UpdateView();
+//                demodArea->viewLock.unlock();
+//            }
+
+//            // Force 30 fps update rate
+//            qint64 elapsed = bb_lib::get_ms_since_epoch() - start;
+//            if(elapsed < MAX_ZERO_SPAN_UPDATE_RATE) {
+//                Sleep(MAX_ZERO_SPAN_UPDATE_RATE - elapsed);
+//            }
+//            if(captureCount > 0) {
+//                if(sweep.triggered) {
+//                    captureCount--;
+//                }
+//            }
+//        } else {
+//            Sleep(MAX_ZERO_SPAN_UPDATE_RATE);
+//        }
+//    }
+
+//    reconfigure = true;
+//    collectThreadHandle.join();
+//}
 
 void DemodCentral::StreamThread()
 {

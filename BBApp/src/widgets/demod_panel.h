@@ -29,6 +29,7 @@ private:
     ComboEntry *triggerTypeEntry;
     ComboEntry *triggerEdgeEntry;
     AmpEntry *triggerAmplitudeEntry; // Only for video triggers
+    NumericEntry *triggerPositionEntry;
 
     CheckBoxEntry *maEnabledEntry;
     FrequencyEntry *maLowPass;

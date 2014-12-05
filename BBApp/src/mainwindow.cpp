@@ -49,6 +49,7 @@ MainWindow::MainWindow(QWidget *parent)
     demodPanel->setObjectName("DemodSettingsPanel");
 
     tgPanel = new TgCtrlPanel("Tracking Generator Controls", this, session);
+    tgPanel->setObjectName("TgControlPanel");
 
     addDockWidget(Qt::RightDockWidgetArea, sweep_panel);
     addDockWidget(Qt::LeftDockWidgetArea, measure_panel);
@@ -441,10 +442,10 @@ void MainWindow::aboutToShowModeMenu()
         a->setEnabled(isOpen);
     }
 
-    // Additional checks/manipulations
+    // Additional checks/manipulations only if device is present
     for(QAction *a : a_list) {
         if(a->data() == MODE_NETWORK_ANALYZER) {
-            a->setEnabled(session->device->IsCompatibleWithTg());
+            a->setEnabled(session->device->IsCompatibleWithTg() && isOpen);
         }
 
         if(a->data() == current_mode) {

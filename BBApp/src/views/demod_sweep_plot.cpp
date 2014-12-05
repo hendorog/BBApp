@@ -79,7 +79,7 @@ void DemodSweepPlot::paintEvent(QPaintEvent *)
 
     int textHeight = textFont.GetTextHeight() + 2;
     SetGraticuleDimensions(QPoint(60, textHeight*2),
-                           QPoint(width() - 80, height() - textHeight*4));
+                           QPoint(grat_sz.x(), height() - textHeight*4));
 
     glViewport(0, 0, width(), height());
 

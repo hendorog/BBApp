@@ -24,6 +24,7 @@ DemodSettings& DemodSettings::operator=(const DemodSettings &other)
     trigType = other.TrigType();
     trigEdge = other.TrigEdge();
     trigAmplitude = other.TrigAmplitude();
+    trigPosition = other.TrigPosition();
 
     maEnabled = other.MAEnabled();
     maLowPass = other.MALowPass();
@@ -45,6 +46,7 @@ bool DemodSettings::operator==(const DemodSettings &other) const
     if(trigType != other.TrigType()) return false;
     if(trigEdge != other.TrigEdge()) return false;
     if(trigAmplitude != other.TrigAmplitude()) return false;
+    if(trigPosition != other.TrigPosition()) return false;
 
     if(maEnabled != other.MAEnabled()) return false;
     if(maLowPass != other.MALowPass()) return false;
@@ -72,6 +74,7 @@ void DemodSettings::LoadDefaults()
     trigType = TriggerTypeNone;
     trigEdge = TriggerEdgeRising;
     trigAmplitude = 0.0;
+    trigPosition = 10.0;
 
     maEnabled = false;
     maLowPass = 10.0e3;
@@ -92,6 +95,7 @@ bool DemodSettings::Load(QSettings &s)
     trigEdge = (TriggerEdge)s.value("Demod/TriggerEdge", TrigEdge()).toInt();
     trigAmplitude = s.value("Demod/TriggerAmplitude",
                             TrigAmplitude().Val()).toDouble();
+    trigPosition = s.value("Demod/TriggerPosition", TrigPosition()).toDouble();
 
     maEnabled = s.value("Demod/MAEnabled", false).toBool();
     maLowPass = s.value("Demod/MALowPass", 10.0e3).toDouble();
@@ -114,6 +118,7 @@ bool DemodSettings::Save(QSettings &s) const
     s.setValue("Demod/TriggerType", TrigType());
     s.setValue("Demod/TriggerEdge", TrigEdge());
     s.setValue("Demod/TriggerAmplitude", TrigAmplitude().Val());
+    s.setValue("Demod/TriggerPosition", TrigPosition());
 
     s.setValue("Demod/MAEnabled", MAEnabled());
     s.setValue("Demod/MALowPass", MALowPass().Val());
@@ -221,6 +226,13 @@ void DemodSettings::setTrigEdge(int te)
 void DemodSettings::setTrigAmplitude(Amplitude ta)
 {
     trigAmplitude = ta;
+    emit updated(this);
+}
+
+void DemodSettings::setTrigPosition(double pos)
+{
+    bb_lib::clamp(pos, 0.0, 90.0);
+    trigPosition = pos;
     emit updated(this);
 }
 

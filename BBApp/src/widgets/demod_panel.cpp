@@ -49,6 +49,7 @@ DemodPanel::DemodPanel(const QString &title,
     triggerEdgeEntry->setComboText(triggerEdge_sl);
 
     triggerAmplitudeEntry = new AmpEntry(tr("Trigger Level"), 0.0);
+    triggerPositionEntry = new NumericEntry("Trigger Position", 10.0, "%");
 
     maEnabledEntry = new CheckBoxEntry(tr("Enabled"));
     maLowPass = new FrequencyEntry(tr("Low Pass"), 0.0);
@@ -66,6 +67,7 @@ DemodPanel::DemodPanel(const QString &title,
     triggerPage->AddWidget(triggerTypeEntry);
     triggerPage->AddWidget(triggerEdgeEntry);
     triggerPage->AddWidget(triggerAmplitudeEntry);
+    triggerPage->AddWidget(triggerPositionEntry);
 
     maPage->AddWidget(maEnabledEntry);
     maPage->AddWidget(maLowPass);
@@ -101,6 +103,8 @@ DemodPanel::DemodPanel(const QString &title,
             settings, SLOT(setTrigEdge(int)));
     connect(triggerAmplitudeEntry, SIGNAL(amplitudeChanged(Amplitude)),
             settings, SLOT(setTrigAmplitude(Amplitude)));
+    connect(triggerPositionEntry, SIGNAL(valueChanged(double)),
+            settings, SLOT(setTrigPosition(double)));
 
     connect(maEnabledEntry, SIGNAL(clicked(bool)),
             settings, SLOT(setMAEnabled(bool)));
@@ -134,6 +138,7 @@ void DemodPanel::updatePanel(const DemodSettings *ds)
     triggerTypeEntry->setComboIndex(ds->TrigType());
     triggerEdgeEntry->setComboIndex(ds->TrigEdge());
     triggerAmplitudeEntry->SetAmplitude(ds->TrigAmplitude());
+    triggerPositionEntry->SetValue(ds->TrigPosition());
 
     maEnabledEntry->SetChecked(ds->MAEnabled());
     maLowPass->SetFrequency(ds->MALowPass());

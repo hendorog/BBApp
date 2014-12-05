@@ -45,6 +45,7 @@ public:
     TriggerType TrigType() const { return trigType; }
     TriggerEdge TrigEdge() const { return trigEdge; }
     Amplitude TrigAmplitude() const { return trigAmplitude; }
+    double TrigPosition() const { return trigPosition; }
 
     bool MAEnabled() const { return maEnabled; }
     Frequency MALowPass() const { return maLowPass; }
@@ -68,6 +69,7 @@ private:
     TriggerType trigType;
     TriggerEdge trigEdge;
     Amplitude trigAmplitude;
+    double trigPosition; // 0 - 90 %
 
     bool maEnabled; // Mod-Analysis enabled
     Frequency maLowPass; // Mod-analysis low pass filter on audio
@@ -85,6 +87,7 @@ public slots:
     void setTrigType(int);
     void setTrigEdge(int);
     void setTrigAmplitude(Amplitude);
+    void setTrigPosition(double);
 
     void setMAEnabled(bool);
     void setMALowPass(Frequency);
