@@ -4,8 +4,8 @@ QString Session::title;
 
 Session::Session()
 {
-    device = new DeviceBB60A(&prefs);
-    //device = new DeviceSA(&prefs);
+    //device = new DeviceBB60A(&prefs);
+    device = new DeviceSA(&prefs);
 
     device_traits::set_device_type(device->GetDeviceType());
 

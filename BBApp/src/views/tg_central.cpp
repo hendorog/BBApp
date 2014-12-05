@@ -83,11 +83,16 @@ void TGCentral::continuousPressed()
 void TGCentral::SweepThread()
 {
     Trace trace;
+    SweepSettings lastConfig = *session_ptr->sweep_settings;
     reconfigure = true;
 
     while(sweeping) {
+        if(*session_ptr->sweep_settings != lastConfig) reconfigure = true;
+
         if(reconfigure) {
+            lastConfig = *session_ptr->sweep_settings;
             session_ptr->device->Reconfigure(session_ptr->sweep_settings, &trace);
+            session_ptr->trace_manager->ClearAllTraces();
             reconfigure = false;
         }
 
