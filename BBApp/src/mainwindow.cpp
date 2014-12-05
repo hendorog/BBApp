@@ -55,7 +55,6 @@ MainWindow::MainWindow(QWidget *parent)
     addDockWidget(Qt::LeftDockWidgetArea, measure_panel);
     addDockWidget(Qt::RightDockWidgetArea, demodPanel);
     addDockWidget(Qt::LeftDockWidgetArea, tgPanel);
-    tgPanel->setVisible(false);
 
     status_bar = new BBStatusBar();
     setStatusBar(status_bar);
@@ -336,6 +335,7 @@ void MainWindow::SaveState()
     sweep_panel->SaveState(settings);
     measure_panel->SaveState(settings);
     demodPanel->SaveState(settings);
+    tgPanel->SaveState(settings);
 }
 
 /*
@@ -376,6 +376,8 @@ void MainWindow::RestoreState()
     sweep_panel->RestoreState(settings);
     measure_panel->RestoreState(settings);
     demodPanel->RestoreState(settings);
+    tgPanel->RestoreState(settings);
+    tgPanel->setVisible(false);
 }
 
 void MainWindow::restoreDefaultLayout()
