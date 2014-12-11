@@ -52,6 +52,41 @@ bool DeviceSA::OpenDevice()
     return true;
 }
 
+bool DeviceSA::OpenDeviceWithSerial(int serialToOpen)
+{
+    if(open) {
+        return true;
+    }
+
+    saStatus status = saOpenDeviceBySerialNumber(&id, serialToOpen);
+    if(status != saNoError) {
+        return false;
+    }
+
+    saGetSerialNumber(id, &serial_number);
+    serial_string.sprintf("%d", serial_number);
+    // Get Firmware version
+    char fs[16];
+    saGetFirmwareString(id, fs);
+    firmware_string = fs;
+
+    saGetDeviceType(id, &saDeviceType);
+
+    if(saDeviceType == SA_DEVICE_SA44 || saDeviceType == SA_DEVICE_SA44B) {
+        device_type = DeviceTypeSA44;
+    } else if(saDeviceType == SA_DEVICE_SA124A || saDeviceType == SA_DEVICE_SA124B) {
+        device_type = DeviceTypeSA124;
+    }
+
+    saQueryTemperature(id, &current_temp);
+    QString diagnostics;
+    diagnostics.sprintf("%.2f C", CurrentTemp());
+    MainWindow::GetStatusBar()->SetDiagnostics(diagnostics);
+
+    open = true;
+    return true;
+}
+
 bool DeviceSA::AttachTg()
 {
     saStatus status = saAttachTg(id);
@@ -81,6 +116,12 @@ void DeviceSA::TgStoreThroughPad()
 bool DeviceSA::CloseDevice()
 {
     saCloseDevice(id);
+
+    id = -1;
+    open = false;
+    device_type = DeviceTypeSA44;
+    serial_number = 0;
+
     return true;
 }
 

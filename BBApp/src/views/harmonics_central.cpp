@@ -62,9 +62,11 @@ void HarmonicsCentral::changeMode(int newState)
 {
     StopStreaming();
 
-    session_ptr->sweep_settings->setMode(MODE_HARMONICS);
+    session_ptr->sweep_settings->setMode((OperationalMode)newState);
 
-    StartStreaming();
+    if(newState == MODE_HARMONICS) {
+        StartStreaming();
+    }
 }
 
 void HarmonicsCentral::Reconfigure(SweepSettings &ss)

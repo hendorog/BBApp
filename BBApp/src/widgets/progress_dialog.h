@@ -13,9 +13,8 @@ public:
     ProgressDialog(QWidget *parent = 0) :
         QProgressDialog("", QString(), 0, 0, parent)
     {
-        //setObjectName("SH_Page");
         setWindowTitle("Initialization");
-        setModal(false);
+        setModal(true);
     }
 
     ~ProgressDialog() {}

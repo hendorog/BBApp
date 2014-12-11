@@ -131,11 +131,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(session->device, SIGNAL(connectionIssues()), this, SLOT(forceDisconnectDevice()));
 
-    connectDevice();
+    connectDeviceUponOpen();
 }
 
 MainWindow::~MainWindow()
 {
+    // Careful here, centralStack uses session
+    // Deleting session first results in crash
     delete centralStack;
     delete session;
 }
@@ -172,7 +174,11 @@ void MainWindow::InitMenuBar()
     import_limits->addAction(tr("Import Limit-Lines"), session->trace_manager, SLOT(importLimitLines()));
     import_limits->addAction(tr("Clear Limit-Lines"), session->trace_manager, SLOT(clearLimitLines()));
     file_menu->addSeparator();
-    file_menu->addAction(tr("Connect Device"), this, SLOT(connectDevice()));
+
+    connect_menu = file_menu->addMenu("Connect");
+    connect(connect_menu, SIGNAL(aboutToShow()), this, SLOT(populateConnectMenu()));
+    connect(connect_menu, SIGNAL(triggered(QAction*)), this, SLOT(connectDevice(QAction*)));
+
     file_menu->addAction(tr("Disconnect Device"), this, SLOT(disconnectDevice()));
     connect(file_menu, SIGNAL(aboutToShow()),
             this, SLOT(aboutToShowFileMenu()));
@@ -414,13 +420,12 @@ void MainWindow::aboutToShowFileMenu()
     if(a_list.length() <= 0) return;
 
     for(QAction *a : a_list) {
-        if(a->text() == tr("Connect Device")) {
-            a->setDisabled(session->device->IsOpen());
-        }
         if(a->text() == tr("Disconnect Device")) {
             a->setDisabled(!session->device->IsOpen());
         }
     }
+
+    connect_menu->setDisabled(session->device->IsOpen());
 }
 
 void MainWindow::aboutToShowSettingsMenu()
@@ -464,12 +469,24 @@ void MainWindow::aboutToShowUtilitiesMenu()
     }
 }
 
-void MainWindow::OpenDeviceInThread()
+void MainWindow::OpenDeviceInThread(QMap<QString, QVariant> devInfoMap)
 {
     progressDialog.makeVisible("Opening Device\n"
                                "Estimated 3 seconds");
 
-    session->device->OpenDevice();
+    Device *device;
+    if(devInfoMap["Series"].toInt() == saSeries) {
+        device = new DeviceSA(&session->prefs);
+    } else {
+        device = new DeviceBB60A(&session->prefs);
+    }
+
+    device->OpenDeviceWithSerial(devInfoMap["SerialNumber"].toInt());
+    if(device->IsOpen()) {
+        Device *tempDevice = session->device;
+        session->device = device;
+        delete tempDevice;
+    }
 
     QMetaObject::invokeMethod(this, "deviceConnected",
                               Q_ARG(bool, session->device->IsOpen()));
@@ -484,10 +501,31 @@ void MainWindow::PresetDeviceInThread()
     progressDialog.makeVisible("Preset Device\n"
                                "Estimated 3 seconds");
 
+    // Stop any sweeping
+    centralStack->CurrentWidget()->changeMode(BB_IDLE);
+    centralStack->CurrentWidget()->ResetView();
+
+    //ChangeMode(OperationalMode(BB_IDLE));
+
+    session->LoadDefaults();
+    session->trace_manager->Reset();
+
+    QMap<QString, QVariant> devInfoMap;
+    DeviceType devType = session->device->GetDeviceType();
+    if(devType == DeviceTypeBB60A || devType == DeviceTypeBB60C) {
+        devInfoMap["Series"] = bbSeries;
+        if(devType == DeviceTypeBB60A) {
+            devInfoMap["SerialNumber"] = 0;
+        } else {
+            devInfoMap["SerialNumber"] = session->device->SerialNumber();
+        }
+    } else {
+        devInfoMap["Series"] = saSeries;
+        devInfoMap["SerialNumber"] = session->device->SerialNumber();
+    }
+
     // Stop all operation
     // Preset -> Close -> Wait -> Open
-    //central_widget->changeMode(BB_IDLE);
-    centralStack->CurrentWidget()->changeMode(BB_IDLE);
     session->device->Preset();
     session->device->CloseDevice();
 
@@ -497,32 +535,110 @@ void MainWindow::PresetDeviceInThread()
     progressDialog.makeDisappear();
 
     session->LoadDefaults();
-    OpenDeviceInThread();
+
+    OpenDeviceInThread(devInfoMap);
+
     return;
 }
 
-/*
- * File Menu Connect Device
- */
-void MainWindow::connectDevice()
+// Only called once upon opening the program
+// If a single device is connected open it, else
+//   report a number messages to the user.
+void MainWindow::connectDeviceUponOpen()
 {
     if(device_thread.joinable()) {
         device_thread.join();
     }
 
-    device_thread = std::thread(&MainWindow::OpenDeviceInThread, this);
+    // Look for no devices or more than one device
+    auto list = session->device->GetDeviceList();
+    if(list.size() == 0) {
+        QMessageBox::warning(this, "Signal Hound", "No Device Found.");
+        return;
+    }
+    if(list.size() > 1) {
+        QMessageBox::warning(this, "Message", "More than one device found. "
+                             "Use the File->Connect menu to select which device to open.");
+        return;
+    }
+
+    DeviceConnectionInfo item = list.at(0);
+    QMap<QString, QVariant> devInfo;
+
+    if(item.series == saSeries) {
+        devInfo["Series"] = saSeries;
+    } else {
+        devInfo["Series"] = bbSeries;
+    }
+    devInfo["SerialNumber"] = item.serialNumber;
+
+    device_thread = std::thread(&MainWindow::OpenDeviceInThread, this, devInfo);
 }
 
-/*
- * File Menu Disconnect Device
- * Can also be called from the device recieving a disconnect error
- *   during normal operation
- */
+void MainWindow::connectDevice(QAction *a)
+{
+    if(device_thread.joinable()) {
+        device_thread.join();
+    }
+
+    QMap<QString, QVariant> infoMap = a->data().toMap();
+
+    device_thread = std::thread(&MainWindow::OpenDeviceInThread, this, infoMap);
+}
+
+// Add all available devices to the connect menu
+void MainWindow::populateConnectMenu()
+{
+    // Force any connecting thread to finish before populating the list
+    // Prevent the possibility of opening a device twice
+    if(device_thread.joinable()) {
+        device_thread.join();
+    }
+
+    connect_menu->clear();
+    auto list = session->device->GetDeviceList();
+
+    if(list.empty()) {
+        QAction *a = connect_menu->addAction("No Devices Found");
+        a->setEnabled(false);
+        return;
+    }
+
+    for(auto &item : list) {
+        QString label;
+        QMap<QString, QVariant> infoMap;
+
+        if(item.series == saSeries) {
+            label += "SA44/124:  ";
+            infoMap["Series"] = saSeries;
+        } else {
+            label += "BB60C:  ";
+            infoMap["Series"] = bbSeries;
+        }
+
+        if(item.serialNumber == 0) {
+            label = "BB60A";
+            infoMap["SerialNumber"] = 0;
+        } else {
+            label += QVariant(item.serialNumber).toString();
+            infoMap["SerialNumber"] = item.serialNumber;
+        }
+
+        QAction *a = connect_menu->addAction(label);
+        a->setData(infoMap);
+    }
+}
+
+// File Menu Disconnect Device
+// Can also be called from the device recieving a disconnect error
+//   during normal operation
 void MainWindow::disconnectDevice()
 {
     // Stop any sweeping
     centralStack->CurrentWidget()->changeMode(BB_IDLE);
     centralStack->CurrentWidget()->ResetView();
+
+    ChangeMode(OperationalMode(BB_IDLE));
 
     session->LoadDefaults();
     session->trace_manager->Reset();
@@ -535,9 +651,7 @@ void MainWindow::disconnectDevice()
     status_bar->UpdateDeviceInfo("");
 }
 
-/*
- * Call disconnect AND provide user warning
- */
+// Call disconnect AND provide user warning
 void MainWindow::forceDisconnectDevice()
 {
     disconnectDevice();
@@ -545,9 +659,7 @@ void MainWindow::forceDisconnectDevice()
                          " device is connected before opening again via the File Menu");
 }
 
-/*
- * Preset Button Disconnect Device
- */
+// Preset Button Disconnect Device
 void MainWindow::presetDevice()
 {
     if(device_thread.joinable()) {
@@ -659,10 +771,8 @@ void MainWindow::loadDefaultSettings()
     centralStack->CurrentWidget()->StartStreaming();
 }
 
-/*
- * Get user input for a new name
- * Replace the text in the .ini file
- */
+// Get user input for a new name
+// Replace the text in the .ini file
 void MainWindow::RenamePreset(int p)
 {
     bool ok;
@@ -686,12 +796,10 @@ void MainWindow::RenamePreset(int p)
     }
 }
 
-/*
- * Slot for when the main preset file menu is about to
- *  be shown. All preset menu's share the same actions in
- *  which the text for those actions are updated here with the
- *  values found in the .ini file
- */
+// Slot for when the main preset file menu is about to
+//  be shown. All preset menu's share the same actions in
+//  which the text for those actions are updated here with the
+//  values found in the .ini file
 void MainWindow::loadPresetNames()
 {
     QSettings settings(QSettings::IniFormat,
@@ -844,9 +952,7 @@ void MainWindow::showPreferencesDialog()
     prefDlg.exec();
 }
 
-/*
- * String for our "About" box
- */
+// String for our "About" box
 QChar trademark_char(short(174));
 QChar copyright_char(short(169));
 const QString about_string =

@@ -11,6 +11,7 @@ public:
     virtual ~DeviceSA();
 
     virtual bool OpenDevice();
+    virtual bool OpenDeviceWithSerial(int serialToOpen);
     virtual bool CloseDevice();
     virtual bool Abort();
     virtual bool Preset();

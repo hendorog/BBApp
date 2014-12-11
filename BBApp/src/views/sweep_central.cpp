@@ -31,7 +31,6 @@ SweepCentral::SweepCentral(Session *sPtr,
 //    toolBar->addWidget(stp);
 //    connect(stp, SIGNAL(clicked()), this, SLOT(storeThroughPad()));
 
-
     trace_view = new TraceView(session_ptr, this);
     connect(this, SIGNAL(updateView()), trace_view, SLOT(update()));
 

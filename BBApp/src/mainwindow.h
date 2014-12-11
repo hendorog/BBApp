@@ -40,7 +40,7 @@ private:
 
     void RenamePreset(int p);
 
-    void OpenDeviceInThread();
+    void OpenDeviceInThread(QMap<QString, QVariant> devInfoMap);
     void PresetDeviceInThread();
 
     // The one and only session instance
@@ -48,7 +48,7 @@ private:
     Session *session;
 
     QMenuBar *main_menu;
-    QMenu *file_menu;
+    QMenu *file_menu, *connect_menu;
     QMenu *preset_menu;
     QMenu *preset_load;
     QMenu *preset_save;
@@ -77,7 +77,9 @@ private:
     bool saveLayoutOnClose;
 
 public slots:
-    void connectDevice();
+    void connectDeviceUponOpen();
+    void populateConnectMenu();
+    void connectDevice(QAction *a);
     // Call direct when user closes device
     void disconnectDevice();
     // Call when device must be forced close
@@ -85,6 +87,8 @@ public slots:
     void presetDevice();
 
 private slots:
+    void deviceConnected(bool);
+
     // Restore the default layout for control panels
     void restoreDefaultLayout();
 
@@ -92,8 +96,6 @@ private slots:
     void aboutToShowSettingsMenu();
     void aboutToShowModeMenu();
     void aboutToShowUtilitiesMenu();
-
-    void deviceConnected(bool);
 
     void printView();
     void saveAsImage();

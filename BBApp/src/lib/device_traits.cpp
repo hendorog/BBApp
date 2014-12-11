@@ -186,7 +186,7 @@ double device_traits::sample_rate()
     case DeviceTypeSA44: case DeviceTypeSA124: return 486.111e3;
     case DeviceTypeBB60A: case DeviceTypeBB60C: return 40.0e6;
     }
-    return BB_SAMPLERATE;
+    return 40.0e6;
 }
 
 bool device_traits::default_spur_reject()

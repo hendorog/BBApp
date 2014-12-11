@@ -19,6 +19,16 @@ const int TIMEBASE_EXT_DC = 2;
 
 class Preferences;
 
+enum DeviceSeries {
+    saSeries,
+    bbSeries
+};
+
+struct DeviceConnectionInfo {
+    int serialNumber;
+    DeviceSeries series;
+};
+
 class Device : public QObject {
     Q_OBJECT
 
@@ -36,7 +46,10 @@ public:
     }
     virtual ~Device() = 0;
 
+    QList<DeviceConnectionInfo> GetDeviceList() const;
+
     virtual bool OpenDevice() = 0;
+    virtual bool OpenDeviceWithSerial(int serialToOpen) = 0;
     virtual bool CloseDevice() = 0;
     virtual bool Abort() = 0;
     virtual bool Preset() = 0;

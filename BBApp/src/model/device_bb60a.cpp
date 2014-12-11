@@ -54,6 +54,33 @@ bool DeviceBB60A::OpenDevice()
     return true;
 }
 
+bool DeviceBB60A::OpenDeviceWithSerial(int serialToOpen)
+{
+    if(open) {
+        lastStatus = bbNoError;
+        return true;
+    }
+
+    STATUS_CHECK(bbOpenDeviceBySerialNumber(&id, serialToOpen));
+
+    bbGetSerialNumber(id, (unsigned int*)(&serial_number));
+    serial_string.sprintf("%d", serial_number);
+    int fv;
+    bbGetFirmwareVersion(id, &fv);
+    firmware_string.sprintf("%d", fv);
+
+    bbGetDeviceType(id, &bbDeviceType);
+
+    if(bbDeviceType == BB_DEVICE_BB60A) {
+        device_type = DeviceTypeBB60A;
+    } else if(bbDeviceType == BB_DEVICE_BB60C) {
+        device_type = DeviceTypeBB60C;
+    }
+
+    open = true;
+    return true;
+}
+
 bool DeviceBB60A::CloseDevice()
 {
     if(!open) {

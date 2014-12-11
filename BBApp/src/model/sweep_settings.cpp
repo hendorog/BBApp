@@ -5,30 +5,6 @@
 #include "lib/bb_api.h"
 #include "lib/device_traits.h"
 
-double TG_STEP_SIZES[14] = {
-    1.0e3,
-    2.0e3,
-    5.0e3,
-    1.0e4,
-    2.0e4,
-    5.0e4,
-    1.0e5,
-    2.0e5,
-    5.0e5,
-    1.0e6,
-    2.0e6,
-    5.0e6,
-    1.0e7,
-    2.0e7
-};
-
-static double get_tg_step_size(int &index) {
-    if(index < 0) index = 0;
-    if(index >= 14) index = 13;
-
-    return TG_STEP_SIZES[index];
-}
-
 SweepSettings::SweepSettings()
 {
     LoadDefaults();    
@@ -251,19 +227,26 @@ void SweepSettings::AutoBandwidthAdjust(bool force)
 
 void SweepSettings::UpdateProgram()
 {
-//    if(mode == MODE_NETWORK_ANALYZER) {
-//        int steps = Span() / get_tg_step_size(tgStepSizeIx);
-//        if(steps < 10 || steps > 500) {
-//            while((Span() / get_tg_step_size(tgStepSizeIx)) > 500
-//                  && tgStepSizeIx < 13) {
-//                tgStepSizeIx++;
-//            }
-//            while((Span() / get_tg_step_size(tgStepSizeIx)) < 100
-//                  && tgStepSizeIx > 0) {
-//                tgStepSizeIx--;
-//            }
-//        }
-//    }
+    if(mode == MODE_NETWORK_ANALYZER) {
+        // Minimum 10kHz on fast TG sweep
+        if(span > 200.0e3 && start < 10.0e3) {
+            start = 10.0e3;
+            span = stop - start;
+            center = start + (span / 2.0);
+        }
+
+        // Minimum 10Hz on slow sweep
+        if(span < 200.0e3 && start < 10.0) {
+            start = 10.0;
+            span = stop - start;
+            center = start + (span / 2.0);
+        }
+
+        // Must be active device on sweeps below 10kHz
+        if(start < 10.0e3) {
+            tgPassiveDevice = false;
+        }
+    }
 
     emit updated(this);
 }

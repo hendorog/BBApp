@@ -18,6 +18,8 @@ TGCentral::TGCentral(Session *sPtr,
             this, SLOT(settingsChanged(const SweepSettings*)));
     connect(sPtr->trace_manager, SIGNAL(updated()),
             plot, SLOT(update()));
+
+    setFocusPolicy(Qt::StrongFocus);
 }
 
 TGCentral::~TGCentral()
@@ -27,7 +29,7 @@ TGCentral::~TGCentral()
 
 void TGCentral::GetViewImage(QImage &image)
 {
-
+    image = plot->grabFrameBuffer();
 }
 
 void TGCentral::StartStreaming()
@@ -59,6 +61,14 @@ void TGCentral::resizeEvent(QResizeEvent *)
     plot->resize(width(), height());
 }
 
+void TGCentral::keyPressEvent(QKeyEvent *e)
+{
+    if(e->key() == Qt::Key_Left || e->key() == Qt::Key_Right) {
+        session_ptr->trace_manager->BumpMarker(e->key() == Qt::Key_Right);
+        plot->update();
+    }
+}
+
 void TGCentral::changeMode(int newState)
 {
     StopStreaming();
@@ -77,7 +87,7 @@ void TGCentral::singlePressed()
 
 void TGCentral::continuousPressed()
 {
-    sweepCount = 1;
+    sweepCount = -1;
 }
 
 void TGCentral::SweepThread()

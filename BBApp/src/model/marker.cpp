@@ -62,6 +62,8 @@ bool Marker::Place(Frequency f)
 {
     freq = f;
 
+
+
     if(!active) {
         active = true;
         return true;
@@ -102,6 +104,7 @@ void Marker::UpdateMarker(const Trace* trace,
     // Regular marker determined by frequency
     Frequency num = freq - trace->StartFreq() + 0.5;
     index = (int)(num / trace->BinSize());
+    freq = trace->StartFreq() + index * trace->BinSize();
     bool log_scale = s->RefLevel().IsLogScale();
 
     if(index < 0 || index >= trace->Length()) {
@@ -132,6 +135,7 @@ void Marker::UpdateMarker(const Trace* trace,
         QString unit_string = log_scale ? "dB" : "mV";
         Frequency num = deltaFreq - trace->StartFreq() + 0.5;
         deltaIndex = (int)(num / trace->BinSize());
+        deltaFreq = trace->StartFreq() + deltaIndex * trace->BinSize();
 
         if(deltaIndex < 0 || deltaIndex >= trace->Length()) {
             deltaInView = false;

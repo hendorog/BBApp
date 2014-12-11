@@ -42,8 +42,9 @@ void TGPlot::mousePressEvent(QMouseEvent *e)
         // Make point relative to upper left of graticule
         int x_pos = e->pos().x() - grat_ul.x();
 
-        if(x_pos < 0 || x_pos > grat_sz.x())
+        if(x_pos < 0 || x_pos > grat_sz.x()) {
             return;
+        }
 
         GetSession()->trace_manager->PlaceMarker((double)x_pos / grat_sz.x());
 
