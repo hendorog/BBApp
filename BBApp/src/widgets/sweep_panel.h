@@ -11,6 +11,8 @@ class Device;
 class SweepPanel : public DockPanel {
     Q_OBJECT
 
+    Device *devicePtr; // Does not own
+
 public:
     SweepPanel(const QString &title, QWidget *parent, const SweepSettings *settings,
                Device *device);
@@ -57,6 +59,10 @@ public slots:
         atten->setEnabled(enable);
         preamp->setEnabled(enable);
     }
+
+private slots:
+    void storeThrough();
+    void storeThroughPad();
 
 signals:
     void zeroSpanPressed();

@@ -25,6 +25,7 @@ private:
     // Trace Widgets
     ComboEntry *trace_select;
     ComboEntry *trace_type;
+    NumericEntry *trace_avg_count;
     ColorEntry *trace_color;
     CheckBoxEntry *trace_updating;
     DualButtonEntry *export_clear;

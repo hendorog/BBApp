@@ -21,6 +21,7 @@ MeasurePanel::MeasurePanel(const QString &title,
 
     trace_select = new ComboEntry("Trace");
     trace_type = new ComboEntry("Type");
+    trace_avg_count = new NumericEntry("Avg Count", 10, "");
     trace_color = new ColorEntry("Color");
     //trace_active = new CheckBoxEntry("Active");
     trace_updating = new CheckBoxEntry("Update");
@@ -32,12 +33,13 @@ MeasurePanel::MeasurePanel(const QString &title,
 
     // Must match TraceType enum list
     string_list << "Off" << "Clear & Write" << "Max Hold" << "Min Hold" <<
-                   "Min/Max Hold" << "Average(10)" << "Average(100)";
+                   "Min/Max Hold" << "Average";
     trace_type->setComboText(string_list);
     string_list.clear();
 
     trace_page->AddWidget(trace_select);
     trace_page->AddWidget(trace_type);
+    trace_page->AddWidget(trace_avg_count);
     trace_page->AddWidget(trace_color);
     trace_page->AddWidget(trace_updating);
     trace_page->AddWidget(export_clear);
@@ -48,6 +50,8 @@ MeasurePanel::MeasurePanel(const QString &title,
             this, SLOT(updateTraceView(int)));
     connect(trace_type, SIGNAL(comboIndexChanged(int)),
             trace_manager_ptr, SLOT(setType(int)));
+    connect(trace_avg_count, SIGNAL(valueChanged(double)),
+            trace_manager_ptr, SLOT(setAvgCount(double)));
     connect(trace_color, SIGNAL(colorChanged(QColor&)),
             trace_manager_ptr, SLOT(setColor(QColor&)));
     connect(trace_updating, SIGNAL(clicked(bool)),
@@ -170,9 +174,12 @@ void MeasurePanel::updateTraceView()
 {
     int active_ix = trace_manager_ptr->GetActiveTraceIndex();
     const Trace *t = trace_manager_ptr->GetActiveTrace();
+    TraceType type = (TraceType)t->GetType();
 
     trace_select->setComboIndex(active_ix);
-    trace_type->setComboIndex((int)t->GetType());
+    trace_type->setComboIndex(type);
+    //trace_avg_count->setEnabled(type == AVERAGE);
+    trace_avg_count->SetValue(t->GetAvgCount());
     trace_color->SetColor(t->Color());
     trace_updating->SetChecked(t->IsUpdating());
 

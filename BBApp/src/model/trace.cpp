@@ -13,6 +13,7 @@ Trace::Trace(bool active, int size)
     _active = active;
     _update = true;
     _type = OFF;
+    _averageCount = 10;
 
     _size = 0;
     _minBuf = nullptr;
@@ -96,6 +97,17 @@ void Trace::SetType(TraceType type)
     Clear();
 
     _type = type;
+}
+
+void Trace::SetAvgCount(int count)
+{
+    _averageCount = count;
+
+    if(_averageCount < 2) _averageCount = 2;
+    if(_averageCount > 1000) _averageCount = 1000;
+
+    // Clear existing trace
+    Clear();
 }
 
 // Returns negative frequency if not active to prevent
@@ -254,8 +266,10 @@ void Trace::Update(const Trace &other)
             _maxBuf[i] = bb_lib::max2(_maxBuf[i], other._maxBuf[i]);
         }
         break;
-    case AVERAGE_10:
-        std::cout << _maxBuf[_updateStart] << "\n";
+    case AVERAGE:
+        //std::cout << _maxBuf[_updateStart] << "\n";
+        float add = 1.0 / _averageCount;
+        float remove = 1.0 - add;
         if(_maxBuf[_updateStart] < -199.0) {
             for(int i = _updateStart; i < _updateStop; i++) {
                 _minBuf[i] = other._minBuf[i];
@@ -263,15 +277,9 @@ void Trace::Update(const Trace &other)
             }
         } else {
             for(int i = _updateStart; i < _updateStop; i++) {
-                _minBuf[i] = _minBuf[i]*0.9 + other._minBuf[i]*0.1;
-                _maxBuf[i] = _maxBuf[i]*0.9 + other._maxBuf[i]*0.1;
+                _minBuf[i] = _minBuf[i]*remove + other._minBuf[i]*add;
+                _maxBuf[i] = _maxBuf[i]*remove + other._maxBuf[i]*add;
             }
-        }
-        break;
-    case AVERAGE_100:
-        for(int i = _updateStart; i < _updateStop; i++) {
-            _minBuf[i] = _minBuf[i]*0.99 + other._minBuf[i]*0.01;
-            _maxBuf[i] = _maxBuf[i]*0.99 + other._maxBuf[i]*0.01;
         }
         break;
     }

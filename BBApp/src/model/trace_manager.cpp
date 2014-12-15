@@ -268,6 +268,12 @@ void TraceManager::setType(int type)
     emit updated();
 }
 
+void TraceManager::setAvgCount(double count)
+{
+    GetActiveTrace()->SetAvgCount((int)count);
+    emit updated();
+}
+
 void TraceManager::setColor(QColor &color)
 {
     GetActiveTrace()->SetColor(color);

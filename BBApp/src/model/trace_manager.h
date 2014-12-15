@@ -119,6 +119,7 @@ public slots:
     void setActive(bool);
     void setUpdate(bool);
     void setType(int);
+    void setAvgCount(double);
     void setColor(QColor &);
     void toFront();
     void clearTrace();

@@ -9,6 +9,10 @@ QLabel#SH_Label {
   color: black;
 }
 
+QLabel#SH_Label:disabled {
+  color: gray;
+}
+
 /********
  * Tool Bar
  ********/
@@ -54,38 +58,64 @@ QPushButton:hover#BBFlatButton {
 /********
  * Ordinary Push Buttons
  ********/
-QPushButton#SH_PushButton {
-  background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
-    stop: 0 rgb(234,236,249), stop: 0.1 rgb(204,206,219),
-    stop: 0.9 rgb(194,196,209), stop: 1 rgb(154,156,169));
+ QPushButton#SH_PushButton {
+   border: 1px solid rgb(133,145,162);
+   background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
+     stop: 0 rgb(244,244,244), stop: 1.0 rgb(232,232,232));
+   border-radius: 1px;
+   font-family: arial-black;
+   color: black;
+   margin: 1px;
+   font-size: 12px;
+   text-align: center;
+   font-weight: normal;
+   padding-top: 0px;
+   padding-left: 5px;
+ }
+
+QPushButton#SH_PushButton:disabled {
+  color: gray;
+}
+
+QPushButton#SH_PushButton:hover:!pressed {
+  background-color: white;
+ }
+
+QPushButton:pressed#SH_PushButton {
+  background: rgb(204,206,219);
+  border: 1px white;
   border-radius: 1px;
-  border: 2px rgb(154,156,169);
-  border-style: outset;
-  margin: 1px;
-  color: black;
+  padding-top: 1px;
+  padding-left: 7px;
+}
+
+/********
+ * Single/Continuous Push Buttons
+ ********/
+QPushButton#SH_SCButton {
+  border: 1px solid rgb(133,145,162);
+  background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
+    stop: 0 rgb(244,244,244), stop: 1.0 rgb(232,232,232));
+  border-radius: 1px;
   font-family: arial-black;
+  color: black;
+  margin: 1px;
   font-size: 12px;
-  text-align: center;
+  text-align: left;
   font-weight: normal;
+  padding-top: 0px;
   padding-left: 5px;
 }
 
-QPushButton:pressed#SH_PushButton {
-  background: qlineargradient(x1:0.5, y1:0, x2:0.5, y2:1,
-    stop: 0 rgb(234,236,249), stop: 0.1 rgb(204,206,219),
-    stop: 0.9 rgb(194,196,209), stop: 1 rgb(154,156,169));
-  border-radius: 2px;
-  border: 1px rgb(154,156,169);
-  border-style: inset;
-  margin: 1px;
-  color: black;
-  font-family: arial-black;
-  font-size: 12px;
-  text-align: center;
-  font-weight: normal;
-  padding-left: 5px;
-  margin-left: 3px;
-  margin-top: 2px;
+QPushButton#SH_SCButton:hover:!pressed {
+  background-color: white;
+}
+
+QPushButton:pressed#SH_SCButton {
+  background: rgb(204,206,219);
+  border: 0px;
+  padding-top: 2px;
+  padding-left: 6px;
 }
 
 /********

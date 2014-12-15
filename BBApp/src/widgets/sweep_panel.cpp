@@ -7,7 +7,8 @@ SweepPanel::SweepPanel(const QString &title,
                        QWidget *parent,
                        const SweepSettings *settings,
                        Device *device)
-    : DockPanel(title, parent)
+    : DockPanel(title, parent),
+      devicePtr(device)
 {
     tg_page = new DockPage("Tracking Generator");
     frequency_page = new DockPage(tr("Frequency"));
@@ -24,10 +25,8 @@ SweepPanel::SweepPanel(const QString &title,
     tgSweepType->setComboText(sweepType_sl);
 
     tgStoreThru = new DualButtonEntry("Store Thru", "Store 20dB Pad");
-    connect(tgStoreThru, SIGNAL(leftPressed()),
-            device, SLOT(TgStoreThrough()));
-    connect(tgStoreThru, SIGNAL(rightPressed()),
-            device, SLOT(TgStoreThroughPad()));
+    connect(tgStoreThru, SIGNAL(leftPressed()), this, SLOT(storeThrough()));
+    connect(tgStoreThru, SIGNAL(rightPressed()), this, SLOT(storeThroughPad()));
 
     center = new FreqShiftEntry(tr("Center"), 0.0);
     span = new FreqShiftEntry(tr("Span"), 0.0);
@@ -225,4 +224,14 @@ void SweepPanel::setMode(OperationalMode mode)
 
     bandwidth_page->SetPageEnabled(pagesEnabled);
     acquisition_page->SetPageEnabled(pagesEnabled);
+}
+
+void SweepPanel::storeThrough()
+{
+    devicePtr->TgStoreThrough();
+}
+
+void SweepPanel::storeThroughPad()
+{
+    devicePtr->TgStoreThroughPad();
 }

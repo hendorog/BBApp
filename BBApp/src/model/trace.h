@@ -13,8 +13,7 @@ enum TraceType {
     MAX_HOLD    = 2,
     MIN_HOLD    = 3,
     MIN_AND_MAX = 4,
-    AVERAGE_10  = 5,
-    AVERAGE_100 = 6
+    AVERAGE  = 5
 };
 
 // N/A for now
@@ -76,6 +75,8 @@ public:
 
     void SetType(TraceType type);
     TraceType GetType() const { return _type; }
+    void SetAvgCount(int count);
+    int GetAvgCount() const { return _averageCount; }
 
     int Length(void) const { return _size; }
 
@@ -121,6 +122,7 @@ private:
     bool _active;
     bool _update;
     TraceType _type;
+    int _averageCount;
 
     int _size;
 

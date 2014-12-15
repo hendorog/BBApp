@@ -68,6 +68,14 @@ public:
     virtual bool IsTgAttached() { return false; }
     virtual bool SetTg(Frequency freq, double amp) { return false; }
 
+    virtual void TgStoreThrough() {}
+    virtual void TgStoreThroughPad() {}
+
+    void setTimebase(int new_val) {
+        timebase_reference = new_val;
+        reconfigure_on_next = true;
+    }
+
     bool IsOpen() const { return open; }
     int Handle() const { return id; }
 
@@ -101,7 +109,7 @@ protected:
     float current_temp; // Last retrieved temp
     float voltage;
     float current;
-    //
+
     bool update_diagnostics_string;
 
     DeviceType device_type;
@@ -115,12 +123,6 @@ protected:
     bool adc_overflow;
 
 public slots:
-    void setTimebase(int new_val) {
-        timebase_reference = new_val;
-        reconfigure_on_next = true;
-    }
-    virtual void TgStoreThrough() {}
-    virtual void TgStoreThroughPad() {}
 
 signals:
     void connectionIssues();

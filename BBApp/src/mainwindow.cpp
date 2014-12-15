@@ -129,8 +129,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     ChangeMode(MODE_SWEEPING);
 
-    connect(session->device, SIGNAL(connectionIssues()), this, SLOT(forceDisconnectDevice()));
-
     connectDeviceUponOpen();
 }
 
@@ -682,6 +680,8 @@ void MainWindow::deviceConnected(bool success)
 
         device_traits::set_device_type(session->device->GetDeviceType());
         session->LoadDefaults();
+        connect(session->device, SIGNAL(connectionIssues()),
+                this, SLOT(forceDisconnectDevice()));
 
         ChangeMode(MODE_SWEEPING);
         centralStack->CurrentWidget()->changeMode(BB_SWEEPING);
