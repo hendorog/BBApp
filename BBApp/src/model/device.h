@@ -24,6 +24,13 @@ enum DeviceSeries {
     bbSeries
 };
 
+// Calibration state regarding the initial store through
+enum TgCalState {
+    tgCalStateUncalibrated,
+    tgCalStatePending,
+    tgCalStateCalibrated
+};
+
 struct DeviceConnectionInfo {
     int serialNumber;
     DeviceSeries series;
@@ -43,6 +50,7 @@ public:
         voltage = 0.0;
         current = 0.0;
         device_type = DeviceTypeBB60C;
+        tgCalState = tgCalStateUncalibrated;
     }
     virtual ~Device() = 0;
 
@@ -71,6 +79,8 @@ public:
     virtual void TgStoreThrough() {}
     virtual void TgStoreThroughPad() {}
 
+    virtual int MsPerIQCapture() const = 0;
+
     void setTimebase(int new_val) {
         timebase_reference = new_val;
         reconfigure_on_next = true;
@@ -82,9 +92,7 @@ public:
     virtual QString GetDeviceString() const = 0;
     virtual void UpdateDiagnostics() = 0;
 
-    const char* GetLastStatusString() const { return bbGetErrorString(lastStatus); }
-    bbStatus GetLastStatus() const { return lastStatus; }
-    const char* GetStatusString(bbStatus status) const { return bbGetErrorString(status); }
+    virtual const char* GetLastStatusString() const = 0;
 
     DeviceType GetDeviceType() const { return device_type; }
     int SerialNumber() const { return serial_number; }
@@ -99,11 +107,11 @@ public:
 
     int TimebaseReference() const { return timebase_reference; }
     virtual bool NeedsTempCal() const = 0;
+    TgCalState GetTgCalState() const { return tgCalState; }
 
 protected:
     bool open;
     int id;
-    bbStatus lastStatus; // Each devices enum
 
     float last_temp; // Temp of last configured state
     float current_temp; // Last retrieved temp
@@ -121,6 +129,7 @@ protected:
     bool reconfigure_on_next; // set true to reconfigure on next sweep
 
     bool adc_overflow;
+    TgCalState tgCalState;
 
 public slots:
 

@@ -103,6 +103,7 @@ void TGCentral::SweepThread()
             lastConfig = *session_ptr->sweep_settings;
             session_ptr->device->Reconfigure(session_ptr->sweep_settings, &trace);
             session_ptr->trace_manager->ClearAllTraces();
+            this->plot->SetStepSize(trace.BinSize());
             reconfigure = false;
         }
 

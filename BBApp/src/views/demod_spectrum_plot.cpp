@@ -74,7 +74,7 @@ void DemodSpectrumPlot::DrawSpectrum()
 {
     spectrum.clear();
 
-    const IQSweep &sweep = GetSession()->iq_capture;
+     IQSweep &sweep = GetSession()->iq_capture;
     const DemodSettings *ds = GetSession()->demod_settings;
     double ref, botRef;
 

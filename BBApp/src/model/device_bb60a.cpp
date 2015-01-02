@@ -405,6 +405,11 @@ void DeviceBB60A::UpdateDiagnostics()
     current = current_now;
 }
 
+const char* DeviceBB60A::GetLastStatusString() const
+{
+    return bbGetErrorString(lastStatus);
+}
+
 QString DeviceBB60A::GetDeviceString() const {
     if(bbDeviceType == BB_DEVICE_NONE) return "No Device Open";
     if(bbDeviceType == BB_DEVICE_BB60A) return "BB60A";

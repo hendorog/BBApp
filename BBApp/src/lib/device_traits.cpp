@@ -40,8 +40,10 @@ void device_traits::set_device_type(DeviceType new_type)
 double device_traits::min_span()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return 10.0;
-    case DeviceTypeBB60A: case DeviceTypeBB60C: return BB_MIN_SPAN;
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return 10.0;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return BB_MIN_SPAN;
     }
     return 100.0;
 }
@@ -49,8 +51,12 @@ double device_traits::min_span()
 double device_traits::min_frequency()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return 1.0; //SA_MIN_FREQ;
-    case DeviceTypeBB60A: case DeviceTypeBB60C: return BB60_MIN_FREQ;
+    case DeviceTypeSA44A: case DeviceTypeSA44B:
+        return SA44_MIN_FREQ;
+    case DeviceTypeSA124:
+        return SA124_MIN_FREQ;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return BB60_MIN_FREQ;
     }
     return BB60_MIN_FREQ;
 }
@@ -58,8 +64,12 @@ double device_traits::min_frequency()
 double device_traits::min_iq_frequency()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return SA_MIN_FREQ;
-    case DeviceTypeBB60A: case DeviceTypeBB60C: return 20.0e6;
+    case DeviceTypeSA44A: case DeviceTypeSA44B:
+        return SA44_MIN_FREQ;
+    case DeviceTypeSA124:
+        return SA124_MIN_FREQ;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return 20.0e6;
     }
     return 20.0e6;
 }
@@ -67,8 +77,10 @@ double device_traits::min_iq_frequency()
 double device_traits::best_start_frequency()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return 100.0e3;
-    case DeviceTypeBB60A: case DeviceTypeBB60C: return 11.0e6;
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return 100.0e3;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return 11.0e6;
     }
     return 10.0e6;
 }
@@ -76,18 +88,38 @@ double device_traits::best_start_frequency()
 double device_traits::max_frequency()
 {
     switch(type) {
-    case DeviceTypeSA44: return SA_MAX_FREQ;
-    case DeviceTypeSA124: return 12.4e9;
-    case DeviceTypeBB60A: case DeviceTypeBB60C: return 6.0e9;
+    case DeviceTypeSA44A: case DeviceTypeSA44B:
+        return SA44_MAX_FREQ;
+    case DeviceTypeSA124:
+        return SA124_MAX_FREQ;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return 6.0e9;
     }
     return 6.0e9;
+}
+
+std::pair<double, double> device_traits::full_span_frequencies()
+{
+    switch(type) {
+    case DeviceTypeSA44A: case DeviceTypeSA44B:
+        return std::make_pair(100.0e3, SA44_MAX_FREQ);
+    case DeviceTypeSA124:
+        return std::make_pair(100.0e3, 12.4e9);
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return std::make_pair(11.0e6, 6.0e9);
+    }
+    return std::make_pair(11.0e6, 6.0e9);
 }
 
 double device_traits::adjust_rbw_on_span(const SweepSettings *ss)
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124:
-        return bb_lib::sa_adjust_rbw_on_span(ss);
+    case DeviceTypeSA44A:
+        return bb_lib::sa44a_adjust_rbw_on_span(ss);
+    case DeviceTypeSA44B:
+        return bb_lib::sa44b_adjust_rbw_on_span(ss);
+    case DeviceTypeSA124:
+        return bb_lib::sa124_adjust_rbw_on_span(ss);
     case DeviceTypeBB60A: case DeviceTypeBB60C:
         return bb_lib::adjust_rbw_on_span(ss);
     }
@@ -96,7 +128,9 @@ double device_traits::adjust_rbw_on_span(const SweepSettings *ss)
 double device_traits::get_best_rbw(const SweepSettings *ss)
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124:
+    case DeviceTypeSA44A:
+        return bb_lib::sa44a_get_best_rbw(ss);
+    case DeviceTypeSA44B: case DeviceTypeSA124:
         return bb_lib::sa_get_best_rbw(ss);
     case DeviceTypeBB60A: case DeviceTypeBB60C:
         return bb_lib::get_best_rbw(ss);
@@ -106,8 +140,10 @@ double device_traits::get_best_rbw(const SweepSettings *ss)
 double device_traits::min_real_time_rbw()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return SA_MIN_RT_RBW;
-    case DeviceTypeBB60A: case DeviceTypeBB60C: return BB_MIN_RT_RBW;
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return SA_MIN_RT_RBW;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return BB_MIN_RT_RBW;
     }
     return BB_MIN_RT_RBW;
 }
@@ -115,8 +151,10 @@ double device_traits::min_real_time_rbw()
 double device_traits::max_real_time_rbw()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return SA_MAX_RT_RBW;
-    case DeviceTypeBB60A: case DeviceTypeBB60C: return BB_MAX_RT_RBW;
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return SA_MAX_RT_RBW;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return BB_MAX_RT_RBW;
     }
     return BB_MAX_RT_RBW;
 }
@@ -124,8 +162,10 @@ double device_traits::max_real_time_rbw()
 double device_traits::min_real_time_span()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return 100.0e3;
-    case DeviceTypeBB60A: case DeviceTypeBB60C: return BB_MIN_RT_SPAN;
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return 100.0e3;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return BB_MIN_RT_SPAN;
     }
     return BB_MIN_RT_SPAN;
 }
@@ -133,9 +173,12 @@ double device_traits::min_real_time_span()
 double device_traits::max_real_time_span()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return 250.0e3;
-    case DeviceTypeBB60A: return BB60A_MAX_RT_SPAN;
-    case DeviceTypeBB60C: return BB60C_MAX_RT_SPAN;
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return 250.0e3;
+    case DeviceTypeBB60A:
+        return BB60A_MAX_RT_SPAN;
+    case DeviceTypeBB60C:
+        return BB60C_MAX_RT_SPAN;
     }
     return BB_MIN_RT_SPAN;
 }
@@ -143,8 +186,10 @@ double device_traits::max_real_time_span()
 double device_traits::min_iq_bandwidth()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return 1.0e3;
-    case DeviceTypeBB60A: case DeviceTypeBB60C: return 100.0e3;
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return 1.0e3;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return 100.0e3;
     }
     return 100.0e3;
 }
@@ -154,7 +199,7 @@ double device_traits::max_iq_bandwidth(int decimation_order)
     Q_ASSERT(decimation_order >= 0 && decimation_order <= 7);
 
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124:
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
         return max_bw_table_sa[decimation_order];
     case DeviceTypeBB60A: case DeviceTypeBB60C:
         return max_bw_table_bb[decimation_order];
@@ -165,8 +210,10 @@ double device_traits::max_iq_bandwidth(int decimation_order)
 int device_traits::max_atten()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return 2;
-    case DeviceTypeBB60A: case DeviceTypeBB60C: return 3;
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return 2;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return 3;
     }
     return 3;
 }
@@ -174,8 +221,10 @@ int device_traits::max_atten()
 int device_traits::max_gain()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return 2;
-    case DeviceTypeBB60A: case DeviceTypeBB60C: return 3;
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return 2;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return 3;
     }
     return 3;
 }
@@ -183,8 +232,10 @@ int device_traits::max_gain()
 double device_traits::sample_rate()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return 486.111e3;
-    case DeviceTypeBB60A: case DeviceTypeBB60C: return 40.0e6;
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return 486.111e3;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return 40.0e6;
     }
     return 40.0e6;
 }
@@ -192,8 +243,10 @@ double device_traits::sample_rate()
 bool device_traits::default_spur_reject()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return true;
-    case DeviceTypeBB60A: case DeviceTypeBB60C: return false;
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return true;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return false;
     }
     return false;
 }
@@ -201,8 +254,10 @@ bool device_traits::default_spur_reject()
 int device_traits::mod_analysis_decimation_order()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return 0;
-    case DeviceTypeBB60A: case DeviceTypeBB60C: return 7;
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return 0;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return 7;
     }
     return 7;
 }
@@ -210,8 +265,10 @@ int device_traits::mod_analysis_decimation_order()
 int device_traits::audio_rate()
 {
     switch(type) {
-    case DeviceTypeSA44: case DeviceTypeSA124: return 30382;
-    case DeviceTypeBB60A: case DeviceTypeBB60C: return 32000;
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return 30382;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return 32000;
     }
     return 32000;
 }

@@ -111,6 +111,7 @@ private slots:
 
     void loadDefaultSettings();
     void loadPreset(QAction *a);
+    void aboutToShowPresetMenu();
     void savePreset(QAction *a) { session->SavePreset(a->data().toInt()); }
     void renamePreset(QAction *a) { RenamePreset(a->data().toInt()); }
     void loadPresetNames();

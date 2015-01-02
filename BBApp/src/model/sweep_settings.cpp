@@ -95,8 +95,9 @@ void SweepSettings::LoadDefaults()
 {
     mode = MODE_SWEEPING;
 
-    start = device_traits::best_start_frequency();
-    stop = device_traits::max_frequency();
+    std::pair<double, double> freqs = device_traits::full_span_frequencies();
+    start = freqs.first;
+    stop = freqs.second;
 
     span = (stop - start);
     center = (start + stop) / 2.0;
@@ -403,14 +404,14 @@ void SweepSettings::increaseSpan(bool inc)
 void SweepSettings::setStep(Frequency f)
 {
     step = f;
-
     UpdateProgram();
 }
 
 void SweepSettings::setFullSpan()
 {
-    start = device_traits::best_start_frequency();
-    stop = device_traits::max_frequency();
+    std::pair<double, double> freqs = device_traits::full_span_frequencies();
+    start = freqs.first;
+    stop = freqs.second;
     center = (stop + start) / 2.0;
     span = stop - start;
 
@@ -433,20 +434,12 @@ void SweepSettings::setRBW(Frequency f)
     auto_rbw = false;
     AutoBandwidthAdjust(false);
 
-//    if(vbw > rbw || auto_vbw) {
-//        vbw = rbw;
-//    }
-
     UpdateProgram();
 }
 
 void SweepSettings::setVBW(Frequency f)
 {
     vbw = f;
-
-    if(vbw > rbw) {
-        vbw = rbw;
-    }
 
     auto_vbw = false;
     AutoBandwidthAdjust(false);

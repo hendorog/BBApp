@@ -5,61 +5,62 @@
 #include "demod_sweep_plot.h"
 
 #include <QXmlStreamWriter>
+#include <iostream>
 
-CircularBuffer::CircularBuffer()
-{
+//CircularBuffer::CircularBuffer()
+//{
 
-}
+//}
 
-CircularBuffer::~CircularBuffer()
-{
+//CircularBuffer::~CircularBuffer()
+//{
 
-}
+//}
 
-void CircularBuffer::Resize(int captureSize)
-{
-    bufferLock.lock();
-    buffer.resize(captureSize * TOTAL_PACKETS);
-    packetLen = captureSize;
-    available = 0;
-    storeIx = 0;
-    retreiveIx = 0;
-    bufferLock.unlock();
-}
+//void CircularBuffer::Resize(int captureSize)
+//{
+//    bufferLock.lock();
+//    buffer.resize(captureSize * TOTAL_PACKETS);
+//    packetLen = captureSize;
+//    available = 0;
+//    storeIx = 0;
+//    retreiveIx = 0;
+//    bufferLock.unlock();
+//}
 
-void CircularBuffer::Store(std::vector<complex_f> &src)
-{
-    bufferLock.lock();
-    std::copy(src.begin(), src.end(), buffer.begin() + storeIx);
-    bufferLock.unlock();
+//void CircularBuffer::Store(std::vector<complex_f> &src)
+//{
+//    bufferLock.lock();
+//    std::copy(src.begin(), src.end(), buffer.begin() + storeIx);
+//    bufferLock.unlock();
 
-    available += packetLen;
-    packetRecieved.notify();
-    storeIx += packetLen;
-    if(storeIx >= TOTAL_PACKETS * packetLen) storeIx = 0;
-}
+//    available += packetLen;
+//    packetRecieved.notify();
+//    storeIx += packetLen;
+//    if(storeIx >= TOTAL_PACKETS * packetLen) storeIx = 0;
+//}
 
-void CircularBuffer::GetCapture(IQSweep &sweep)
-{
-    retreiveIx = storeIx;
-    available = 0;
-    auto iter = sweep.iq.begin();
+//void CircularBuffer::GetCapture(IQSweep &sweep)
+//{
+//    retreiveIx = storeIx;
+//    available = 0;
+//    auto iter = sweep.iq.begin();
 
-    int toGet = sweep.sweepLen;
-    while(toGet > 0) {
-        packetRecieved.wait();
-        size_t toCopy = std::min(toGet, packetLen);
-        toCopy = std::min(toCopy, buffer.size() - retreiveIx);
-        if(toCopy > available) continue;
-        iter = std::copy(buffer.begin() + retreiveIx,
-                         buffer.begin() + retreiveIx + toCopy,
-                         iter);
-        toGet -= toCopy;
-        available -= toCopy;
-        retreiveIx += toCopy;
-        if(retreiveIx >= buffer.size()) retreiveIx = 0;
-    }
-}
+//    int toGet = sweep.sweepLen;
+//    while(toGet > 0) {
+//        packetRecieved.wait();
+//        size_t toCopy = std::min(toGet, packetLen);
+//        toCopy = std::min(toCopy, buffer.size() - retreiveIx);
+//        if(toCopy > available) continue;
+//        iter = std::copy(buffer.begin() + retreiveIx,
+//                         buffer.begin() + retreiveIx + toCopy,
+//                         iter);
+//        toGet -= toCopy;
+//        available -= toCopy;
+//        retreiveIx += toCopy;
+//        if(retreiveIx >= buffer.size()) retreiveIx = 0;
+//    }
+//}
 
 DemodCentral::DemodCentral(Session *sPtr,
                            QToolBar *toolBar,
@@ -272,14 +273,27 @@ void DemodCentral::Reconfigure(DemodSettings *ds, IQCapture *iqc, IQSweep &iqs)
 
     iqs.iq.resize(fullLen);
     iqs.sweepLen = sweepLen;
+    iqs.preTrigger = (int)(ds->TrigPosition() * 0.01 * sweepLen);
     iqs.settings = *ds;
 
     reconfigure = false;
 }
 
-void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &iqs, Device *device)
+void DemodCentral::GetCapture(const DemodSettings *ds,
+                              IQCapture &iqc,
+                              IQSweep &iqs,
+                              Device *device)
 {
-    int retrieved = 0, toRetrieve = iqs.sweepLen;
+    // Packets to look for trigger, scale with decimation
+    // Max time to look for packets = 500 ms?
+    int forceTriggerPacketCount = 4 * (0x1 << ds->DecimationFactor());
+    forceTriggerPacketCount = qMin(forceTriggerPacketCount,
+                                   500 / device->MsPerIQCapture());
+    buffer.resize(forceTriggerPacketCount * iqc.capture.size());
+
+    int retrieved = 0;
+    int toRetrieve = iqs.sweepLen;
+    int preTrigger = iqs.preTrigger; // Samples before the trigger
     int firstIx = 0; // Start index in first capture
     bool flush = iqs.triggered; // Clear the API buffer?
     iqs.triggered = false;
@@ -289,34 +303,54 @@ void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &
         iqs.triggered = true;
     } else {
         device->GetIQFlush(&iqc, flush); // Start with flush
-        if(ds->TrigType() == TriggerTypeVideo) {
+        if(ds->TrigType() == TriggerTypeVideo || ds->TrigType() == TriggerTypeExternal) {
             double trigVal = ds->TrigAmplitude().ConvertToUnits(DBM);
             trigVal = pow(10.0, (trigVal/10.0));
             int maxTimeForTrig = 0;
-            while(maxTimeForTrig++ < 7) {
-                if(ds->TrigEdge() == TriggerEdgeRising) {
-                    firstIx = find_rising_trigger(&iqc.capture[0], trigVal, iqc.capture.size());
+            int placePos = 0;
+            int mustWait = preTrigger;
+            while(maxTimeForTrig++ < forceTriggerPacketCount) {
+                simdCopy_32fc(&iqc.capture[0], &buffer[placePos], iqc.capture.size());
+
+                if(mustWait < iqc.capture.size()) {
+                    if(ds->TrigType() == TriggerTypeVideo) {
+                        if(ds->TrigEdge() == TriggerEdgeRising) {
+                            firstIx = find_rising_trigger(&iqc.capture[mustWait],
+                                                          trigVal, iqc.capture.size() - mustWait);
+                        } else {
+                            firstIx = find_falling_trigger(&iqc.capture[mustWait],
+                                                           trigVal, iqc.capture.size() - mustWait);
+                        }
+                    } else if(ds->TrigType() == TriggerTypeExternal) {
+                        firstIx = iqc.triggers[0];
+                        if(firstIx != 0) {
+                            firstIx /= ((0x1 << ds->DecimationFactor()) * 2);
+                            if(firstIx < mustWait) firstIx = -1;
+                        } else {
+                            firstIx = -1;
+                        }
+                    }
                 } else {
-                    firstIx = find_falling_trigger(&iqc.capture[0], trigVal, iqc.capture.size());
+                    firstIx = -1;
                 }
+
                 if(firstIx >= 0) {
+                    if(ds->TrigType() == TriggerTypeVideo) {
+                        firstIx += mustWait;
+                    }
                     iqs.triggered = true;
+                    simdMove_32fc(&buffer[(placePos + firstIx) - preTrigger],
+                            &buffer[0], preTrigger);
+                    retrieved = preTrigger;
+                    toRetrieve -= retrieved;
                     break;
                 }
+
                 device->GetIQ(&iqc);
                 firstIx = 0;
-            }
-            int i = 2;
-        } else if(ds->TrigType() == TriggerTypeExternal) {
-            int maxTimeForTrig = 0;
-            while(maxTimeForTrig++ < 7) {
-                firstIx = iqc.triggers[0];
-                if(firstIx != 0) {
-                    iqs.triggered = true;
-                    firstIx /= ((0x1 << ds->DecimationFactor()) * 2);
-                    break;
-                }
-                device->GetIQ(&iqc);
+                mustWait -= iqc.capture.size();
+                if(mustWait < 0) mustWait = 0;
+                placePos += iqc.capture.size();
             }
         }
     }
@@ -326,7 +360,7 @@ void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &
     while(toRetrieve > 0) {
         int toCopy = bb_lib::min2(iqs.descriptor.returnLen,
                                   iqs.descriptor.returnLen - firstIx);
-        simdCopy_32fc(&iqc.capture[firstIx], &iqs.iq[retrieved], toCopy);
+        simdCopy_32fc(&iqc.capture[firstIx], &buffer[retrieved], toCopy);
         firstIx = 0;
         toRetrieve -= toCopy;
         retrieved += toCopy;
@@ -334,6 +368,8 @@ void DemodCentral::GetCapture(const DemodSettings *ds, IQCapture &iqc, IQSweep &
             device->GetIQ(&iqc);
         }
     }
+
+    simdCopy_32fc(&buffer[0], &iqs.iq[0], retrieved);
 
     // Store how many total samples we have access to
     iqs.dataLen = retrieved;

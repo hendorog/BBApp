@@ -88,6 +88,9 @@ void TGPlot::paintEvent(QPaintEvent *)
     glEnable(GL_DEPTH_TEST);
     glEnableClientState(GL_VERTEX_ARRAY);
 
+    SetGraticuleDimensions(QPoint(60, 50),
+                           QPoint(width() - 80, height() - 100));
+
     if(grat_sz.x() >= 600) {
         textFont = GLFont(14);
     } else if(grat_sz.x() <= 350) {
@@ -95,6 +98,12 @@ void TGPlot::paintEvent(QPaintEvent *)
     } else {
         int mod = (600 - grat_sz.x()) / 50;
         textFont = GLFont(13 - mod);
+    }
+
+    // Calculate dimensions for the presence of the title bar
+    if(!GetSession()->GetTitle().isNull()) {
+        grat_ul -= QPoint(0, 20);
+        grat_sz -= QPoint(0, 20);
     }
 
     glViewport(0, 0, width(), height());
@@ -256,6 +265,16 @@ void TGPlot::RenderText()
     if(!str.isNull()) {
         DrawString(str, GLFont(20), width() / 2, height() - 22, CENTER_ALIGNED);
     }
+
+    TgCalState tgState = GetSession()->device->GetTgCalState();
+    if(tgState == tgCalStateUncalibrated) {
+        str.sprintf("Uncalibrated");
+    } else if(tgState == tgCalStatePending) {
+        str.sprintf("Calibration on next sweep");
+    } else {
+        str.sprintf("");
+    }
+    DrawString(str, textFont, grat_ll.x() + 5, grat_ll.y() + 5, LEFT_ALIGNED);
 
     str.sprintf("%d pts in %d ms", tm->GetTrace(0)->Length(), elapsed.toInt());
     DrawString(str, textFont, grat_ll.x()+grat_sz.x()-5,

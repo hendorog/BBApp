@@ -64,25 +64,25 @@ private:
     DISALLOW_COPY_AND_ASSIGN(MdiArea)
 };
 
-class CircularBuffer {
-public:
-    CircularBuffer();
-    ~CircularBuffer();
+//class CircularBuffer {
+//public:
+//    CircularBuffer();
+//    ~CircularBuffer();
 
-    void Resize(int captureSize);
-    void Store(std::vector<complex_f> &src);
-    void GetCapture(IQSweep &sweep);
-    void GetData(complex_f *dst, int len);
+//    void Resize(int captureSize);
+//    void Store(std::vector<complex_f> &src);
+//    void GetCapture(IQSweep &sweep);
+//    void GetData(complex_f *dst, int len);
 
-private:
-    static const int TOTAL_PACKETS = 40;
-    int packetLen;
-    std::mutex bufferLock;
-    semaphore packetRecieved;
-    std::atomic<int> available;
-    std::vector<complex_f> buffer;
-    int storeIx, retreiveIx;
-};
+//private:
+//    static const int TOTAL_PACKETS = 40;
+//    int packetLen;
+//    std::mutex bufferLock;
+//    semaphore packetRecieved;
+//    std::atomic<int> available;
+//    std::vector<complex_f> buffer;
+//    int storeIx, retreiveIx;
+//};
 
 class DemodCentral : public CentralWidget {
     Q_OBJECT
@@ -123,6 +123,7 @@ private:
     std::thread threadHandle;
     bool streaming;
     bool reconfigure;
+    std::vector<complex_f> buffer;
 
     Label *currentRecordDirLabel;
     LineEntry *recordLenEntry;

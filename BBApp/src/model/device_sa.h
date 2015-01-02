@@ -2,6 +2,7 @@
 #define DEVICE_SA_H
 
 #include "device.h"
+#include "lib/sa_api.h"
 
 class Preferences;
 
@@ -26,6 +27,8 @@ public:
     virtual bool ConfigureAudio(const AudioSettings &as);
     virtual bool GetAudio(float *audio);
 
+    virtual const char* GetLastStatusString() const;
+
     virtual QString GetDeviceString() const;
     virtual void UpdateDiagnostics();
 
@@ -37,12 +40,14 @@ public:
     virtual bool IsTgAttached();
     virtual bool SetTg(Frequency freq, double amp);
 
-private:
-    int saDeviceType;
-
-public slots:
     virtual void TgStoreThrough();
     virtual void TgStoreThroughPad();
+
+    virtual int MsPerIQCapture() const { return 34; }
+
+private:
+    saDeviceType deviceType;
+    saStatus lastStatus;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DeviceSA)

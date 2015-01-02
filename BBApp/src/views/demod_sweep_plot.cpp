@@ -162,6 +162,20 @@ void DemodSweepPlot::DemodAndDraw()
     qglColor(QColor(255, 0, 0));
     DrawTrace(trace);
 
+    if(GetSession()->demod_settings->TrigType() != TriggerTypeNone) {
+        // Draw trigger position line, vertical line
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0.0, sweep.sweepLen-1, 0.0, 1.0, -1.0, 1.0);
+        glColor4f(0.5, 0.5, 0.5, 0.5);
+        glLineWidth(2.0);
+        glBegin(GL_LINE_STRIP);
+        //int xPos = (double)sweep.preTrigger / sweep.sweepLen * grat_sz.x();
+        glVertex2f(sweep.preTrigger, 0);
+        glVertex2f(sweep.preTrigger, 1.0);
+        glEnd();
+    }
+
     // Disable nice lines
     glLineWidth(1.0);
     glDisable(GL_BLEND);
@@ -347,7 +361,8 @@ void DemodSweepPlot::DrawMarkers()
     glLineWidth(1.0);
 
     glDisable(GL_DEPTH_TEST);
-    DrawMarker(markerPos.x() * grat_sz.x(), markerPos.y() * grat_sz.y(), 1);
+    DrawMarker(markerPos.x() * grat_sz.x(), markerPos.y() * grat_sz.y(), 1);    
+
     if(deltaOn) {
         DrawDeltaMarker(deltaPos.x() * grat_sz.x(), deltaPos.y() * grat_sz.y(), 1);
         double diff = markerVal - deltaVal;

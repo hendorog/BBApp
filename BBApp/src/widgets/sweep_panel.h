@@ -7,15 +7,17 @@
 
 class SweepSettings;
 class Device;
+class Session;
 
 class SweepPanel : public DockPanel {
     Q_OBJECT
 
-    Device *devicePtr; // Does not own
+    Session *sessionPtr; // Does not own
 
 public:
-    SweepPanel(const QString &title, QWidget *parent, const SweepSettings *settings,
-               Device *device);
+    SweepPanel(const QString &title,
+               QWidget *parent,
+               Session *session);
     ~SweepPanel();
 
 private:

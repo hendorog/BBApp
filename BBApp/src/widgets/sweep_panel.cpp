@@ -1,15 +1,17 @@
 #include "sweep_panel.h"
 
-#include "model/sweep_settings.h"
-#include "model/device.h"
+#include "model/session.h"
+//#include "model/sweep_settings.h"
+//#include "model/device.h"
 
 SweepPanel::SweepPanel(const QString &title,
                        QWidget *parent,
-                       const SweepSettings *settings,
-                       Device *device)
+                       Session *session)
     : DockPanel(title, parent),
-      devicePtr(device)
+      sessionPtr(session)
 {
+    const SweepSettings *settings = session->sweep_settings;
+
     tg_page = new DockPage("Tracking Generator");
     frequency_page = new DockPage(tr("Frequency"));
     amplitude_page = new DockPage(tr("Amplitude"));
@@ -228,10 +230,10 @@ void SweepPanel::setMode(OperationalMode mode)
 
 void SweepPanel::storeThrough()
 {
-    devicePtr->TgStoreThrough();
+    sessionPtr->device->TgStoreThrough();
 }
 
 void SweepPanel::storeThroughPad()
 {
-    devicePtr->TgStoreThroughPad();
+    sessionPtr->device->TgStoreThroughPad();
 }

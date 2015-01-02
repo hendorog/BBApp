@@ -113,7 +113,7 @@ struct IQDescriptor {
     double bandwidth;
 };
 
-// Represents a single IQ capture
+// Represents a single IQ capture from the device
 struct IQCapture {
     IQCapture() {
         simdZero_32s(triggers, 70);
@@ -152,6 +152,7 @@ typedef struct IQSweep {
     int sweepLen;                  // The requested length of the sweep
     int dataLen;                   // Number of actual samples in buffer
                                    // May be longer than sweepLen
+    int preTrigger;
     std::vector<float> amWaveform; // (i*i + q*q)
     std::vector<float> fmWaveform; // Frequency over time
     std::vector<float> pmWaveform; // Phase over time

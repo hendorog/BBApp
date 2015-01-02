@@ -1,6 +1,5 @@
 #include "device_sa.h"
 #include "mainwindow.h"
-#include "lib/sa_api.h"
 
 #include <QElapsedTimer>
 
@@ -10,6 +9,7 @@ DeviceSA::DeviceSA(const Preferences *preferences) :
     id = -1;
     open = false;
     serial_number = 0;
+    deviceType = saDeviceTypeNone;
 }
 
 DeviceSA::~DeviceSA()
@@ -23,8 +23,8 @@ bool DeviceSA::OpenDevice()
         return true;
     }
 
-    saStatus status = saOpenDevice(&id);
-    if(status != saNoError) {
+    lastStatus = saOpenDevice(&id);
+    if(lastStatus != saNoError) {
         return false;
     }
 
@@ -35,11 +35,13 @@ bool DeviceSA::OpenDevice()
     saGetFirmwareString(id, fs);
     firmware_string = fs;
 
-    saGetDeviceType(id, &saDeviceType);
+    saGetDeviceType(id, &deviceType);
 
-    if(saDeviceType == SA_DEVICE_SA44 || saDeviceType == SA_DEVICE_SA44B) {
-        device_type = DeviceTypeSA44;
-    } else if(saDeviceType == SA_DEVICE_SA124A || saDeviceType == SA_DEVICE_SA124B) {
+    if(deviceType == saDeviceTypeSA44) {
+        device_type = DeviceTypeSA44A;
+    } else if(deviceType == saDeviceTypeSA44B) {
+        device_type = DeviceTypeSA44B;
+    } else if(deviceType == saDeviceTypeSA124A || deviceType == saDeviceTypeSA124B) {
         device_type = DeviceTypeSA124;
     }
 
@@ -58,8 +60,8 @@ bool DeviceSA::OpenDeviceWithSerial(int serialToOpen)
         return true;
     }
 
-    saStatus status = saOpenDeviceBySerialNumber(&id, serialToOpen);
-    if(status != saNoError) {
+    lastStatus = saOpenDeviceBySerialNumber(&id, serialToOpen);
+    if(lastStatus != saNoError) {
         return false;
     }
 
@@ -70,11 +72,13 @@ bool DeviceSA::OpenDeviceWithSerial(int serialToOpen)
     saGetFirmwareString(id, fs);
     firmware_string = fs;
 
-    saGetDeviceType(id, &saDeviceType);
+    saGetDeviceType(id, &deviceType);
 
-    if(saDeviceType == SA_DEVICE_SA44 || saDeviceType == SA_DEVICE_SA44B) {
-        device_type = DeviceTypeSA44;
-    } else if(saDeviceType == SA_DEVICE_SA124A || saDeviceType == SA_DEVICE_SA124B) {
+    if(deviceType == saDeviceTypeSA44) {
+        device_type = DeviceTypeSA44A;
+    } else if(deviceType == saDeviceTypeSA44B) {
+        device_type = DeviceTypeSA44B;
+    } else if(deviceType == saDeviceTypeSA124A || deviceType == saDeviceTypeSA124B) {
         device_type = DeviceTypeSA124;
     }
 
@@ -103,23 +107,13 @@ bool DeviceSA::IsTgAttached()
     return false;
 }
 
-void DeviceSA::TgStoreThrough()
-{
-    saStoreTgThru(id, TG_THRU_0DB);
-}
-
-void DeviceSA::TgStoreThroughPad()
-{
-    saStoreTgThru(id, TG_THRU_20DB);
-}
-
 bool DeviceSA::CloseDevice()
 {
     saCloseDevice(id);
 
     id = -1;
     open = false;
-    device_type = DeviceTypeSA44;
+    device_type = DeviceTypeSA44B;
     serial_number = 0;
 
     return true;
@@ -143,6 +137,17 @@ bool DeviceSA::Preset()
 
 bool DeviceSA::Reconfigure(const SweepSettings *s, Trace *t)
 {   
+    Abort();
+    tgCalState = tgCalStateUncalibrated;
+
+    // Update temperature between configurations
+    saQueryTemperature(id, &current_temp);
+    QString diagnostics;
+    if(deviceType != saDeviceTypeSA44) {
+        diagnostics.sprintf("%.2f C", CurrentTemp());
+    }
+    MainWindow::GetStatusBar()->SetDiagnostics(diagnostics);
+
     int atten = (s->Atten() == 0) ? SA_AUTO_ATTEN : s->Atten() - 1;
     int gain = (s->Gain() == 0) ? SA_AUTO_GAIN : s->Gain() - 1;
     int preamp = (s->Preamp() == 0) ? SA_PREAMP_AUTO : s->Preamp() - 1;
@@ -196,6 +201,12 @@ bool DeviceSA::GetSweep(const SweepSettings *s, Trace *t)
     status = saFetchPartialData(id, t->Min(), t->Max(), &startIx, &stopIx);
 
     t->SetUpdateRange(startIx, stopIx);
+
+    if(s->Mode() == MODE_NETWORK_ANALYZER && tgCalState == tgCalStatePending) {
+        if(stopIx >= t->Length()) {
+            tgCalState = tgCalStateCalibrated;
+        }
+    }
 
     adc_overflow = (status == saCompressionWarning);
 
@@ -301,12 +312,17 @@ bool DeviceSA::GetAudio(float *audio)
     return true;
 }
 
+const char* DeviceSA::GetLastStatusString() const
+{
+    return saGetErrorString(lastStatus);
+}
+
 QString DeviceSA::GetDeviceString() const
 {
-    if(saDeviceType == SA_DEVICE_SA44) return "SA44";
-    if(saDeviceType == SA_DEVICE_SA44B) return "SA44B";
-    if(saDeviceType == SA_DEVICE_SA124A) return "SA124A";
-    if(saDeviceType == SA_DEVICE_SA124B) return "SA124B";
+    if(deviceType == saDeviceTypeSA44) return "SA44";
+    if(deviceType == saDeviceTypeSA44B) return "SA44B";
+    if(deviceType == saDeviceTypeSA124A) return "SA124A";
+    if(deviceType == saDeviceTypeSA124B) return "SA124B";
 
     return "No Device Open";
 }
@@ -334,4 +350,15 @@ bool DeviceSA::SetTg(Frequency freq, double amp)
     }
 
     return true;
+}
+
+void DeviceSA::TgStoreThrough()
+{
+    saStoreTgThru(id, TG_THRU_0DB);
+    tgCalState = tgCalStatePending;
+}
+
+void DeviceSA::TgStoreThroughPad()
+{
+    saStoreTgThru(id, TG_THRU_20DB);
 }

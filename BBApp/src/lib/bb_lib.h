@@ -257,6 +257,11 @@ inline void simdMove_32f(const float *src, float *dst, int len)
     memmove(dst, src, len * sizeof(float));
 }
 
+inline void simdMove_32fc(const complex_f *src, complex_f *dst, int len)
+{
+    memmove(dst, src, len * sizeof(complex_f));
+}
+
 inline void simdZero_32s(int *srcDst, int len)
 {
     memset(srcDst, 0, len * sizeof(int));
@@ -472,13 +477,16 @@ inline int get_flattop_bandwidth(double rbw) {
 
 // Adjust rbw to prevent small(<1) and large(>1.2m) sweep sizes
 // Return true if adjustment made
-double adjust_rbw_on_span(const SweepSettings *ss);
-double sa_adjust_rbw_on_span(const SweepSettings *ss);
+double adjust_rbw_on_span(const SweepSettings *ss); // BB60A/C
+double sa44a_adjust_rbw_on_span(const SweepSettings *ss);
+double sa44b_adjust_rbw_on_span(const SweepSettings *ss);
+double sa124_adjust_rbw_on_span(const SweepSettings *ss);
 
 // Retrieve the 'best' possible rbw based on span
 // 'best' is determined by the auto_bw_lut[]
 double get_best_rbw(const SweepSettings *ss);
 double sa_get_best_rbw(const SweepSettings *ss);
+double sa44a_get_best_rbw(const SweepSettings *ss);
 
 QString get_my_documents_path();
 

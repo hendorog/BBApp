@@ -1,4 +1,5 @@
 #include "session.h"
+#include <QMessageBox>
 
 QString Session::title;
 
@@ -51,19 +52,30 @@ void Session::LoadPreset(int p)
                        "SignalHound",
                        fileName);
 
+    // Ensure the current device matches the device used to save the preset
+    DeviceType deviceNeeded = (DeviceType)settings.value("DeviceType", DeviceTypeBB60C).toInt();
+    if(deviceNeeded != device->GetDeviceType()) {
+        QMessageBox::warning(0, "Unable to Open Preset",
+                             "The device currently open does not "
+                             "match the device used to save the preset.");
+        return;
+    }
+
     sweep_settings->Load(settings);
     audio_settings->Load(settings);
     demod_settings->Load(settings);
 }
 
 void Session::SavePreset(int p)
-{
+{  
     QString fileName;
     fileName.sprintf("Preset%d", p);
     QSettings settings(QSettings::IniFormat,
                        QSettings::UserScope,
                        "SignalHound",
                        fileName);
+
+    settings.setValue("DeviceType", (int)device->GetDeviceType());
 
     sweep_settings->Save(settings);
     audio_settings->Save(settings);

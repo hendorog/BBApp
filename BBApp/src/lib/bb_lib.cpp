@@ -460,10 +460,19 @@ double bb_lib::adjust_rbw_on_span(const SweepSettings *ss)
     return rbw;
 }
 
-double bb_lib::sa_adjust_rbw_on_span(const SweepSettings *ss)
+double bb_lib::sa44a_adjust_rbw_on_span(const SweepSettings *ss)
 {
     double rbw = ss->RBW();
 
+    // Limit points in sweep
+    while((ss->Span() / rbw) > 50000) {
+        rbw = sequence_bw(rbw, false, true);
+    }
+    while((ss->Span() / rbw) < 1.0) {
+        rbw = sequence_bw(rbw, false, false);
+    }
+
+    // Do some clamping at the upper end
     if(rbw > 100.0e3) {
         if(rbw > 150.0e3) {
             rbw = 250.0e3;
@@ -472,26 +481,104 @@ double bb_lib::sa_adjust_rbw_on_span(const SweepSettings *ss)
         }
     }
 
-    while((ss->Span() / rbw) > 50000) {
-        rbw = sequence_bw(rbw, false, true);
-    }
-
-    while((ss->Span() / rbw) < 1.0) {
-        rbw = sequence_bw(rbw, false, false);
-    }
-
-    if(ss->Span() > 98.0e6 && rbw < 6.5e3) {
+    // Min RBW limitation for SA44A
+    if(ss->Span() > 200.0e3 && rbw < 6.5e3) {
         rbw = 6.5e3;
     }
 
+    // RBW limitation at low freq
     if(ss->Start() < 16.0e6 && ss->Span() > 200.0e3) {
         if(rbw < 6.5e3) {
             rbw = 6.5e3;
         }
     }
 
-    if(rbw < 1.0) {
-        rbw = 1.0;
+    if(rbw < 0.1) {
+        rbw = 0.1;
+    }
+
+    return rbw;
+}
+
+double bb_lib::sa44b_adjust_rbw_on_span(const SweepSettings *ss)
+{
+    double rbw = ss->RBW();
+
+    // Limit points in sweep
+    while((ss->Span() / rbw) > 50000) {
+        rbw = sequence_bw(rbw, false, true);
+    }
+    while((ss->Span() / rbw) < 1.0) {
+        rbw = sequence_bw(rbw, false, false);
+    }
+
+    // Do some clamping at the upper end
+    if(rbw > 100.0e3) {
+        if(rbw > 150.0e3) {
+            rbw = 250.0e3;
+        } else {
+            rbw = 100.0e3;
+        }
+    }
+
+    // RBW limitation at 100MHz
+    if(ss->Span() > 98.0e6 && rbw < 6.5e3) {
+        rbw = 6.5e3;
+    }
+
+    // RBW limitation at low freq
+    if(ss->Start() < 16.0e6 && ss->Span() > 200.0e3) {
+        if(rbw < 6.5e3) {
+            rbw = 6.5e3;
+        }
+    }
+
+    if(rbw < 0.1) {
+        rbw = 0.1;
+    }
+
+    return rbw;
+}
+
+double bb_lib::sa124_adjust_rbw_on_span(const SweepSettings *ss)
+{
+    double rbw = ss->RBW();
+
+    // Limit points in sweep
+    while((ss->Span() / rbw) > 50000) {
+        rbw = sequence_bw(rbw, false, true);
+    }
+    while((ss->Span() / rbw) < 1.0) {
+        rbw = sequence_bw(rbw, false, false);
+    }
+
+    // Do some clamping at the upper end
+    if(rbw > 100.0e3) {
+        if(rbw > 150.0e3) {
+            if(rbw > 275.0e3) {
+                rbw = 6.0e6;
+            } else {
+                rbw = 250.0e3;
+            }
+        } else {
+            rbw = 100.0e3;
+        }
+    }
+
+    // RBW limitation above 100MHz span
+    if(ss->Span() > 98.0e6 && rbw < 6.5e3) {
+        rbw = 6.5e3;
+    }
+
+    // Low freq RBW limitation
+    if(ss->Start() < 16.0e6 && ss->Span() > 200.0e3) {
+        if(rbw < 6.5e3) {
+            rbw = 6.5e3;
+        }
+    }
+
+    if(rbw < 0.1) {
+        rbw = 0.1;
     }
 
     return rbw;
@@ -542,6 +629,34 @@ double bb_lib::sa_get_best_rbw(const SweepSettings *ss)
     return rbw;
 }
 
+double bb_lib::sa44a_get_best_rbw(const SweepSettings *ss)
+{
+    int best_ix = 0;
+    double best_diff = fabs(ss->Span() - sa_auto_bw_lut[0].span);
+
+    for(int i = 1; i < sa_auto_bw_lut_sz; i++) {
+        double d = fabs(ss->Span() - sa_auto_bw_lut[i].span);
+        if(d < best_diff) {
+            best_diff = d;
+            best_ix = i;
+        }
+    }
+
+    double rbw = sa_auto_bw_lut[best_ix].rbw;
+
+    if(ss->Span() > 200.0e3 && rbw < 6.5e3) {
+        rbw = 6.5e3;
+    }
+
+    if(ss->Start() < 16.0e6 && ss->Span() > 200.0e3) {
+        if(rbw < 6.5e3) {
+            return 6.5e3;
+        }
+    }
+
+    return rbw;
+}
+
 // Get Users MyDocuments path, append application directory
 QString bb_lib::get_my_documents_path()
 {
@@ -574,7 +689,7 @@ char* bb_lib::get_gl_shader_source(const char *file_name)
 
 QString bb_lib::getUserDirectory(const QString &path)
 {
-    return QFileDialog::getExistingDirectory(0, "FFF", path);
+    return QFileDialog::getExistingDirectory(0, "Select Record Directory", path);
 }
 
 void normalize_trace(const Trace *t, GLVector &v, QPoint grat_size)

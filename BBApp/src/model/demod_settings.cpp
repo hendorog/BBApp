@@ -66,7 +66,6 @@ void DemodSettings::LoadDefaults()
     gain = 0; // Index, 0 == auto
     atten = 0; // Index, 0 == auto
     decimationFactor = 6;
-    //bandwidth = iq_auto_bandwidth_lut[decimationFactor].bandwidth;
     bandwidth = device_traits::max_iq_bandwidth(decimationFactor);
     autoBandwidth = true;
     sweepTime = 1.0e-3;

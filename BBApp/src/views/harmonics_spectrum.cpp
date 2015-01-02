@@ -66,6 +66,9 @@ void HarmonicsSpectrumPlot::paintEvent(QPaintEvent *)
     glEnable(GL_DEPTH_TEST);
     glEnableClientState(GL_VERTEX_ARRAY);
 
+    SetGraticuleDimensions(QPoint(60, 50),
+                           QPoint(width() - 80, height() - 100));
+
     if(grat_sz.x() >= 600) {
         textFont = GLFont(14);
     } else if(grat_sz.x() <= 350) {
@@ -73,6 +76,12 @@ void HarmonicsSpectrumPlot::paintEvent(QPaintEvent *)
     } else {
         int mod = (600 - grat_sz.x()) / 50;
         textFont = GLFont(13 - mod);
+    }
+
+    // Calculate dimensions for the presence of the title bar
+    if(!GetSession()->GetTitle().isNull()) {
+        grat_ul -= QPoint(0, 20);
+        grat_sz -= QPoint(0, 20);
     }
 
     glViewport(0, 0, width(), height());
@@ -193,6 +202,11 @@ void HarmonicsSpectrumPlot::DrawGratText()
     int textHeight = textFont.GetTextHeight();
 
     double div = s->RefLevel().IsLogScale() ? s->Div() : (s->RefLevel().Val() / 10.0);
+
+    str = GetSession()->GetTitle();
+    if(!str.isNull()) {
+        DrawString(str, GLFont(20), width() / 2, height() - 22, CENTER_ALIGNED);
+    }
 
     DrawString("Center " + s->Center().GetFreqString(), textFont,
                grat_ll.x() + grat_sz.x()/10, grat_ll.y() - textHeight, CENTER_ALIGNED);

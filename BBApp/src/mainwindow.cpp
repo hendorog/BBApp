@@ -36,8 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
     setTabPosition(Qt::RightDockWidgetArea, QTabWidget::East);
     setTabPosition(Qt::LeftDockWidgetArea, QTabWidget::West);
 
-    sweep_panel = new SweepPanel(tr("Sweep Settings"), this,
-                                 session->sweep_settings, session->device);
+    sweep_panel = new SweepPanel(tr("Sweep Settings"), this, session);
     sweep_panel->setObjectName("SweepSettingsPanel");
     connect(sweep_panel, SIGNAL(zeroSpanPressed()), this, SLOT(zeroSpanPressed()));
 
@@ -228,14 +227,11 @@ void MainWindow::InitMenuBar()
         load_action->setShortcut(QKeySequence("Ctrl+" + numeric));
     }
 
-    connect(preset_load, SIGNAL(triggered(QAction*)),
-            this, SLOT(loadPreset(QAction*)));
-    connect(preset_save, SIGNAL(triggered(QAction*)),
-            this, SLOT(savePreset(QAction*)));
-    connect(preset_name, SIGNAL(triggered(QAction*)),
-            this, SLOT(renamePreset(QAction*)));
-    connect(preset_menu, SIGNAL(aboutToShow()),
-            this, SLOT(loadPresetNames()));
+    connect(preset_menu, SIGNAL(aboutToShow()), this, SLOT(aboutToShowPresetMenu()));
+    connect(preset_load, SIGNAL(triggered(QAction*)), this, SLOT(loadPreset(QAction*)));
+    connect(preset_save, SIGNAL(triggered(QAction*)), this, SLOT(savePreset(QAction*)));
+    connect(preset_name, SIGNAL(triggered(QAction*)), this, SLOT(renamePreset(QAction*)));
+    connect(preset_menu, SIGNAL(aboutToShow()), this, SLOT(loadPresetNames()));
 
     settings_menu = main_menu->addMenu(tr("Settings"));
 
@@ -479,12 +475,17 @@ void MainWindow::OpenDeviceInThread(QMap<QString, QVariant> devInfoMap)
         device = new DeviceBB60A(&session->prefs);
     }
 
+    // Replace the old device with the new one
+    Device *tempDevice = session->device;
+    session->device = device;
+    delete tempDevice;
+
     device->OpenDeviceWithSerial(devInfoMap["SerialNumber"].toInt());
-    if(device->IsOpen()) {
-        Device *tempDevice = session->device;
-        session->device = device;
-        delete tempDevice;
-    }
+//    if(device->IsOpen()) {
+//        Device *tempDevice = session->device;
+//        session->device = device;
+//        delete tempDevice;
+//    }
 
     QMetaObject::invokeMethod(this, "deviceConnected",
                               Q_ARG(bool, session->device->IsOpen()));
@@ -687,8 +688,9 @@ void MainWindow::deviceConnected(bool success)
         centralStack->CurrentWidget()->changeMode(BB_SWEEPING);
     } else {
         QMessageBox::information(this, tr("Connection Status"),
-                                 tr("No device found. Use the file menu to"
-                                    " open a device once connected."));
+                                 session->device->GetLastStatusString());
+//                                 tr("No device found. Use the file menu to"
+//                                    " open a device once connected."));
         status_bar->SetDeviceType("No Device Connected");
     }
 
@@ -839,6 +841,12 @@ void MainWindow::loadPreset(QAction *a)
     ChangeMode((OperationalMode)newMode);
 
     centralStack->CurrentWidget()->changeMode(newMode);
+}
+
+void MainWindow::aboutToShowPresetMenu()
+{
+    preset_load->setEnabled(session->device->IsOpen());
+    preset_save->setEnabled(session->device->IsOpen());
 }
 
 void MainWindow::modeChanged(QAction *a)

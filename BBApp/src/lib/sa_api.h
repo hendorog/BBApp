@@ -9,15 +9,19 @@
 
 #define SA_MAX_DEVICES 8
 
-#define SA_DEVICE_NONE (0x0);
-#define SA_DEVICE_SA44 (0x1)
-#define SA_DEVICE_SA44B (0x2)
-#define SA_DEVICE_SA124A (0x3)
-#define SA_DEVICE_SA124B (0x4)
+enum saDeviceType {
+    saDeviceTypeNone = 0,
+    saDeviceTypeSA44 = 1,
+    saDeviceTypeSA44B = 2,
+    saDeviceTypeSA124A = 3,
+    saDeviceTypeSA124B = 4
+};
 
 // Limits
-#define SA_MIN_FREQ (0.01)
-#define SA_MAX_FREQ (4.4e9)
+#define SA44_MIN_FREQ (1.0)
+#define SA124_MIN_FREQ (100.0e3)
+#define SA44_MAX_FREQ (4.4e9)
+#define SA124_MAX_FREQ (13.0e9)
 #define SA_MIN_SPAN (100.0)
 #define SA_MAX_REF (20) // dBm
 #define SA_MAX_ATTEN (3)
@@ -90,12 +94,15 @@ enum saStatus {
     saBandwidthErr = -91,
     saRealTimeBandwidthErr = -90,
 
+    // Device-specific errors
+    saOvenColdErr = -20,
+
     // Data errors
-    saInternetErr = -11,
-    saUSBCommErr = -10,
+    saInternetErr = -12,
+    saUSBCommErr = -11,
 
     // General configuration errors
-    saTrackingGeneratorNotFound = 10,
+    saTrackingGeneratorNotFound = -10,
     saDeviceNotIdleErr = -9,
     saDeviceNotFoundErr = -8,
     saInvalidModeErr = -7,
@@ -127,7 +134,7 @@ SA_API saStatus saPreset(int device);
 
 SA_API saStatus saGetSerialNumber(int device, int *serial);
 SA_API saStatus saGetFirmwareString(int device, char firmwareString[16]);
-SA_API saStatus saGetDeviceType(int device, int *device_type);
+SA_API saStatus saGetDeviceType(int device, saDeviceType *device_type);
 SA_API saStatus saConfigAcquisition(int device, int detector, int scale, int sweepTime);
 SA_API saStatus saConfigCenterSpan(int device, double center, double span);
 SA_API saStatus saConfigLevel(int device, double ref);
@@ -157,7 +164,6 @@ SA_API saStatus saQueryDiagnostics(int device, float *voltage, float *current);
 
 SA_API saStatus saAttachTg(int device);
 SA_API saStatus saIsTgAttached(int device, bool *attached);
-//SA_API saStatus saConfigTG(int device, tgStepSize stepSize, bool isPassiveDUT);
 SA_API saStatus saConfigTgSweep(int device, int sweepSize, bool highDynamicRange, bool passiveDevice);
 SA_API saStatus saStoreTgThru(int device, int flags);
 SA_API saStatus saSetTg(int device, double frequency, double amplitude);
