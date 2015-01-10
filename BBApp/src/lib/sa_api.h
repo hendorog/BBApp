@@ -22,12 +22,12 @@ enum saDeviceType {
 #define SA124_MIN_FREQ (100.0e3)
 #define SA44_MAX_FREQ (4.4e9)
 #define SA124_MAX_FREQ (13.0e9)
-#define SA_MIN_SPAN (100.0)
+#define SA_MIN_SPAN (1.0)
 #define SA_MAX_REF (20) // dBm
 #define SA_MAX_ATTEN (3)
 #define SA_MAX_GAIN (2)
 #define SA_MIN_RBW (0.1)
-#define SA_MAX_RBW (5.0e6)
+#define SA_MAX_RBW (6.0e6)
 #define SA_MIN_RT_RBW (100.0)
 #define SA_MAX_RT_RBW (10000.0)
 #define SA_MAX_SWEEP_TIME (30000) // ms
@@ -90,7 +90,6 @@ enum saStatus {
     saInvalidDetectorErr = -95,
     saInvalidScaleErr = -94,
     saInvalidProcUnitsErr = -93,
-    saSweepTimeTooLargeErr = -92,
     saBandwidthErr = -91,
     saRealTimeBandwidthErr = -90,
 
@@ -135,7 +134,7 @@ SA_API saStatus saPreset(int device);
 SA_API saStatus saGetSerialNumber(int device, int *serial);
 SA_API saStatus saGetFirmwareString(int device, char firmwareString[16]);
 SA_API saStatus saGetDeviceType(int device, saDeviceType *device_type);
-SA_API saStatus saConfigAcquisition(int device, int detector, int scale, int sweepTime);
+SA_API saStatus saConfigAcquisition(int device, int detector, int scale);
 SA_API saStatus saConfigCenterSpan(int device, double center, double span);
 SA_API saStatus saConfigLevel(int device, double ref);
 SA_API saStatus saConfigGainAtten(int device, int atten, int gain, bool preAmp);
@@ -149,14 +148,14 @@ SA_API saStatus saConfigAudio(int device, int audioType, double centerFreq,
 SA_API saStatus saInitiate(int device, int mode, int flag);
 SA_API saStatus saAbort(int device);
 
-SA_API saStatus saQuerySweepTime(int device, int *time);
-SA_API saStatus saQueryTraceInfo(int device, int *traceLength, double *startFreq, double *binSize);
+//SA_API saStatus saQuerySweepTime(int device, int *time); // Needed anymore?
+SA_API saStatus saQuerySweepInfo(int device, int *sweepLength, double *startFreq, double *binSize);
 SA_API saStatus saQueryStreamInfo(int device, int *returnLen, double *bandwidth, double *samplesPerSecond);
-SA_API saStatus saFetchData(int device, float *a, float *b);
-SA_API saStatus saFetchData_64f(int device, double *a, double *b);
-SA_API saStatus saFetchPartialData(int device, float *a, float *b, int *start, int *stop);
-SA_API saStatus saFetchPartialData_64f(int device, double *a, double *b, int *start, int *stop);
-SA_API saStatus saGetIQ(int device, float *iq);
+SA_API saStatus saGetSweep_32f(int device, float *min, float *max);
+SA_API saStatus saGetSweep_64f(int device, double *min, double *max);
+SA_API saStatus saGetPartialSweep_32f(int device, float *min, float *max, int *start, int *stop);
+SA_API saStatus saGetPartialSweep_64f(int device, double *min, double *max, int *start, int *stop);
+SA_API saStatus saGetIQ_32f(int device, float *iq);
 SA_API saStatus saGetIQ_64f(int device, double *iq);
 SA_API saStatus saGetAudio(int device, float *audio);
 SA_API saStatus saQueryTemperature(int device, float *temp);
@@ -168,6 +167,7 @@ SA_API saStatus saConfigTgSweep(int device, int sweepSize, bool highDynamicRange
 SA_API saStatus saStoreTgThru(int device, int flags);
 SA_API saStatus saSetTg(int device, double frequency, double amplitude);
 
+SA_API const char* saGetAPIVersion();
 SA_API const char* saGetErrorString(saStatus code);
 
 #ifdef __cplusplus

@@ -3,6 +3,7 @@
 #include "sa_api.h"
 #include "bb_api.h"
 #include "bb_lib.h"
+#include "model/sweep_settings.h"
 
 #include <QtGlobal>
 
@@ -125,6 +126,42 @@ double device_traits::adjust_rbw_on_span(const SweepSettings *ss)
     }
 }
 
+// Clamp VBW based on the sweep engine or as
+//  a ratio to RBW
+double device_traits::adjust_vbw(const SweepSettings *ss)
+{
+    double newVBW = ss->VBW();
+
+    switch(type) {
+    case DeviceTypeSA44A :
+        // No mid-range engine in SA44A
+        if(ss->Span() > 200.0e3) {
+            if(ss->VBW() < 6.5e3) newVBW = 6.5e3;
+        }
+        if(ss->RBW() > ss->VBW() * 100.0) {
+            newVBW = ss->RBW() / 100.0;
+        }
+        break;
+    case DeviceTypeSA44B: case DeviceTypeSA124:
+        if(ss->Span() > 98.0e6 || (ss->Start() < 16.0e6 && ss->Span() > 200.0e3)) {
+            if(ss->VBW() < 6.5e3) {
+                newVBW = 6.5e3;
+            }
+        }
+        if(ss->RBW() > ss->VBW() * 100.0) {
+            newVBW = ss->RBW() / 100.0;
+        }
+        break;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        if(ss->RBW() > ss->VBW() * 1000.0) {
+            newVBW = ss->RBW() / 1000.0;
+        }
+        break;
+    }
+
+    return newVBW;
+}
+
 double device_traits::get_best_rbw(const SweepSettings *ss)
 {
     switch(type) {
@@ -134,6 +171,18 @@ double device_traits::get_best_rbw(const SweepSettings *ss)
         return bb_lib::sa_get_best_rbw(ss);
     case DeviceTypeBB60A: case DeviceTypeBB60C:
         return bb_lib::get_best_rbw(ss);
+    }
+}
+
+double device_traits::sequence_bw(double bw, bool native_bw, bool increase)
+{
+    switch(type) {
+    case DeviceTypeSA44A: case DeviceTypeSA44B:
+        return bb_lib::sa44_sequence_bw(bw, native_bw, increase);
+    case DeviceTypeSA124:
+        return bb_lib::sa124_sequence_bw(bw, native_bw, increase);
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return bb_lib::bb_sequence_bw(bw, native_bw, increase);
     }
 }
 

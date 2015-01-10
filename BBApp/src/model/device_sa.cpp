@@ -132,6 +132,9 @@ bool DeviceSA::Preset()
         return false;
     }
 
+    saAbort(id);
+    saPreset(id);
+
     return true;
 }
 
@@ -151,9 +154,10 @@ bool DeviceSA::Reconfigure(const SweepSettings *s, Trace *t)
     int atten = (s->Atten() == 0) ? SA_AUTO_ATTEN : s->Atten() - 1;
     int gain = (s->Gain() == 0) ? SA_AUTO_GAIN : s->Gain() - 1;
     int preamp = (s->Preamp() == 0) ? SA_PREAMP_AUTO : s->Preamp() - 1;
+    int scale = (s->RefLevel().IsLogScale() ? SA_LOG_SCALE : SA_LIN_SCALE);
 
     saConfigCenterSpan(id, s->Center(), s->Span());
-    saConfigAcquisition(id, SA_MIN_MAX, SA_LOG_SCALE, 0.1);
+    saConfigAcquisition(id, s->Detector(), scale);
 
     if(s->Atten() == 0 || s->Gain() == 0 || s->Preamp() == 0) {
         saConfigLevel(id, s->RefLevel());
@@ -176,7 +180,7 @@ bool DeviceSA::Reconfigure(const SweepSettings *s, Trace *t)
 
     int traceLength = 0;
     double startFreq = 0.0, binSize = 0.0;
-    saQueryTraceInfo(id, &traceLength, &startFreq, &binSize);
+    saQuerySweepInfo(id, &traceLength, &startFreq, &binSize);
 
     t->SetSettings(*s);
     t->SetSize(traceLength);
@@ -198,7 +202,7 @@ bool DeviceSA::GetSweep(const SweepSettings *s, Trace *t)
 
     int startIx, stopIx;
 
-    status = saFetchPartialData(id, t->Min(), t->Max(), &startIx, &stopIx);
+    status = saGetPartialSweep_32f(id, t->Min(), t->Max(), &startIx, &stopIx);
 
     t->SetUpdateRange(startIx, stopIx);
 
@@ -240,7 +244,7 @@ bool DeviceSA::Reconfigure(const DemodSettings *s, IQDescriptor *iqc)
 
 bool DeviceSA::GetIQ(IQCapture *iqc)
 {
-    saStatus status = saGetIQ(id, (float*)(&iqc->capture[0]));
+    saStatus status = saGetIQ_32f(id, (float*)(&iqc->capture[0]));
 
     adc_overflow = (status == saCompressionWarning);
 

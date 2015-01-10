@@ -118,6 +118,13 @@ bool DeviceBB60A::Preset()
 
     bbAbort(id);
     bbPreset(id);
+
+    // Need to call bbCloseDevice for BB60A/C
+    CloseDevice();
+
+    SleepEvent preset_wait;
+    preset_wait.Sleep(3000);
+
     return true;
 }
 

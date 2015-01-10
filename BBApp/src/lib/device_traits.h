@@ -25,7 +25,9 @@ public:
     static double max_frequency();
     static std::pair<double, double> full_span_frequencies();
     static double adjust_rbw_on_span(const SweepSettings *ss);
+    static double adjust_vbw(const SweepSettings *ss);
     static double get_best_rbw(const SweepSettings *ss);
+    static double sequence_bw(double bw, bool native_bw, bool increase);
     static double min_real_time_rbw();
     static double max_real_time_rbw();
     static double min_real_time_span();

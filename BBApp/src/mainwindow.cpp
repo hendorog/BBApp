@@ -501,7 +501,7 @@ void MainWindow::PresetDeviceInThread()
                                "Estimated 3 seconds");
 
     // Stop any sweeping
-    centralStack->CurrentWidget()->changeMode(BB_IDLE);
+    centralStack->CurrentWidget()->changeMode(MODE_IDLE);
     centralStack->CurrentWidget()->ResetView();
 
     //ChangeMode(OperationalMode(BB_IDLE));
@@ -526,10 +526,7 @@ void MainWindow::PresetDeviceInThread()
     // Stop all operation
     // Preset -> Close -> Wait -> Open
     session->device->Preset();
-    session->device->CloseDevice();
-
-    SleepEvent preset_wait;
-    preset_wait.Sleep(3000);
+    //session->device->CloseDevice();
 
     progressDialog.makeDisappear();
 

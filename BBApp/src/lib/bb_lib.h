@@ -425,7 +425,9 @@ inline double frac_between(double start, double stop, double f) {
 // Get the closest index representative of the bw parameter
 int get_native_bw_index(double bw);
 // Get next bandwidth in sequence
-double sequence_bw(double bw, bool native_bw, bool increase);
+double sa44_sequence_bw(double bw, bool native_bw, bool increase);
+double sa124_sequence_bw(double bw, bool native_bw, bool increase);
+double bb_sequence_bw(double bw, bool native_bw, bool increase);
 // Get next 1/2/5
 double sequence_span(double span, bool increase);
 

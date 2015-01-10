@@ -367,10 +367,65 @@ int bb_lib::get_native_bw_index(double bw)
     return ix - 1;
 }
 
+double bb_lib::sa44_sequence_bw(double bw, bool native_bw, bool increase)
+{
+    int factor = 0;
+
+    while(bw >= 10.0) {
+        bw /= 10.0;
+        factor++;
+    }
+
+    if(increase) {
+        if(bw >= 3.0) bw = 10.0;
+        else bw = 3.0;
+    } else {
+        if(bw <= 1.0) bw = 0.3;
+        else if(bw <= 3.0) bw = 1.0;
+        else bw = 3.0;
+    }
+
+    while(factor--) {
+        bw *= 10.0;
+    }
+
+    return bw;
+}
+
+double bb_lib::sa124_sequence_bw(double bw, bool native_bw, bool increase)
+{
+    int factor = 0;
+
+    if(bw > 250.0e3 && !increase) return 250.0e3;
+    if(bw >= 250.0e3 && increase) return 6.0e6;
+    if(bw >= 100.0e3 && bw < 250.0e3 && increase) return 250.0e3;
+    if(bw <= 250.0e3 && bw > 100.0e3 && !increase) return 100.0e3;
+
+    while(bw >= 10.0) {
+        bw /= 10.0;
+        factor++;
+    }
+
+    if(increase) {
+        if(bw >= 3.0) bw = 10.0;
+        else bw = 3.0;
+    } else {
+        if(bw <= 1.0) bw = 0.3;
+        else if(bw <= 3.0) bw = 1.0;
+        else bw = 3.0;
+    }
+
+    while(factor--) {
+        bw *= 10.0;
+    }
+
+    return bw;
+}
+
 // Find the next bandwidth in sequence
 // If native, use table
 // If non-native, use 1/3/10 sequence
-double bb_lib::sequence_bw(double bw, bool native_bw, bool increase)
+double bb_lib::bb_sequence_bw(double bw, bool native_bw, bool increase)
 {
     if(native_bw) {
         int ix = get_native_bw_index(bw);
@@ -450,11 +505,11 @@ double bb_lib::adjust_rbw_on_span(const SweepSettings *ss)
     double rbw = ss->RBW();
 
     while((ss->Span() / rbw) > 500000) {
-        rbw = sequence_bw(rbw, ss->NativeRBW(), true);
+        rbw = bb_sequence_bw(rbw, ss->NativeRBW(), true);
     }
 
     while((ss->Span() / rbw) < 1.0) {
-        rbw = sequence_bw(rbw, ss->NativeRBW(), false);
+        rbw = bb_sequence_bw(rbw, ss->NativeRBW(), false);
     }
 
     return rbw;
@@ -465,11 +520,11 @@ double bb_lib::sa44a_adjust_rbw_on_span(const SweepSettings *ss)
     double rbw = ss->RBW();
 
     // Limit points in sweep
-    while((ss->Span() / rbw) > 50000) {
-        rbw = sequence_bw(rbw, false, true);
+    while((ss->Span() / rbw) > 500000) {
+        rbw = sa44_sequence_bw(rbw, false, true);
     }
     while((ss->Span() / rbw) < 1.0) {
-        rbw = sequence_bw(rbw, false, false);
+        rbw = sa44_sequence_bw(rbw, false, false);
     }
 
     // Do some clamping at the upper end
@@ -505,11 +560,11 @@ double bb_lib::sa44b_adjust_rbw_on_span(const SweepSettings *ss)
     double rbw = ss->RBW();
 
     // Limit points in sweep
-    while((ss->Span() / rbw) > 50000) {
-        rbw = sequence_bw(rbw, false, true);
+    while((ss->Span() / rbw) > 500000) {
+        rbw = sa44_sequence_bw(rbw, false, true);
     }
     while((ss->Span() / rbw) < 1.0) {
-        rbw = sequence_bw(rbw, false, false);
+        rbw = sa44_sequence_bw(rbw, false, false);
     }
 
     // Do some clamping at the upper end
@@ -544,12 +599,17 @@ double bb_lib::sa124_adjust_rbw_on_span(const SweepSettings *ss)
 {
     double rbw = ss->RBW();
 
+    // Broadband sweep for 124 limitations
+    if((ss->Start() < 200.0e6 || ss->Span() < 200.0e6) && ss->RBW() > 250.0e3) {
+        rbw = 250.0e3;
+    }
+
     // Limit points in sweep
-    while((ss->Span() / rbw) > 50000) {
-        rbw = sequence_bw(rbw, false, true);
+    while((ss->Span() / rbw) > 500000) {
+        rbw = sa124_sequence_bw(rbw, false, true);
     }
     while((ss->Span() / rbw) < 1.0) {
-        rbw = sequence_bw(rbw, false, false);
+        rbw = sa124_sequence_bw(rbw, false, false);
     }
 
     // Do some clamping at the upper end
@@ -580,6 +640,7 @@ double bb_lib::sa124_adjust_rbw_on_span(const SweepSettings *ss)
     if(rbw < 0.1) {
         rbw = 0.1;
     }
+
 
     return rbw;
 }

@@ -212,6 +212,7 @@ void SweepSettings::AutoBandwidthAdjust(bool force)
         vbw = rbw;
     }
 
+    vbw = device_traits::adjust_vbw(this);
     // VBW should not be over 1000 times less than RBW
     if(rbw > vbw * 1000.0) {
         vbw = rbw / 1000.0;
@@ -448,7 +449,7 @@ void SweepSettings::setVBW(Frequency f)
 
 void SweepSettings::rbwIncrease(bool inc)
 {
-    double new_rbw = bb_lib::sequence_bw(rbw, native_rbw, inc);
+    double new_rbw = device_traits::sequence_bw(rbw, native_rbw, inc);
 
     rbw = new_rbw;
     auto_rbw = false;
@@ -459,7 +460,7 @@ void SweepSettings::rbwIncrease(bool inc)
 
 void SweepSettings::vbwIncrease(bool inc)
 {
-    double new_vbw = bb_lib::sequence_bw(vbw, native_rbw, inc);
+    double new_vbw = device_traits::sequence_bw(vbw, native_rbw, inc);
 
     if(new_vbw > rbw) new_vbw = rbw;
 
