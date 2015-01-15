@@ -722,7 +722,7 @@ void MainWindow::saveAsImage()
     QString file_name = QFileDialog::getSaveFileName(this,
                                                      tr("Image Save Name"),
                                                      bb_lib::get_my_documents_path(),
-                                                     tr("Images (*.png)"));
+                                                     tr("Images (*.png *.jpg *.bmp)"));
     if(file_name.isNull()) return;
 
     QImage image;

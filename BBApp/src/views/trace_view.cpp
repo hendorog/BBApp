@@ -276,7 +276,7 @@ void TraceView::mouseMoveEvent(QMouseEvent *e)
             yScale = s->RefLevel() / grat_sz.y();
         }
 
-        y = s->RefLevel() - (e->pos().y() - grat_ll.y()) * yScale;
+        y = s->RefLevel() - (e->pos().y() - (height() - grat_ul.y())) * yScale;
         MainWindow::GetStatusBar()->SetCursorPos(
                     Frequency(x).GetFreqString() + "  " +
                     Amplitude(y, s->RefLevel().Units()).GetString());

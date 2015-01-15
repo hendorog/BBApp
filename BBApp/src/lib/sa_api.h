@@ -48,8 +48,8 @@ enum saDeviceType {
 
 // Scales
 #define SA_LOG_SCALE      (0x0)
-#define SA_LOG_FULL_SCALE (0x1)
-#define SA_LIN_SCALE      (0x2)
+#define SA_LIN_SCALE      (0x1)
+#define SA_LOG_FULL_SCALE (0x2)
 #define SA_LIN_FULL_SCALE (0x3)
 
 // Levels
@@ -62,9 +62,9 @@ enum saDeviceType {
 #define SA_PREAMP_ON   (0x1)
 
 // Video Processing Units
-#define SA_POWER_UNITS (0x0)
-#define SA_LOG_UNITS   (0x1)
-#define SA_VOLT_UNITS  (0x2)
+#define SA_LOG_UNITS   (0x0)
+#define SA_VOLT_UNITS  (0x1)
+#define SA_POWER_UNITS (0x2)
 #define SA_BYPASS      (0x3)
 
 #define SA_AUDIO_AM  (0x0)
@@ -82,16 +82,13 @@ enum saStatus {
     saUnknownErr = -666,
 
     // Setting specific error codes
-    saReferenceLevelErr = -100,
     saFrequencyRangeErr = -99,
-    saAttenuationErr = -98,
-    saGainErr = -97,
     saVideoBWErr = -96,
     saInvalidDetectorErr = -95,
     saInvalidScaleErr = -94,
-    saInvalidProcUnitsErr = -93,
     saBandwidthErr = -91,
     saRealTimeBandwidthErr = -90,
+    saExternalReferenceNotFound = -89,
 
     // Device-specific errors
     saOvenColdErr = -20,
@@ -118,7 +115,8 @@ enum saStatus {
     // Warnings
     saNoCorrections = 1,
     saCompressionWarning = 2,
-    saParameterClamped = 3
+    saParameterClamped = 3,
+    saBandwidthClamped = 4,
 };
 
 #ifdef __cplusplus
@@ -144,11 +142,11 @@ SA_API saStatus saConfigIQ(int device, int decimation, double bandwidth);
 SA_API saStatus saConfigAudio(int device, int audioType, double centerFreq,
                               double bandwidth, double audioLowPassFreq,
                               double audioHighPassFreq, double fmDeemphasis);
+SA_API saStatus saEnableExternalReference(int device);
 
 SA_API saStatus saInitiate(int device, int mode, int flag);
 SA_API saStatus saAbort(int device);
 
-//SA_API saStatus saQuerySweepTime(int device, int *time); // Needed anymore?
 SA_API saStatus saQuerySweepInfo(int device, int *sweepLength, double *startFreq, double *binSize);
 SA_API saStatus saQueryStreamInfo(int device, int *returnLen, double *bandwidth, double *samplesPerSecond);
 SA_API saStatus saGetSweep_32f(int device, float *min, float *max);
@@ -159,7 +157,7 @@ SA_API saStatus saGetIQ_32f(int device, float *iq);
 SA_API saStatus saGetIQ_64f(int device, double *iq);
 SA_API saStatus saGetAudio(int device, float *audio);
 SA_API saStatus saQueryTemperature(int device, float *temp);
-SA_API saStatus saQueryDiagnostics(int device, float *voltage, float *current);
+SA_API saStatus saQueryDiagnostics(int device, float *voltage);
 
 SA_API saStatus saAttachTg(int device);
 SA_API saStatus saIsTgAttached(int device, bool *attached);

@@ -156,7 +156,7 @@ void PlaybackFile::CloseRecording()
     file_handle.write((char*)&header, sizeof(playback_header));
     file_handle.close();
 
-    QMessageBox::information(0, tr("File Saved"), tr("Recording saved at ") + file_handle.fileName());
+    //QMessageBox::information(0, tr("File Saved"), tr("Recording saved at ") + file_handle.fileName());
 }
 
 void PlaybackFile::startRecording()
@@ -331,6 +331,9 @@ PlaybackToolBar::PlaybackToolBar(const Preferences *preferences,
     connect(this, SIGNAL(startPlaying(bool)), step_back_btn, SLOT(setEnabled(bool)));
     connect(this, SIGNAL(startPlaying(bool)), step_fwd_btn, SLOT(setEnabled(bool)));
 
+    connect(this, SIGNAL(showFilenameInGuiThread()),
+            this, SLOT(showFileNameSaved()));
+
     emit startPlaying(false);
     emit startRecording(false);
 
@@ -402,6 +405,7 @@ void PlaybackToolBar::stopRecordPressed()
     size_label->setText("");
     file_io->stopRecording();
 
+    emit showFilenameInGuiThread();
     emit startRecording(false);
 }
 
@@ -485,5 +489,11 @@ void PlaybackToolBar::sliderPosChanged(int new_pos)
     timer.Wake();
 }
 
+void PlaybackToolBar::showFileNameSaved()
+{
+    QMessageBox::information(0, tr("File Saved"),
+                             tr("Recording saved at ") +
+                             file_io->file_handle.fileName());
+}
 
 

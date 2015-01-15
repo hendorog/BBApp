@@ -3,6 +3,11 @@
 
 #include <QElapsedTimer>
 
+#define STATUS_CHECK(status) \
+    if(status < saNoError) { \
+    return false; \
+    }
+
 DeviceSA::DeviceSA(const Preferences *preferences) :
     Device(preferences)
 {
@@ -71,6 +76,7 @@ bool DeviceSA::OpenDeviceWithSerial(int serialToOpen)
     char fs[16];
     saGetFirmwareString(id, fs);
     firmware_string = fs;
+    firmware_string += "  ";
 
     saGetDeviceType(id, &deviceType);
 
@@ -159,19 +165,21 @@ bool DeviceSA::Reconfigure(const SweepSettings *s, Trace *t)
     saConfigCenterSpan(id, s->Center(), s->Span());
     saConfigAcquisition(id, s->Detector(), scale);
 
-    if(s->Atten() == 0 || s->Gain() == 0 || s->Preamp() == 0) {
-        saConfigLevel(id, s->RefLevel());
+    saConfigLevel(id, s->RefLevel());
+    saConfigGainAtten(id, atten, gain, s->Preamp());
+
+    if(atten == SA_AUTO_ATTEN || gain == SA_AUTO_GAIN) {
+        saConfigLevel(id, s->RefLevel().ConvertToUnits(AmpUnits::DBM));
     } else {
         saConfigGainAtten(id, s->Atten(), s->Gain(), s->Preamp());
     }
 
     saConfigSweepCoupling(id, s->RBW(), s->VBW(), s->Rejection());
-    saConfigProcUnits(id, SA_LOG_UNITS);
+    saConfigProcUnits(id, s->ProcessingUnits());
 
     int init_mode = SA_SWEEPING;
     if(s->Mode() == BB_REAL_TIME) init_mode = SA_REAL_TIME;
     if(s->Mode() == MODE_NETWORK_ANALYZER) {
-        //saConfigTG(id, (tgStepSize)s->tgStepSizeIx, s->tgPassiveDevice);
         saConfigTgSweep(id, s->tgSweepSize, s->tgHighRangeSweep, s->tgPassiveDevice);
         init_mode = SA_TG_SWEEP;
     }

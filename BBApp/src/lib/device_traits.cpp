@@ -83,7 +83,7 @@ double device_traits::best_start_frequency()
     case DeviceTypeBB60A: case DeviceTypeBB60C:
         return 11.0e6;
     }
-    return 10.0e6;
+    return 11.0e6;
 }
 
 double device_traits::max_frequency()
@@ -107,9 +107,9 @@ std::pair<double, double> device_traits::full_span_frequencies()
     case DeviceTypeSA124:
         return std::make_pair(100.0e3, 12.4e9);
     case DeviceTypeBB60A: case DeviceTypeBB60C:
-        return std::make_pair(11.0e6, 6.0e9);
+        return std::make_pair(9.0e3, 6.0e9);
     }
-    return std::make_pair(11.0e6, 6.0e9);
+    return std::make_pair(9.0e3, 6.0e9);
 }
 
 double device_traits::adjust_rbw_on_span(const SweepSettings *ss)

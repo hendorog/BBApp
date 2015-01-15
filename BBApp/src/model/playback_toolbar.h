@@ -82,9 +82,10 @@ private:
     std::atomic<bool> is_recording;
     std::atomic<bool> is_playing;
 
+    void stopRecording() { CloseRecording(); }
+
 private slots:
     void startRecording();
-    void stopRecording() { CloseRecording(); }
 
     bool play();
 
@@ -123,7 +124,6 @@ private:
     QPushButton *record_btn, *stop_record_btn;
     QPushButton *play_btn, *stop_play_btn, *pause_btn;
     QPushButton *rewind_btn, *step_back_btn, *step_fwd_btn;
-    //QPushButton *timer_btn;
 
     Label *trace_label; // Trace number over total traces
     Label *time_label; // Time of the last trace recieved
@@ -150,9 +150,13 @@ private slots:
     //void setDelayPressed();
     void sliderPosChanged(int);
 
+    void showFileNameSaved();
+
 signals:
     void startRecording(bool);
     void startPlaying(bool);
+
+    void showFilenameInGuiThread();
 
 private:
     DISALLOW_COPY_AND_ASSIGN(PlaybackToolBar)

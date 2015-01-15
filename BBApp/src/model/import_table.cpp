@@ -1,6 +1,7 @@
 #include "import_table.h"
 
 #include <QFile>
+#include <fstream>
 
 ImportTable::ImportTable()
 {
@@ -109,7 +110,7 @@ void ImportTable::BuildStore(const Trace *t)
         }
 
         // Find i and k, such that they straddle currFreq
-        while(currFreq > points[k].Freq()) {
+        while(currFreq >= points[k].Freq()) {
             i++; // Passed a point
             k = i + 1;
             if(currFreq >= stop) {
@@ -144,6 +145,12 @@ void ImportTable::BuildStore(const Trace *t)
     // Do unit conversions in repective derived class
 
     stored = true;
+
+    // Debug: print the path loss table
+    //std::ofstream f("out.csv");
+    //for(int i = 0; i < store.Length(); i++) {
+    //    f << i << ", " << store.Max()[i] << "\n";
+    //}
 
     return;
 }

@@ -67,7 +67,7 @@ bool DeviceBB60A::OpenDeviceWithSerial(int serialToOpen)
     serial_string.sprintf("%d", serial_number);
     int fv;
     bbGetFirmwareVersion(id, &fv);
-    firmware_string.sprintf("%d", fv);
+    firmware_string.sprintf("%d  ", fv);
 
     bbGetDeviceType(id, &bbDeviceType);
 

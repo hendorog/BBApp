@@ -96,8 +96,8 @@ void SweepSettings::LoadDefaults()
     mode = MODE_SWEEPING;
 
     std::pair<double, double> freqs = device_traits::full_span_frequencies();
-    start = freqs.first;
-    stop = freqs.second;
+    start = device_traits::best_start_frequency();
+    stop = device_traits::max_frequency();
 
     span = (stop - start);
     center = (start + stop) / 2.0;

@@ -62,8 +62,6 @@ bool Marker::Place(Frequency f)
 {
     freq = f;
 
-
-
     if(!active) {
         active = true;
         return true;
