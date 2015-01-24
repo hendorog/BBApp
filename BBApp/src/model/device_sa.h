@@ -1,6 +1,8 @@
 #ifndef DEVICE_SA_H
 #define DEVICE_SA_H
 
+#include <QEventLoop>
+
 #include "device.h"
 #include "lib/sa_api.h"
 
@@ -13,6 +15,7 @@ public:
 
     virtual bool OpenDevice();
     virtual bool OpenDeviceWithSerial(int serialToOpen);
+    virtual int GetNativeDeviceType() const;
     virtual bool CloseDevice();
     virtual bool Abort();
     virtual bool Preset();
@@ -40,14 +43,32 @@ public:
     virtual bool IsTgAttached();
     virtual bool SetTg(Frequency freq, double amp);
 
+
     virtual void TgStoreThrough();
     virtual void TgStoreThroughPad();
 
     virtual int MsPerIQCapture() const { return 34; }
 
+    virtual int SetTimebase(int);
+    virtual void ConfigureIFOutput(double inputFreq, double outputFreq,
+                                   int intputAtten, int outputGain);
+
 private:
+    void connectTgInThread(QEventLoop *el)
+    {
+        if(saAttachTg(id) == saNoError) {
+            tgIsConnected = true;
+        }
+
+        while(!el->isRunning()) { Sleep(1); }
+        el->exit();
+    }
+
     saDeviceType deviceType;
     saStatus lastStatus;
+    bool tgIsConnected;
+    // Once external reference is chosen, unable to return to internal
+    bool externalReference;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(DeviceSA)

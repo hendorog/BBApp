@@ -4,6 +4,7 @@
 #include "widgets/progress_dialog.h"
 #include "widgets/preferences_dialog.h"
 #include "widgets/measuring_receiver_dialog.h"
+#include "widgets/if_output_dialog.h"
 
 #include <QFile>
 #include <QSplitter>
@@ -13,6 +14,9 @@
 #include <QtPrintSupport>
 #include <QMessageBox>
 
+static const QString utilitiesTgControlString = "Tracking Generator Controls";
+static const QString utilitiesIFOutputString = "SA124 IF Output";
+
 // Static status bar
 BBStatusBar *MainWindow::status_bar;
 
@@ -21,9 +25,10 @@ MainWindow::MainWindow(QWidget *parent)
       progressDialog(this),
       saveLayoutOnClose(true)
 {
-    setWindowTitle(tr("Signal Hound Spectrum Analyzer"));
-    move(200, 0);
-    resize(1820, 1080);
+    setWindowTitle(tr("Spike: Signal Hound Spectrum Analyzer Software"));
+    move(0, 0);
+    const QRect r = QApplication::desktop()->screenGeometry();
+    resize(r.width() - 20, r.height() - 80);
 
     session = new Session();
 
@@ -47,7 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
     demodPanel = new DemodPanel(tr("Demod Settings"), this, session->demod_settings);
     demodPanel->setObjectName("DemodSettingsPanel");
 
-    tgPanel = new TgCtrlPanel("Tracking Generator Controls", this, session);
+    tgPanel = new TgCtrlPanel(utilitiesTgControlString, this, session);
     tgPanel->setObjectName("TgControlPanel");
 
     addDockWidget(Qt::RightDockWidgetArea, sweep_panel);
@@ -85,6 +90,10 @@ MainWindow::MainWindow(QWidget *parent)
     tgCentral = new TGCentral(session, toolBar);
     centralStack->AddWidget(tgCentral);
 
+    phaseNoiseCentral = new PhaseNoiseCentral(session, toolBar);
+    phaseNoiseCentral->EnableToolBarActions(false);
+    centralStack->AddWidget(phaseNoiseCentral);
+
     // Add Single/continuous/preset button to toolbar
     QWidget *spacer = new QWidget();
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -104,10 +113,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(single_sweep, SIGNAL(clicked()), demodCentral, SLOT(singlePressed()));
     connect(single_sweep, SIGNAL(clicked()), harmonicCentral, SLOT(singlePressed()));
     connect(single_sweep, SIGNAL(clicked()), tgCentral, SLOT(singlePressed()));
+    connect(single_sweep, SIGNAL(clicked()), phaseNoiseCentral, SLOT(singlePressed()));
     connect(continuous_sweep, SIGNAL(clicked()), sweepCentral, SLOT(continuousSweepPressed()));
     connect(continuous_sweep, SIGNAL(clicked()), demodCentral, SLOT(autoPressed()));
     connect(continuous_sweep, SIGNAL(clicked()), harmonicCentral, SLOT(continuousPressed()));
     connect(continuous_sweep, SIGNAL(clicked()), tgCentral, SLOT(continuousPressed()));
+    connect(continuous_sweep, SIGNAL(clicked()), phaseNoiseCentral, SLOT(continuousPressed()));
 
     toolBar->addWidget(new FixedSpacer(QSize(10, TOOLBAR_H)));
     toolBar->addSeparator();
@@ -158,8 +169,8 @@ void MainWindow::InitMenuBar()
 
     // File Menu
     file_menu = main_menu->addMenu(tr("File"));
-    file_menu->addAction(tr("New"));
-    file_menu->addSeparator();
+    //file_menu->addAction(tr("New"));
+    //file_menu->addSeparator();
     file_menu->addAction(tr("Print"), this, SLOT(printView()));
     file_menu->addAction(tr("Save as Image"), this, SLOT(saveAsImage()));
     file_menu->addSeparator();
@@ -294,6 +305,11 @@ void MainWindow::InitMenuBar()
     mode_action->setCheckable(true);
     mode_action_group->addAction(mode_action);
 
+    mode_action = mode_menu->addAction("Phase Noise Plot");
+    mode_action->setData(MODE_PHASE_NOISE);
+    mode_action->setCheckable(true);
+    mode_action_group->addAction(mode_action);
+
     connect(mode_action_group, SIGNAL(triggered(QAction*)),
             this, SLOT(modeChanged(QAction*)));
     connect(mode_menu, SIGNAL(aboutToShow()),
@@ -303,6 +319,7 @@ void MainWindow::InitMenuBar()
     utilities_menu->addAction(tr("Audio Player"), this, SLOT(startAudioPlayer()));
     utilities_menu->addAction(tr("Measuring Receiever"), this, SLOT(startMeasuringReceiever()));
     utilities_menu->addAction(tgPanel->toggleViewAction());
+    utilities_menu->addAction(utilitiesIFOutputString, this, SLOT(startSA124IFOutput()));
     connect(utilities_menu, SIGNAL(aboutToShow()), this, SLOT(aboutToShowUtilitiesMenu()));
 
     help_menu = main_menu->addMenu(tr("Help"));
@@ -435,18 +452,26 @@ void MainWindow::aboutToShowModeMenu()
 {
     int current_mode = session->sweep_settings->Mode();
     bool isOpen = session->device->IsOpen();
+    DeviceType devType = session->device->GetDeviceType();
 
     QList<QAction*> a_list = mode_menu->actions();
 
     // Set all enabled/disabled
     for(QAction *a : a_list) {
         a->setEnabled(isOpen);
-    }
 
-    // Additional checks/manipulations only if device is present
-    for(QAction *a : a_list) {
+        if(!isOpen) {
+            continue;
+        }
+
+        // Additional checks/manipulations only if device is present
         if(a->data() == MODE_NETWORK_ANALYZER) {
-            a->setEnabled(session->device->IsCompatibleWithTg() && isOpen);
+            a->setEnabled(session->device->IsCompatibleWithTg());
+        }
+
+        if(a->data() == MODE_PHASE_NOISE) {
+            a->setEnabled(devType != DeviceTypeBB60A
+                    && devType != DeviceTypeBB60C);
         }
 
         if(a->data() == current_mode) {
@@ -458,15 +483,35 @@ void MainWindow::aboutToShowModeMenu()
 // Disable utilities that require a device to be open
 void MainWindow::aboutToShowUtilitiesMenu()
 {
+    bool isOpen = session->device->IsOpen();
+
     for(QAction *a : utilities_menu->actions()) {
-        a->setEnabled(session->device->IsOpen());
+        a->setEnabled(isOpen);
+
+        if(!isOpen) {
+            continue;
+        }
+
+        if(a->text() == utilitiesTgControlString) {
+            a->setEnabled(session->device->IsCompatibleWithTg());
+        }
+
+        if(a->text() == utilitiesIFOutputString) {
+            a->setEnabled(session->device->GetDeviceType() == DeviceTypeSA124);
+        }
     }
 }
 
 void MainWindow::OpenDeviceInThread(QMap<QString, QVariant> devInfoMap)
 {
-    progressDialog.makeVisible("Opening Device\n"
-                               "Estimated 3 seconds");
+    QString openLabel;
+    if(devInfoMap["Series"].toInt() == saSeries) {
+        openLabel = "Connecting Device\nEstimated 6 seconds\n";
+    } else {
+        openLabel = "Connecting Device\nEstimated 3 seconds";
+    }
+
+    progressDialog.makeVisible(openLabel);
 
     Device *device;
     if(devInfoMap["Series"].toInt() == saSeries) {
@@ -526,7 +571,6 @@ void MainWindow::PresetDeviceInThread()
     // Stop all operation
     // Preset -> Close -> Wait -> Open
     session->device->Preset();
-    //session->device->CloseDevice();
 
     progressDialog.makeDisappear();
 
@@ -835,7 +879,7 @@ void MainWindow::loadPreset(QAction *a)
     session->LoadPreset(a->data().toInt());
     int newMode = session->sweep_settings->Mode();
 
-    ChangeMode((OperationalMode)newMode);
+    newMode = ChangeMode((OperationalMode)newMode);
 
     centralStack->CurrentWidget()->changeMode(newMode);
 }
@@ -852,24 +896,26 @@ void MainWindow::modeChanged(QAction *a)
 
     OperationalMode newMode = (OperationalMode)a->data().toInt();
 
+    newMode = ChangeMode((OperationalMode)newMode);
+
+    centralStack->CurrentWidget()->changeMode(newMode);
+}
+
+OperationalMode MainWindow::ChangeMode(OperationalMode newMode)
+{
+    centralStack->CurrentWidget()->EnableToolBarActions(false);
+
     // Ensure the TG is connected before switching into network analysis
+    // If it is not, then go to previous mode
     if(newMode == MODE_NETWORK_ANALYZER) {
         if(!session->device->AttachTg()) {
-            newMode = session->sweep_settings->Mode();
+            newMode = MODE_SWEEPING; //session->sweep_settings->Mode();
+            session->sweep_settings->setMode(newMode);
             QMessageBox::warning(0, "Tracking Generator Not Found",
                                  "Tracking Generator Not Found\n"
                                  "Please ensure tracking generator is connected to your PC");
         }
     }
-
-    ChangeMode((OperationalMode)newMode);
-
-    centralStack->CurrentWidget()->changeMode(newMode);
-}
-
-void MainWindow::ChangeMode(OperationalMode newMode)
-{
-    centralStack->CurrentWidget()->EnableToolBarActions(false);
 
     sweep_panel->setMode(newMode);
     measure_panel->setMode(newMode);
@@ -889,6 +935,11 @@ void MainWindow::ChangeMode(OperationalMode newMode)
         sweep_panel->show();
         measure_panel->show();
         demodPanel->hide();
+    } else if(newMode == MODE_PHASE_NOISE) {
+        centralStack->setCurrentWidget(phaseNoiseCentral);
+        sweep_panel->show();
+        measure_panel->show();
+        demodPanel->hide();
     } else {
         centralStack->setCurrentWidget(sweepCentral);
         demodPanel->hide();
@@ -897,6 +948,8 @@ void MainWindow::ChangeMode(OperationalMode newMode)
     }
 
     centralStack->CurrentWidget()->EnableToolBarActions(true);
+
+    return newMode;
 }
 
 // Function gets called when the zero-span button is pressed on the sweep panel
@@ -944,11 +997,38 @@ void MainWindow::startMeasuringReceiever()
     centralStack->CurrentWidget()->changeMode(temp_mode);
 }
 
+void MainWindow::startSA124IFOutput()
+{
+    int temp_mode = session->sweep_settings->Mode();
+
+    centralStack->CurrentWidget()->changeMode(MODE_IDLE);
+
+    IFOutputDialog *dlg = new IFOutputDialog(session->device, this);
+    dlg->exec();
+    delete dlg;
+
+    centralStack->CurrentWidget()->changeMode(temp_mode);
+}
+
 void MainWindow::aboutToShowTimebaseMenu()
 {
     for(QAction *a : timebase_menu->actions()) {
         a->setChecked(a->data().toInt() == session->device->TimebaseReference());
     }
+}
+
+void MainWindow::timebaseChanged(QAction *a)
+{
+    centralStack->CurrentWidget()->StopStreaming();
+
+    int setMode = session->device->SetTimebase(a->data().toInt());
+
+    auto actions = timebase_menu->actions();
+    for(QAction *a : actions) {
+        a->setChecked(setMode == a->data().toInt());
+    }
+
+    centralStack->CurrentWidget()->StartStreaming();
 }
 
 void MainWindow::showPreferencesDialog()
@@ -962,8 +1042,8 @@ QChar trademark_char(short(174));
 QChar copyright_char(short(169));
 const QString about_string =
         QWidget::tr("Signal Hound") + trademark_char + QWidget::tr("\n") +
-        QWidget::tr("Copyright ") + copyright_char + QWidget::tr(" 2014\n");
-const QString gui_version = QWidget::tr("Software Version 2.0.5\n");
+        QWidget::tr("Copyright ") + copyright_char + QWidget::tr(" 2015\n");
+const QString gui_version = QWidget::tr("Software Version 3.0.0\n");
 
 void MainWindow::showAboutBox()
 {

@@ -12,6 +12,7 @@ public:
 
     virtual bool OpenDevice();
     virtual bool OpenDeviceWithSerial(int serialToOpen);
+    virtual int GetNativeDeviceType() const;
     virtual bool CloseDevice();
     virtual bool Abort();
     virtual bool Preset();
@@ -34,6 +35,12 @@ public:
     virtual bool NeedsTempCal() const { return fabs(last_temp - current_temp) > 2; }
 
     virtual int MsPerIQCapture() const { return 26; }
+
+    virtual int SetTimebase(int new_val) {
+        timebase_reference = new_val;
+        reconfigure_on_next = true;
+        return timebase_reference;
+    }
 
 private:
     // Controls whether or not we need to reinitialize the device when

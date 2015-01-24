@@ -3,6 +3,7 @@
 
 #include <QProgressDialog>
 #include <QTimer>
+#include <QLabel>
 
 #include <thread>
 

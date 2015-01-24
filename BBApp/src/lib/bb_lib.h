@@ -58,7 +58,8 @@ enum OperationalMode {
     MODE_REAL_TIME = 1,
     MODE_ZERO_SPAN = 2,
     MODE_HARMONICS = 3,
-    MODE_NETWORK_ANALYZER = 4
+    MODE_NETWORK_ANALYZER = 4,
+    MODE_PHASE_NOISE = 5
 };
 
 enum Setting {
@@ -348,10 +349,15 @@ inline _Type min3(_Type a, _Type b, _Type c) {
     return ((d < c) ? d : c);
 }
 
-template<class _Type>
-inline void clamp(_Type &val, _Type min, _Type max) {
-    if(val < min) val = min;
-    if(val > max) val = max;
+// Clamp val into range of [min, max]
+// If val is outside the range specified, clamp val to the
+//   range and return true, otherwise return false and do not
+//   modify val
+template<class Type>
+inline bool clamp(Type &val, Type min, Type max) {
+    if(val < min) { val = min; return true; }
+    if(val > max) { val = max; return true; }
+    return false;
 }
 
 // Interpolation between a -> b
@@ -530,6 +536,10 @@ inline QString get_time_string(int64_t ms_since_epoch) {
 void normalize_trace(const Trace *t, GLVector &vector, QPoint grat_size);
 void normalize_trace(const Trace *t, GLVector &vector, QPoint grat_size,
                      Amplitude refLevel, double div);
+void normalize_trace(const float *sweepMin, const float *sweepMax,
+                     int length, GLVector &v, QPoint grat_size,
+                     Amplitude refLevel, double dBdiv);
+
 //void normalize_trace(const Trace *t, LineList &ll, QSize grat_size);
 
 void build_blackman_window(float *dst, int len);

@@ -17,6 +17,7 @@
 #include "views/demod_central.h"
 #include "views/harmonics_central.h"
 #include "views/tg_central.h"
+#include "views/phase_noise_central.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -36,7 +37,8 @@ private:
     void SaveState();
     void RestoreState();
     // Change centralWidget, toolBars, dockWidgets
-    void ChangeMode(OperationalMode newMode);
+    // Return the mode that was set
+    OperationalMode ChangeMode(OperationalMode newMode);
 
     void RenamePreset(int p);
 
@@ -68,6 +70,7 @@ private:
     DemodCentral *demodCentral;
     HarmonicsCentral *harmonicCentral;
     TGCentral *tgCentral;
+    PhaseNoiseCentral *phaseNoiseCentral;
 
     static BBStatusBar *status_bar;
 
@@ -119,8 +122,9 @@ private slots:
     void zeroSpanPressed();
     void startAudioPlayer();
     void startMeasuringReceiever();
+    void startSA124IFOutput();
     void aboutToShowTimebaseMenu();
-    void timebaseChanged(QAction *a) { session->device->setTimebase(a->data().toInt()); }
+    void timebaseChanged(QAction *a);
     void showPreferencesDialog();
     void showAboutBox();
 

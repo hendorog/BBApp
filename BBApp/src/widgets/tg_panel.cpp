@@ -1,6 +1,9 @@
 #include "tg_panel.h"
 #include "model/session.h"
 
+#include <QMessageBox>
+#include <QAction>
+
 TgCtrlPanel::TgCtrlPanel(const QString &title, QWidget *parent, Session *session)
     : DockPanel(title, parent),
       session_ptr(session)
@@ -28,6 +31,9 @@ TgCtrlPanel::TgCtrlPanel(const QString &title, QWidget *parent, Session *session
     connect(ampStep, SIGNAL(leftPressed()), this, SLOT(stepAmplitudeDown()));
     connect(ampStep, SIGNAL(rightPressed()), this, SLOT(stepAmplitudeUp()));
 
+    QAction *a = toggleViewAction();
+    connect(a, SIGNAL(toggled(bool)), this, SLOT(becameVisible(bool)));
+
     AppendPage(main_page);
 }
 
@@ -35,6 +41,24 @@ TgCtrlPanel::~TgCtrlPanel()
 {
 
 }
+
+void TgCtrlPanel::becameVisible(bool checked) {
+    // Software makes the control panel visible once
+    //  at launch, ignore the first entry into this function
+    static bool first = true;
+    if(checked && !first) {
+        if(!session_ptr->device->AttachTg()) {
+            QMessageBox::warning(0, "Warning",
+                                 "Tracking Generator Not Found\n"
+                                 "Please connect your tracking generator\n"
+                                 "and try again");
+            toggleViewAction()->toggle();
+        }
+    } else {
+        first = false;
+    }
+}
+
 
 void TgCtrlPanel::changeFrequency(Frequency f)
 {

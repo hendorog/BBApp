@@ -14,6 +14,8 @@ public:
     TgCtrlPanel(const QString &title, QWidget *parent, Session *session);
     ~TgCtrlPanel();
 
+protected:
+
 private:
     DockPage *main_page;
     FrequencyEntry *center, *freqStepSize;
@@ -21,6 +23,8 @@ private:
     Session *session_ptr; // Does not own
 
 private slots:
+    void becameVisible(bool checked);
+
     void changeFrequency(Frequency f);
     void stepFrequencyDown();
     void stepFrequencyUp();

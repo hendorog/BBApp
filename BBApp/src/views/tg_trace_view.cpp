@@ -287,7 +287,8 @@ void TGPlot::RenderText()
                grat_ll.x()+5, grat_ll.y()-textHeight, LEFT_ALIGNED);
     DrawString("Stop " + (s->Stop()).GetFreqString(), textFont,
                grat_ll.x()+grat_sz.x()-5, grat_ll.y()-textHeight, RIGHT_ALIGNED);
-    DrawString("Ref " + s->RefLevel().GetString(), textFont,
+    str.sprintf("%.2f dB", s->RefLevel().Val());
+    DrawString("Ref " + str, textFont,
                grat_ll.x()+5, grat_ul.y()+textHeight, LEFT_ALIGNED);
     str.sprintf("Div %.1f", div);
     DrawString(str, textFont, grat_ul.x()+5, grat_ul.y()+2 , LEFT_ALIGNED);
@@ -406,8 +407,9 @@ void TGPlot::RenderMarkers()
                        textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
             y_print -= 20;
         } else if(m->Active()) {
+            QString markerReadout = QString().sprintf("%.2f dB", m->Amp().Val());
             glQColor(GetSession()->colors.text);
-            DrawString("Mkr " + QVariant(i+1).toString() + ": " + m->Text(),
+            DrawString("Mkr " + QVariant(i+1).toString() + ": " + markerReadout, //m->Text(),
                        textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
             y_print -= 20;
         }

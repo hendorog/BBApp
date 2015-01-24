@@ -483,7 +483,7 @@ void DemodSweepPlot::DrawModAnalysisReport()
 
     DrawString("AM/FM Modulation Analysis", textFont, leftPos, LEFT_ALIGNED);
     leftPos -= textHeight*2;
-    DrawString("RF Center " + Frequency(stats.rfCenter).GetFreqString(), textFont, leftPos, LEFT_ALIGNED);
+    DrawString("RF Center " + Frequency(stats.rfCenter).GetFreqString(12, true), textFont, leftPos, LEFT_ALIGNED);
     leftPos -= textHeight*1.5;
 
     DrawString("FM RMS: " + Frequency(stats.fmRMS).GetFreqString(), textFont, leftPos, LEFT_ALIGNED);

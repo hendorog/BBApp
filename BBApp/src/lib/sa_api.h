@@ -83,11 +83,9 @@ enum saStatus {
 
     // Setting specific error codes
     saFrequencyRangeErr = -99,
-    saVideoBWErr = -96,
     saInvalidDetectorErr = -95,
     saInvalidScaleErr = -94,
     saBandwidthErr = -91,
-    saRealTimeBandwidthErr = -90,
     saExternalReferenceNotFound = -89,
 
     // Device-specific errors
@@ -162,8 +160,11 @@ SA_API saStatus saQueryDiagnostics(int device, float *voltage);
 SA_API saStatus saAttachTg(int device);
 SA_API saStatus saIsTgAttached(int device, bool *attached);
 SA_API saStatus saConfigTgSweep(int device, int sweepSize, bool highDynamicRange, bool passiveDevice);
-SA_API saStatus saStoreTgThru(int device, int flags);
+SA_API saStatus saStoreTgThru(int device, int flag);
 SA_API saStatus saSetTg(int device, double frequency, double amplitude);
+
+SA_API saStatus saConfigIFOutput(int device, double inputFreq, double outputFreq,
+                                 int inputAtten, int outputGain);
 
 SA_API const char* saGetAPIVersion();
 SA_API const char* saGetErrorString(saStatus code);

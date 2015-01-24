@@ -156,6 +156,10 @@ bool SweepSettings::Load(QSettings &s)
     detector = s.value("Sweep/Detector", Detector()).toInt();
     rejection = s.value("Sweep/Rejection", Rejection()).toBool();
 
+    tgSweepSize = s.value("Sweep/TgSweepSize", tgSweepSize).toInt();
+    tgHighRangeSweep = s.value("Sweep/TgHighRangeSweep", tgHighRangeSweep).toBool();
+    tgPassiveDevice = s.value("Sweep/TgPassiveDevice", tgPassiveDevice).toBool();
+
     UpdateProgram();
     return true;
 }
@@ -186,6 +190,10 @@ bool SweepSettings::Save(QSettings &s) const
     s.setValue("Sweep/ProcessingUnits", processingUnits);
     s.setValue("Sweep/Detector", detector);
     s.setValue("Sweep/Rejection", rejection);
+
+    s.setValue("Sweep/TgSweepSize", tgSweepSize);
+    s.setValue("Sweep/TgHighRangeSweep", tgHighRangeSweep);
+    s.setValue("Sweep/TgPassiveDevice", tgPassiveDevice);
 
     return true;
 }

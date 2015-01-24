@@ -592,6 +592,14 @@ double bb_lib::sa44b_adjust_rbw_on_span(const SweepSettings *ss)
         rbw = 0.1;
     }
 
+    // Mid-range sweep, limit RBW to a specific sweep time
+    // All mid-range sweeps, limit to 30Hz
+    if(ss->Span() > 200.0e3 && ss->Span() < 98.0e6 && ss->Start() > 16.0e6) {
+        double limitRBW = ss->Span() / 80.0e3;
+        if(rbw < limitRBW) rbw = limitRBW;
+        if(rbw < 30.0) rbw = 30.0;
+    }
+
     return rbw;
 }
 
@@ -641,6 +649,13 @@ double bb_lib::sa124_adjust_rbw_on_span(const SweepSettings *ss)
         rbw = 0.1;
     }
 
+    // Mid-range sweep, limit RBW to a specific sweep time
+    // All mid-range sweeps, limit to 30Hz
+    if(ss->Span() > 200.0e3 && ss->Span() < 98.0e6 && ss->Start() > 16.0e6) {
+        double limitRBW = ss->Span() / 80.0e3;
+        if(rbw < limitRBW) rbw = limitRBW;
+        if(rbw < 30.0) rbw = 30.0;
+    }
 
     return rbw;
 }
@@ -762,8 +777,102 @@ void normalize_trace(const Trace *t, GLVector &v, QPoint grat_size)
                     t->GetSettings()->Div());
 }
 
-// Normalize frequency domain trace
 void normalize_trace(const Trace *t,
+                     GLVector &v,
+                     QPoint grat_size,
+                     Amplitude refLevel,
+                     double dBdiv)
+{
+    normalize_trace(t->Min(), t->Max(), t->Length(), v,
+                    grat_size, refLevel, dBdiv);
+}
+
+//// Normalize frequency domain trace
+//void normalize_trace(const Trace *t,
+//                     GLVector &v,
+//                     QPoint grat_size,
+//                     Amplitude refLevel,
+//                     double dBdiv)
+//{
+//    v.clear();
+
+//    if(t->Length() <= 0) {
+//        return;
+//    }
+
+//    // Data needed to transform sweep into a screen trace
+//    int currentPix = 0;                                    // Step through all pixels
+//    double currentStep = 0.0;                              // Our curr step
+//    double step = (float)(grat_size.x()) / ( t->Length() - 1 );   // Step size
+//    double ref;                       // Value representing the top of graticule
+//    double botRef;                    // Value representing bottom of graticule
+//    double xScale = 1.0 / (double)grat_size.x();
+//    double yScale;
+
+//    if(refLevel.IsLogScale()) {
+//        ref = refLevel.ConvertToUnits(AmpUnits::DBM);
+//        botRef = ref - 10.0 * dBdiv;
+//        yScale = 1.0 / (10.0 * dBdiv);
+//    } else {
+//        ref = refLevel.Val();
+//        botRef = 0.0;
+//        yScale = (1.0 / ref);
+//    }
+
+//    v.reserve(grat_size.x() * 4);
+
+//    // Less samples than pixels, create quads max1,min1,max2,min2,max3,min3,..
+//    if((int)t->Length() < grat_size.x()) {
+
+//        for(int i = 0; i < (int)t->Length(); i++) {
+
+//            double max = t->Max()[i];
+//            double min = t->Min()[i];
+
+//            v.push_back(xScale * (currentStep));
+//            v.push_back(yScale * (max - botRef));
+//            v.push_back(xScale * (currentStep));
+//            v.push_back(yScale * (min - botRef));
+
+//            currentStep += step;
+//        }
+//        return;
+//    }
+
+//    // Keeps track of local max/mins
+//    float min = ref;
+//    float max = botRef;
+
+//    // More samples than pixels, Create pixel resolution, keeps track
+//    //   of min/max for each pixel, draws 1 pixel wide quads
+//    for(int i = 0; i < t->Length(); i++) {
+
+//        double minVal = t->Min()[i];
+//        double maxVal = t->Max()[i];
+
+//        if(maxVal > max) max = maxVal;
+//        if(minVal < min) min = minVal;
+
+//        currentStep += step;
+
+//        if(currentStep > currentPix) {
+
+//            v.push_back(xScale * currentPix);
+//            v.push_back(yScale * (min - botRef));
+//            v.push_back(xScale * currentPix);
+//            v.push_back(yScale * (max - botRef));
+
+//            min = ref;
+//            max = botRef;
+//            currentPix++;
+//        }
+//    }
+//}
+
+// Normalize frequency domain trace
+void normalize_trace(const float *sweepMin,
+                     const float *sweepMax,
+                     int length,
                      GLVector &v,
                      QPoint grat_size,
                      Amplitude refLevel,
@@ -771,14 +880,14 @@ void normalize_trace(const Trace *t,
 {
     v.clear();
 
-    if(t->Length() <= 0) {
+    if(length <= 0) {
         return;
     }
 
     // Data needed to transform sweep into a screen trace
     int currentPix = 0;                                    // Step through all pixels
     double currentStep = 0.0;                              // Our curr step
-    double step = (float)(grat_size.x()) / ( t->Length() - 1 );   // Step size
+    double step = (float)(grat_size.x()) / ( length - 1 );   // Step size
     double ref;                       // Value representing the top of graticule
     double botRef;                    // Value representing bottom of graticule
     double xScale = 1.0 / (double)grat_size.x();
@@ -797,12 +906,12 @@ void normalize_trace(const Trace *t,
     v.reserve(grat_size.x() * 4);
 
     // Less samples than pixels, create quads max1,min1,max2,min2,max3,min3,..
-    if((int)t->Length() < grat_size.x()) {
+    if(length < grat_size.x()) {
 
-        for(int i = 0; i < (int)t->Length(); i++) {
+        for(int i = 0; i < length; i++) {
 
-            double max = t->Max()[i];
-            double min = t->Min()[i];
+            double max = sweepMax[i];
+            double min = sweepMin[i];
 
             v.push_back(xScale * (currentStep));
             v.push_back(yScale * (max - botRef));
@@ -820,10 +929,10 @@ void normalize_trace(const Trace *t,
 
     // More samples than pixels, Create pixel resolution, keeps track
     //   of min/max for each pixel, draws 1 pixel wide quads
-    for(int i = 0; i < t->Length(); i++) {
+    for(int i = 0; i < length; i++) {
 
-        double minVal = t->Min()[i];
-        double maxVal = t->Max()[i];
+        double minVal = sweepMin[i];
+        double maxVal = sweepMax[i];
 
         if(maxVal > max) max = maxVal;
         if(minVal < min) min = minVal;
@@ -844,79 +953,79 @@ void normalize_trace(const Trace *t,
     }
 }
 
-void normalize_trace(const Trace *t, LineList &ll, QSize grat_size)
-{
-    ll.clear();
+//void normalize_trace(const Trace *t, LineList &ll, QSize grat_size)
+//{
+//    ll.clear();
 
-    if(t->Length() <= 0) {
-        return;
-    }
+//    if(t->Length() <= 0) {
+//        return;
+//    }
 
-    // Data needed to transform sweep into a screen trace
-    int currentPix = 0;                                   // Step through all pixels
-    double currentStep = 0.0;                              // Our curr step
-    double step = (float)(grat_size.width()) / ( t->Length() - 1 );   // Step size
-    double ref;                       // Value representing the top of graticule
-    double botRef;                    // Value representing bottom of graticule
-    double xScale, yScale;
-    double dBdiv = t->GetSettings()->Div();
+//    // Data needed to transform sweep into a screen trace
+//    int currentPix = 0;                                   // Step through all pixels
+//    double currentStep = 0.0;                              // Our curr step
+//    double step = (float)(grat_size.width()) / ( t->Length() - 1 );   // Step size
+//    double ref;                       // Value representing the top of graticule
+//    double botRef;                    // Value representing bottom of graticule
+//    double xScale, yScale;
+//    double dBdiv = t->GetSettings()->Div();
 
-    // Non-FM modulation
-    ref = t->GetSettings()->RefLevel().Val();
-    botRef = ref - 10.0 * dBdiv;
-    yScale = 1.0 / (10.0 * dBdiv);
+//    // Non-FM modulation
+//    ref = t->GetSettings()->RefLevel().Val();
+//    botRef = ref - 10.0 * dBdiv;
+//    yScale = 1.0 / (10.0 * dBdiv);
 
-    xScale = 1.0 / (float)grat_size.width();
+//    xScale = 1.0 / (float)grat_size.width();
 
-    ll.reserve(grat_size.width() * 4);
+//    ll.reserve(grat_size.width() * 4);
 
-    // Less samples than pixels, create quads max1,min1,max2,min2,max3,min3,..
-    if((int)t->Length() < grat_size.width()) {
+//    // Less samples than pixels, create quads max1,min1,max2,min2,max3,min3,..
+//    if((int)t->Length() < grat_size.width()) {
 
-        for(int i = 0; i < (int)t->Length(); i++) {
+//        for(int i = 0; i < (int)t->Length(); i++) {
 
-            double max = t->Max()[i];
-            double min = t->Min()[i];
+//            double max = t->Max()[i];
+//            double min = t->Min()[i];
 
-            ll.push_back(QPointF(xScale * (currentStep),
-                                 yScale * (max - botRef)));
-            ll.push_back(QPointF(xScale * (currentStep),
-                                 yScale * (min - botRef)));
+//            ll.push_back(QPointF(xScale * (currentStep),
+//                                 yScale * (max - botRef)));
+//            ll.push_back(QPointF(xScale * (currentStep),
+//                                 yScale * (min - botRef)));
 
-            currentStep += step;
-        }
-        return;
-    }
+//            currentStep += step;
+//        }
+//        return;
+//    }
 
-    // Keeps track of local max/mins
-    float min = ref;
-    float max = botRef;
+//    // Keeps track of local max/mins
+//    float min = ref;
+//    float max = botRef;
 
-    // More samples than pixels, Create pixel resolution, keeps track
-    //   of min/max for each pixel, draws 1 pixel wide quads
-    for(int i = 0; i < t->Length(); i++) {
+//    // More samples than pixels, Create pixel resolution, keeps track
+//    //   of min/max for each pixel, draws 1 pixel wide quads
+//    for(int i = 0; i < t->Length(); i++) {
 
-        double minVal = t->Min()[i];
-        double maxVal = t->Max()[i];
+//        double minVal = t->Min()[i];
+//        double maxVal = t->Max()[i];
 
-        if(maxVal > max) max = maxVal;
-        if(minVal < min) min = minVal;
+//        if(maxVal > max) max = maxVal;
+//        if(minVal < min) min = minVal;
 
-        currentStep += step;
+//        currentStep += step;
 
-        if(currentStep > currentPix) {
+//        if(currentStep > currentPix) {
 
-            ll.push_back(QPointF(xScale * currentPix,
-                                 yScale * (min - botRef)));
-            ll.push_back(QPointF(xScale * currentPix,
-                                 yScale * (max - botRef)));
+//            ll.push_back(QPointF(xScale * currentPix,
+//                                 yScale * (min - botRef)));
+//            ll.push_back(QPointF(xScale * currentPix,
+//                                 yScale * (max - botRef)));
 
-            min = ref;
-            max = botRef;
-            currentPix++;
-        }
-    }
-}
+//            min = ref;
+//            max = botRef;
+//            currentPix++;
+//        }
+//    }
+//}
 
 void build_blackman_window(float *window, int len)
 {

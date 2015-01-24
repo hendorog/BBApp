@@ -7,8 +7,20 @@
 
 #include <QtGlobal>
 
-// I/Q max bandwidth per decimation
-static double max_bw_table_bb[] = {
+// I/Q max bandwidth per decimation BB60C
+static double max_bw_table_bb60a[] = {
+    20.0e6,
+    17.8e6,
+    8.0e6,
+    3.75e6,
+    2.0e6,
+    1.0e6,
+    0.5e6,
+    0.25e6
+};
+
+// I/Q max bandwidth per decimation BB60C
+static double max_bw_table_bb60c[] = {
     27.0e6,
     17.8e6,
     8.0e6,
@@ -69,7 +81,9 @@ double device_traits::min_iq_frequency()
         return SA44_MIN_FREQ;
     case DeviceTypeSA124:
         return SA124_MIN_FREQ;
-    case DeviceTypeBB60A: case DeviceTypeBB60C:
+    case DeviceTypeBB60A:
+        return 10.0e6;
+    case DeviceTypeBB60C:
         return 20.0e6;
     }
     return 20.0e6;
@@ -148,9 +162,18 @@ double device_traits::adjust_vbw(const SweepSettings *ss)
                 newVBW = 6.5e3;
             }
         }
-        if(ss->RBW() > ss->VBW() * 100.0) {
-            newVBW = ss->RBW() / 100.0;
+
+        // Mid-range sweep, limit VBW to a specific sweep time
+        // All mid-range sweeps, limit to 30Hz
+        if(ss->Span() > 200.0e3 && ss->Span() < 98.0e6 && ss->Start() > 16.0e6) {
+            double limitVBW = ss->Span() / 80.0e3;
+            if(newVBW < limitVBW) newVBW = limitVBW;
+            if(newVBW < 30.0) newVBW = 30.0;
         }
+
+//        if(ss->RBW() > ss->VBW() * 100.0) {
+//            newVBW = ss->RBW() / 100.0;
+//        }
         break;
     case DeviceTypeBB60A: case DeviceTypeBB60C:
         if(ss->RBW() > ss->VBW() * 1000.0) {
@@ -250,10 +273,12 @@ double device_traits::max_iq_bandwidth(int decimation_order)
     switch(type) {
     case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
         return max_bw_table_sa[decimation_order];
-    case DeviceTypeBB60A: case DeviceTypeBB60C:
-        return max_bw_table_bb[decimation_order];
+    case DeviceTypeBB60A:
+        return max_bw_table_bb60a[decimation_order];
+    case DeviceTypeBB60C:
+        return max_bw_table_bb60c[decimation_order];
     }
-    return max_bw_table_bb[decimation_order];
+    return max_bw_table_bb60c[decimation_order];
 }
 
 int device_traits::max_atten()

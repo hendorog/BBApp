@@ -58,6 +58,7 @@ public:
 
     virtual bool OpenDevice() = 0;
     virtual bool OpenDeviceWithSerial(int serialToOpen) = 0;
+    virtual int GetNativeDeviceType() const = 0;
     virtual bool CloseDevice() = 0;
     virtual bool Abort() = 0;
     virtual bool Preset() = 0;
@@ -81,10 +82,12 @@ public:
 
     virtual int MsPerIQCapture() const = 0;
 
-    void setTimebase(int new_val) {
-        timebase_reference = new_val;
-        reconfigure_on_next = true;
-    }
+    // Only defined for SA devices
+    virtual void ConfigureIFOutput(double inputFreq, double outputFreq,
+                                   int intputAtten, int outputGain) {}
+
+    // Return the timebase that was set or is going to be set
+    virtual int SetTimebase(int new_val) = 0;
 
     bool IsOpen() const { return open; }
     int Handle() const { return id; }

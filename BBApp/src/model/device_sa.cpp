@@ -15,6 +15,10 @@ DeviceSA::DeviceSA(const Preferences *preferences) :
     open = false;
     serial_number = 0;
     deviceType = saDeviceTypeNone;
+    tgIsConnected = false;
+
+    timebase_reference = TIMEBASE_INTERNAL;
+    externalReference = false;
 }
 
 DeviceSA::~DeviceSA()
@@ -97,14 +101,31 @@ bool DeviceSA::OpenDeviceWithSerial(int serialToOpen)
     return true;
 }
 
-bool DeviceSA::AttachTg()
+int DeviceSA::GetNativeDeviceType() const
 {
-    saStatus status = saAttachTg(id);
-    if(status != saNoError) {
-        return false;
+    if(!open) {
+        return (int)saDeviceTypeSA44B;
     }
 
-    return true;
+    saDeviceType type;
+    saGetDeviceType(id, &type);
+    return (int)type;
+}
+
+bool DeviceSA::AttachTg()
+{
+    QProgressDialog pd("Looking for Tracking Generator", QString(), 0, 0, 0);
+    pd.setModal(true);
+    pd.show();
+
+    QEventLoop el;
+    std::thread t = std::thread(&DeviceSA::connectTgInThread, this, &el);
+    el.exec();
+    if(t.joinable()) {
+        t.join();
+    }
+
+    return tgIsConnected;
 }
 
 bool DeviceSA::IsTgAttached()
@@ -150,10 +171,11 @@ bool DeviceSA::Reconfigure(const SweepSettings *s, Trace *t)
     tgCalState = tgCalStateUncalibrated;
 
     // Update temperature between configurations
-    saQueryTemperature(id, &current_temp);
     QString diagnostics;
     if(deviceType != saDeviceTypeSA44) {
-        diagnostics.sprintf("%.2f C", CurrentTemp());
+        saQueryTemperature(id, &current_temp);
+        saQueryDiagnostics(id, &voltage);
+        diagnostics.sprintf("%.2f C  --  %.2f V", CurrentTemp(), Voltage());
     }
     MainWindow::GetStatusBar()->SetDiagnostics(diagnostics);
 
@@ -373,4 +395,36 @@ void DeviceSA::TgStoreThrough()
 void DeviceSA::TgStoreThroughPad()
 {
     saStoreTgThru(id, TG_THRU_20DB);
+}
+
+int DeviceSA::SetTimebase(int newTimebase)
+{
+    if(!externalReference && newTimebase == TIMEBASE_INTERNAL) {
+        return timebase_reference;
+    }
+
+    if(externalReference) {
+        QMessageBox::information(0, "Information",
+                                 "Unable to modify the external reference of the device "
+                                 "once it has been enabled.");
+        return timebase_reference;
+    }
+
+    if(saEnableExternalReference(id) == saExternalReferenceNotFound) {
+        QMessageBox::warning(0, "Warning",
+                             "No external reference on port.\n"
+                             "Connect reference and try again.");
+        return timebase_reference;
+    }
+
+    timebase_reference = newTimebase;
+    externalReference = true;
+    return timebase_reference;
+}
+void DeviceSA::ConfigureIFOutput(double inputFreq,
+                                 double outputFreq,
+                                 int inputAtten,
+                                 int outputGain)
+{
+    saConfigIFOutput(id, inputFreq, outputFreq, inputAtten, outputGain);
 }

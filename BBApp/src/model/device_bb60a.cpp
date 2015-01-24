@@ -81,6 +81,17 @@ bool DeviceBB60A::OpenDeviceWithSerial(int serialToOpen)
     return true;
 }
 
+int DeviceBB60A::GetNativeDeviceType() const
+{
+    if(!open) {
+        return BB_DEVICE_BB60C;
+    }
+
+    int type;
+    bbGetDeviceType(id, &type);
+    return type;
+}
+
 bool DeviceBB60A::CloseDevice()
 {
     if(!open) {
@@ -284,7 +295,7 @@ bool DeviceBB60A::Reconfigure(const DemodSettings *ds, IQDescriptor *desc)
     }
 
     bbConfigureIO(id, port_one_mask, port_two_mask);
-    bbConfigureCenterSpan(id, ds->CenterFreq(), 20.0e6);
+    bbConfigureCenterSpan(id, ds->CenterFreq(), 1.0e6);
     bbConfigureIQ(id, decimation, ds->Bandwidth());
     bbConfigureLevel(id, ds->InputPower().ConvertToUnits(DBM), atten);
     bbConfigureGain(id, gain);
