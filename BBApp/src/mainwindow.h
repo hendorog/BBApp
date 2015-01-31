@@ -42,8 +42,10 @@ private:
 
     void RenamePreset(int p);
 
-    void OpenDeviceInThread(QMap<QString, QVariant> devInfoMap);
-    void PresetDeviceInThread();
+    void OpenDevice(QMap<QString, QVariant> devInfoMap);
+    void OpenDeviceInThread(QEventLoop *el, Device *device, int serialToOpen);
+    void Preset();
+    void PresetDeviceInThread(QEventLoop *el);
 
     // The one and only session instance
     //   all other Session pointers are copies
@@ -75,8 +77,8 @@ private:
     static BBStatusBar *status_bar;
 
     // Used for opening/closing BB60
-    std::thread device_thread;
-    ProgressDialog progressDialog;
+    //std::thread device_thread;
+    //ProgressDialog progressDialog;
     bool saveLayoutOnClose;
 
 public slots:
@@ -123,6 +125,7 @@ private slots:
     void startAudioPlayer();
     void startMeasuringReceiever();
     void startSA124IFOutput();
+    void startSelfTest();
     void aboutToShowTimebaseMenu();
     void timebaseChanged(QAction *a);
     void showPreferencesDialog();

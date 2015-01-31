@@ -301,13 +301,14 @@ void getPeakCorrelation(const complex_f *src,
                         int len,
                         double centerIn,
                         double &centerOut,
-                        double &peakPower)
+                        double &peakPower,
+                        double sampleRate)
 {
     centerOut = centerIn;
 
     const int STEPS = 401;
 
-    double stepSize = (0.5 / 312500.0);
+    double stepSize = (0.5 / sampleRate); //312500.0);
     double startFreq = centerIn - stepSize * (STEPS/2 - 1);
     double maxPower = -1.0;
     double maxCenter = 0.0;

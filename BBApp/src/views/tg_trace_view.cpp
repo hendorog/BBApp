@@ -400,6 +400,7 @@ void TGPlot::RenderMarkers()
             DrawDeltaMarker(m->delxRatio() * grat_sz.x(),
                             m->delyRatio() * grat_sz.y(), i + 1);
         }
+
         // Does not have to be in view to draw the delta values
         if(m->DeltaActive()) {
             glQColor(GetSession()->colors.text);
@@ -407,9 +408,10 @@ void TGPlot::RenderMarkers()
                        textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
             y_print -= 20;
         } else if(m->Active()) {
-            QString markerReadout = QString().sprintf("%.2f dB", m->Amp().Val());
+            QString markerReadout = m->Freq().GetFreqString() + ", " +
+                    QString().sprintf("%.2f dB", m->Amp().Val());
             glQColor(GetSession()->colors.text);
-            DrawString("Mkr " + QVariant(i+1).toString() + ": " + markerReadout, //m->Text(),
+            DrawString("Mkr " + QVariant(i+1).toString() + ": " + markerReadout,
                        textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
             y_print -= 20;
         }

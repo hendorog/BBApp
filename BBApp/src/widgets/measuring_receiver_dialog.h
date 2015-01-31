@@ -14,11 +14,7 @@ class MeasuringReceiver : public QDialog {
     Q_OBJECT
 
     static const int rangeLevelNone = -1;
-    enum RangeLevel {
-        rangeLevelHigh = 0,
-        rangeLevelMid = 1,
-        rangeLevelLow = 2
-    };
+
     enum RangeColor {
         rangeColorBlack = 0,
         rangeColorRed,
@@ -64,9 +60,9 @@ private slots:
         }
 
         switch(pl) {
-        case rangeLevelHigh: highLabel->setText(lblText); break;
-        case rangeLevelMid: midLabel->setText(lblText); break;
-        case rangeLevelLow: lowLabel->setText(lblText); break;
+        case MeasRcvrRangeHigh: highLabel->setText(lblText); break;
+        case MeasRcvrRangeMid: midLabel->setText(lblText); break;
+        case MeasRcvrRangeLow: lowLabel->setText(lblText); break;
         }
     }
     // Set the current range text label
@@ -75,9 +71,9 @@ private slots:
     }
     // Enable a single range button or disable with rangeLevelNone
     void setRangeEnabled(int range) {
-        ampGroup->button(rangeLevelHigh)->setEnabled(range == rangeLevelHigh);
-        ampGroup->button(rangeLevelMid)->setEnabled(range == rangeLevelMid);
-        ampGroup->button(rangeLevelLow)->setEnabled(range == rangeLevelLow);
+        ampGroup->button(MeasRcvrRangeHigh)->setEnabled(range == MeasRcvrRangeHigh);
+        ampGroup->button(MeasRcvrRangeMid)->setEnabled(range == MeasRcvrRangeMid);
+        ampGroup->button(MeasRcvrRangeLow)->setEnabled(range == MeasRcvrRangeLow);
     }
 
     void setEntryEnabled(bool enabled) {
@@ -97,8 +93,8 @@ protected:
 private:
     void Recalibrate(double &centerOut, double &powerOut, IQCapture &iqc);
     void ProcessThread();
-    RangeLevel GetCurrentRange() const {
-        return static_cast<RangeLevel>(ampGroup->checkedId());
+    MeasRcvrRange GetCurrentRange() const {
+        return static_cast<MeasRcvrRange>(ampGroup->checkedId());
     }
 
     FrequencyEntry *freqEntry;
@@ -110,6 +106,7 @@ private:
     std::thread threadHandle;
     std::atomic<bool> running, reinitialize, recalibrate;
     Device *device;
+    IQDescriptor descriptor;
 };
 
 #endif // MEASURING_RECEIVER_DIALOG_H

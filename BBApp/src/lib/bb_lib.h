@@ -307,7 +307,8 @@ void getPeakCorrelation(const complex_f *src,
                         int len,
                         double centerIn,
                         double &centerOut,
-                        double &peakPower);
+                        double &peakPower,
+                        double sampleRate);
 
 double getSignalFrequency(const std::vector<complex_f> &src, double sampleRate);
 QString getSampleRateString(double sampleRate);

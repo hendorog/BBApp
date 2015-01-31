@@ -345,6 +345,7 @@ bool DeviceBB60A::GetIQFlush(IQCapture *iqc, bool flush)
 // Tuned RF Level measurements configuration
 // Requires lowest sample rate, smallest bandwidth streaming
 bool DeviceBB60A::ConfigureForTRFL(double center,
+                                   MeasRcvrRange range,
                                    int atten,
                                    int gain,
                                    IQDescriptor &desc)
@@ -364,11 +365,24 @@ bool DeviceBB60A::ConfigureForTRFL(double center,
         break;
     }
 
+    double refLevel;
+    switch(range) {
+    case MeasRcvrRangeHigh:
+        refLevel = +10.0;
+        break;
+    case MeasRcvrRangeMid:
+        refLevel = -25.0;
+        break;
+    case MeasRcvrRangeLow:
+        refLevel = -50.0;
+        break;
+    }
+
     bbConfigureIO(id, port_one_mask, 0x0);
     bbConfigureCenterSpan(id, center, 20.0e6);
     bbConfigureIQ(id, 128, 100.0e3);
-    bbConfigureLevel(id, 0.0, atten);
-    bbConfigureGain(id, gain);
+    bbConfigureLevel(id, refLevel, BB_AUTO_ATTEN);
+    bbConfigureGain(id, BB_AUTO_GAIN);
 
     bbInitiate(id, BB_STREAMING, BB_STREAM_IQ);
     int sampleRate;

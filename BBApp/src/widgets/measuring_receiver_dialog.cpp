@@ -3,6 +3,8 @@
 #include <QRadioButton>
 #include <QButtonGroup>
 
+#include <iostream>
+
 static const int WIDGET_HEIGHT = 25;
 
 MeasuringReceiver::MeasuringReceiver(Device *devicePtr,
@@ -43,7 +45,7 @@ MeasuringReceiver::MeasuringReceiver(Device *devicePtr,
     highAmp->resize(width()/2, WIDGET_HEIGHT);
     highAmp->setObjectName("SHPrefRadioButton");
     highAmp->setChecked(true);
-    ampGroup->addButton(highAmp, rangeLevelHigh);
+    ampGroup->addButton(highAmp, MeasRcvrRangeHigh);
 
     highLabel = new Label("", this);
     highLabel->move(QPoint(width()/2, pos.y()));
@@ -53,7 +55,7 @@ MeasuringReceiver::MeasuringReceiver(Device *devicePtr,
     midAmp->move(pos);
     midAmp->resize(width()/2, WIDGET_HEIGHT);
     midAmp->setObjectName("SHPrefRadioButton");
-    ampGroup->addButton(midAmp, rangeLevelMid);
+    ampGroup->addButton(midAmp, MeasRcvrRangeMid);
 
     midLabel = new Label("", this);
     midLabel->move(QPoint(width()/2, pos.y()));
@@ -63,7 +65,7 @@ MeasuringReceiver::MeasuringReceiver(Device *devicePtr,
     lowAmp->move(pos);
     lowAmp->resize(width()/2, WIDGET_HEIGHT);
     lowAmp->setObjectName("SHPrefRadioButton");
-    ampGroup->addButton(lowAmp, rangeLevelLow);
+    ampGroup->addButton(lowAmp, MeasRcvrRangeLow);
 
     lowLabel = new Label("", this);
     lowLabel->move(QPoint(width()/2, pos.y()));
@@ -149,12 +151,12 @@ MeasuringReceiver::~MeasuringReceiver()
 void MeasuringReceiver::Recalibrate(double &centerOut, double &powerOut, IQCapture &iqc)
 {
     int atten, gain;
-    RangeLevel level = GetCurrentRange();
+    MeasRcvrRange level = GetCurrentRange();
 
     switch(level) {
-    case rangeLevelHigh: atten = 30; gain = 1; break;
-    case rangeLevelMid: atten = 30; gain = 3; break;
-    case rangeLevelLow: atten = 0; gain = 3; break;
+    case MeasRcvrRangeHigh: atten = 30; gain = 1; break;
+    case MeasRcvrRangeMid: atten = 30; gain = 3; break;
+    case MeasRcvrRangeLow: atten = 0; gain = 3; break;
     }
 
     emit updateLabels("", "", "", "");
@@ -162,12 +164,13 @@ void MeasuringReceiver::Recalibrate(double &centerOut, double &powerOut, IQCaptu
     emit updateRangeEnabled(rangeLevelNone);
     emit updateEntryEnabled(false);
 
-    IQDescriptor descriptor;
-    device->ConfigureForTRFL(freqEntry->GetFrequency(), atten, gain, descriptor);
+    device->ConfigureForTRFL(freqEntry->GetFrequency(), level, atten, gain, descriptor);
     iqc.capture.resize(descriptor.returnLen);
-    device->GetIQFlush(&iqc, true);
-    centerOut = getSignalFrequency(iqc.capture, 312500.0);
-    centerOut /= 312500.0;
+    for(int i = 0; i < 3; i++) {
+        device->GetIQFlush(&iqc, true);
+    }
+    centerOut = getSignalFrequency(iqc.capture, descriptor.sampleRate); // 312500.0);
+    centerOut /= descriptor.sampleRate; //312500.0;
     for(int i = 0; i < 30; i++) { // Amplitude settles in roughly 30 packets ?
         if(i % 10 == 0) {
             QString calStr = "Calibrating";
@@ -175,7 +178,9 @@ void MeasuringReceiver::Recalibrate(double &centerOut, double &powerOut, IQCaptu
             emit updateRangeLevelText(calStr, rangeColorGreen);
         }
         device->GetIQFlush(&iqc, true);
-        getPeakCorrelation(&iqc.capture[0], 4096, centerOut, centerOut, powerOut);
+        getPeakCorrelation(&iqc.capture[0], 4096, centerOut,
+                centerOut, powerOut, descriptor.sampleRate);
+        std::cout << "Pre Center " << centerOut << " " << powerOut << std::endl;
     }
 
     emit updateRangeLevelText("", rangeColorBlack);
@@ -189,7 +194,6 @@ void MeasuringReceiver::ProcessThread()
     double center, power, relative, offset;
     std::list<double> average;
     std::vector<complex_f> full;
-    full.resize(4096 * 3);
 
     while(running) {
         // Reinitialize to start tuned level measurements over
@@ -209,40 +213,43 @@ void MeasuringReceiver::ProcessThread()
             offset += (power - relative);
             Recalibrate(center, power, capture);
             relative = power;
+            full.resize(descriptor.returnLen * 3);
+            average.clear();
         }
 
         device->GetIQFlush(&capture, true);
-        simdCopy_32fc(&capture.capture[0], &full[0], 4096);
+        simdCopy_32fc(&capture.capture[0], &full[0], descriptor.returnLen);
         for(int i = 1; i < 3; i++) {
             device->GetIQ(&capture);
-            simdCopy_32fc(&capture.capture[0], &full[i * 4096], 4096);
+            simdCopy_32fc(&capture.capture[0], &full[i * descriptor.returnLen], descriptor.returnLen);
         }
-        getPeakCorrelation(&full[0], 4096*3, center, center, power);
+        getPeakCorrelation(&full[0], descriptor.returnLen*3, center, center, power, descriptor.sampleRate);
+        std::cout << "Post center " << center << " " << power << "\n";
 
         if(device->ADCOverflow()) {
             emit updateRangeLevelText("IF Overload", rangeColorRed);
         } else {
-            if(GetCurrentRange() == rangeLevelHigh) {
-                if(power > -30.0) {
+            if(GetCurrentRange() == MeasRcvrRangeHigh) {
+                if(power > -25.0) {
                     emit updateRangeLevelText("", rangeColorBlack);
                     emit updateRangeEnabled(rangeLevelNone);
-                } else if(power < -45.0) {
-                    emit updateRangeLevelText(rangeLevelMid, "Passed Mid-Range", rangeColorRed);
+                } else if(power < -40.0) {
+                    emit updateRangeLevelText(MeasRcvrRangeMid, "Passed Mid-Range", rangeColorRed);
                     emit updateRangeEnabled(rangeLevelNone);
                 } else {
-                    emit updateRangeLevelText(rangeLevelMid, "Recal at new range", rangeColorOrange);
-                    emit updateRangeEnabled(rangeLevelMid);
+                    emit updateRangeLevelText(MeasRcvrRangeMid, "Recal at new range", rangeColorOrange);
+                    emit updateRangeEnabled(MeasRcvrRangeMid);
                 }
-            } else if(GetCurrentRange() == rangeLevelMid) {
-                if(power > -60.0) {
+            } else if(GetCurrentRange() == MeasRcvrRangeMid) {
+                if(power > -50.0) {
                     emit updateRangeLevelText("", rangeColorBlack);
                     emit updateRangeEnabled(rangeLevelNone);
-                } else if(power < -75.0) {
-                    emit updateRangeLevelText(rangeLevelLow, "Passed Low-Range", rangeColorRed);
+                } else if(power < -65.0) {
+                    emit updateRangeLevelText(MeasRcvrRangeLow, "Passed Low-Range", rangeColorRed);
                     emit updateRangeEnabled(rangeLevelNone);
                 } else {
-                    emit updateRangeLevelText(rangeLevelLow, "Recal at new range", rangeColorOrange);
-                    emit updateRangeEnabled(rangeLevelLow);
+                    emit updateRangeLevelText(MeasRcvrRangeLow, "Recal at new range", rangeColorOrange);
+                    emit updateRangeEnabled(MeasRcvrRangeLow);
                 }
             } else {
                 emit updateRangeLevelText("", rangeColorBlack);
@@ -259,7 +266,8 @@ void MeasuringReceiver::ProcessThread()
         avgPower /= average.size();
 
         QString centerStr, powerStr, relativeStr, averageStr;
-        centerStr = Frequency(freqEntry->GetFrequency() + center * 312500.0).GetFreqString();
+        centerStr = Frequency(freqEntry->GetFrequency() +
+                              center * descriptor.sampleRate/*312500.0*/).GetFreqString();
         powerStr.sprintf("%.3f dBm", power);
         relativeStr.sprintf("%.3f dB", diff);
         averageStr.sprintf("%.3f dB", avgPower);

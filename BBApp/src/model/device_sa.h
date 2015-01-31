@@ -26,7 +26,8 @@ public:
     virtual bool Reconfigure(const DemodSettings *s, IQDescriptor *iqc);
     virtual bool GetIQ(IQCapture *iqc);
     virtual bool GetIQFlush(IQCapture *iqc, bool sync);
-    virtual bool ConfigureForTRFL(double center, int atten, int gain, IQDescriptor &desc);
+    virtual bool ConfigureForTRFL(double center, MeasRcvrRange range,
+                                  int atten, int gain, IQDescriptor &desc);
     virtual bool ConfigureAudio(const AudioSettings &as);
     virtual bool GetAudio(float *audio);
 
@@ -43,6 +44,15 @@ public:
     virtual bool IsTgAttached();
     virtual bool SetTg(Frequency freq, double amp);
 
+    virtual bool CanPerformSelfTest() const {
+        if(deviceType == saDeviceTypeSA44B
+                || deviceType == saDeviceTypeSA124B)
+        {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     virtual void TgStoreThrough();
     virtual void TgStoreThroughPad();

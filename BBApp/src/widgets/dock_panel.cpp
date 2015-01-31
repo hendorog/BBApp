@@ -31,6 +31,14 @@ DockPanel::DockPanel(const QString &title,
 
 void DockPanel::PrependPage(DockPage *page)
 {
+    // Do not add page if it already is in the list
+    // Loading presets might cause this function to get
+    //  called again even if the page already is in the list.
+    auto iter = std::find(tabs.begin(), tabs.end(), page);
+    if(iter != tabs.end()) {
+        return;
+    }
+
     connect(page, SIGNAL(tabUpdated()),
             this, SLOT(tabsChanged()));
 
@@ -42,6 +50,14 @@ void DockPanel::PrependPage(DockPage *page)
 
 void DockPanel::AppendPage(DockPage *page)
 {
+    // Do not add page if it already is in the list
+    // Loading presets might cause this function to get
+    //  called again even if the page already is in the list.
+    auto iter = std::find(tabs.begin(), tabs.end(), page);
+    if(iter != tabs.end()) {
+        return;
+    }
+
     connect(page, SIGNAL(tabUpdated()),
             this, SLOT(tabsChanged()));
 

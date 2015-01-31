@@ -65,7 +65,7 @@ void DemodSettings::LoadDefaults()
     centerFreq = 1.0e9;
     gain = 0; // Index, 0 == auto
     atten = 0; // Index, 0 == auto
-    decimationFactor = 6;
+    decimationFactor = device_traits::default_decimation();
     bandwidth = device_traits::max_iq_bandwidth(decimationFactor);
     autoBandwidth = true;
     sweepTime = 1.0e-3;
@@ -77,6 +77,8 @@ void DemodSettings::LoadDefaults()
 
     maEnabled = false;
     maLowPass = 10.0e3;
+
+    emit updated(this);
 }
 
 bool DemodSettings::Load(QSettings &s)
@@ -257,14 +259,12 @@ void DemodSettings::setMALowPass(Frequency f)
 
 void DemodSettings::SetMRConfiguration()
 {
-    // Max decimation
+    // Set proper decimation
     decimationFactor = device_traits::mod_analysis_decimation_order();
 
-    // Clamp down bandwidth
+    // Force highest bandwidth for given decimation
     double maxBandwidth = device_traits::max_iq_bandwidth(decimationFactor);
-    if(bandwidth > maxBandwidth) {
-        bandwidth = maxBandwidth;
-    }
+    bandwidth = maxBandwidth;
 
     // Max possible sweep time
     double binSize = (0x1 << decimationFactor) / device_traits::sample_rate();

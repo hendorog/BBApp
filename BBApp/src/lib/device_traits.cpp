@@ -281,6 +281,17 @@ double device_traits::max_iq_bandwidth(int decimation_order)
     return max_bw_table_bb60c[decimation_order];
 }
 
+int device_traits::default_decimation()
+{
+    switch(type) {
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return 0;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return 6;
+    }
+    return 6;
+}
+
 int device_traits::max_atten()
 {
     switch(type) {

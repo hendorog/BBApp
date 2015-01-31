@@ -36,6 +36,14 @@ struct DeviceConnectionInfo {
     DeviceSeries series;
 };
 
+// Do not change these values
+// They act as indices in the measuring receiver dialog class
+enum MeasRcvrRange {
+    MeasRcvrRangeHigh = 0,
+    MeasRcvrRangeMid = 1,
+    MeasRcvrRangeLow = 2
+};
+
 class Device : public QObject {
     Q_OBJECT
 
@@ -68,7 +76,8 @@ public:
     virtual bool Reconfigure(const DemodSettings *s, IQDescriptor *capture) = 0;
     virtual bool GetIQ(IQCapture *iqc) = 0;
     virtual bool GetIQFlush(IQCapture *iqc, bool flush) = 0;
-    virtual bool ConfigureForTRFL(double center, int atten, int gain, IQDescriptor &desc) = 0;
+    virtual bool ConfigureForTRFL(double center, MeasRcvrRange range,
+                                  int atten, int gain, IQDescriptor &desc) = 0;
     virtual bool ConfigureAudio(const AudioSettings &as) = 0;
     virtual bool GetAudio(float *audio) = 0;
 
@@ -76,6 +85,8 @@ public:
     virtual bool AttachTg() { return false; }
     virtual bool IsTgAttached() { return false; }
     virtual bool SetTg(Frequency freq, double amp) { return false; }
+
+    virtual bool CanPerformSelfTest() const { return false; }
 
     virtual void TgStoreThrough() {}
     virtual void TgStoreThroughPad() {}

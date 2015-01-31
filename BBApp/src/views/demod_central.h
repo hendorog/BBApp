@@ -105,12 +105,12 @@ protected:
 
 private:
     void Reconfigure(DemodSettings *ds, IQCapture *iqc, IQSweep &iqSweep);
-    void GetCapture(const DemodSettings *ds, IQCapture &iqc,
+    bool GetCapture(const DemodSettings *ds, IQCapture &iqc,
                     IQSweep &iq, Device *device);
-    void RecordIQCapture(const IQSweep &sweep, IQCapture &capture, Device *device);
-    void CollectThread(Device *device, int captureLen);
+    //void CollectThread(Device *device, int captureLen);
     void StreamThread();
     void UpdateView();
+    void RecordIQCapture(const IQSweep &sweep, IQCapture &capture, Device *device);
 
     Session *sessionPtr; // Copy, does not own
     //CircularBuffer circularBuffer;

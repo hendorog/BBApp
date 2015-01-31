@@ -5,6 +5,7 @@
 #include "widgets/preferences_dialog.h"
 #include "widgets/measuring_receiver_dialog.h"
 #include "widgets/if_output_dialog.h"
+#include "widgets/self_test_dialog.h"
 
 #include <QFile>
 #include <QSplitter>
@@ -16,13 +17,13 @@
 
 static const QString utilitiesTgControlString = "Tracking Generator Controls";
 static const QString utilitiesIFOutputString = "SA124 IF Output";
+static const QString utilitiesSelfTestString = "Self Test";
 
 // Static status bar
 BBStatusBar *MainWindow::status_bar;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
-      progressDialog(this),
       saveLayoutOnClose(true)
 {
     setWindowTitle(tr("Spike: Signal Hound Spectrum Analyzer Software"));
@@ -300,7 +301,7 @@ void MainWindow::InitMenuBar()
     mode_action->setCheckable(true);
     mode_action_group->addAction(mode_action);
 
-    mode_action = mode_menu->addAction("Scalar Network Analyzer");
+    mode_action = mode_menu->addAction("Scalar Network Analysis");
     mode_action->setData(MODE_NETWORK_ANALYZER);
     mode_action->setCheckable(true);
     mode_action_group->addAction(mode_action);
@@ -320,6 +321,7 @@ void MainWindow::InitMenuBar()
     utilities_menu->addAction(tr("Measuring Receiever"), this, SLOT(startMeasuringReceiever()));
     utilities_menu->addAction(tgPanel->toggleViewAction());
     utilities_menu->addAction(utilitiesIFOutputString, this, SLOT(startSA124IFOutput()));
+    utilities_menu->addAction(utilitiesSelfTestString, this, SLOT(startSelfTest()));
     connect(utilities_menu, SIGNAL(aboutToShow()), this, SLOT(aboutToShowUtilitiesMenu()));
 
     help_menu = main_menu->addMenu(tr("Help"));
@@ -488,9 +490,7 @@ void MainWindow::aboutToShowUtilitiesMenu()
     for(QAction *a : utilities_menu->actions()) {
         a->setEnabled(isOpen);
 
-        if(!isOpen) {
-            continue;
-        }
+        if(!isOpen) continue;
 
         if(a->text() == utilitiesTgControlString) {
             a->setEnabled(session->device->IsCompatibleWithTg());
@@ -499,10 +499,14 @@ void MainWindow::aboutToShowUtilitiesMenu()
         if(a->text() == utilitiesIFOutputString) {
             a->setEnabled(session->device->GetDeviceType() == DeviceTypeSA124);
         }
+
+        if(a->text() == utilitiesSelfTestString) {
+            a->setEnabled(session->device->CanPerformSelfTest());
+        }
     }
 }
 
-void MainWindow::OpenDeviceInThread(QMap<QString, QVariant> devInfoMap)
+void MainWindow::OpenDevice(QMap<QString, QVariant> devInfoMap)
 {
     QString openLabel;
     if(devInfoMap["Series"].toInt() == saSeries) {
@@ -511,7 +515,8 @@ void MainWindow::OpenDeviceInThread(QMap<QString, QVariant> devInfoMap)
         openLabel = "Connecting Device\nEstimated 3 seconds";
     }
 
-    progressDialog.makeVisible(openLabel);
+    SHProgressDialog pd(openLabel, this);
+    pd.show();
 
     Device *device;
     if(devInfoMap["Series"].toInt() == saSeries) {
@@ -525,26 +530,34 @@ void MainWindow::OpenDeviceInThread(QMap<QString, QVariant> devInfoMap)
     session->device = device;
     delete tempDevice;
 
-    device->OpenDeviceWithSerial(devInfoMap["SerialNumber"].toInt());
-//    if(device->IsOpen()) {
-//        Device *tempDevice = session->device;
-//        session->device = device;
-//        delete tempDevice;
-//    }
+    QEventLoop el;
+    std::thread t = std::thread(&MainWindow::OpenDeviceInThread,
+                                this,
+                                &el,
+                                device,
+                                devInfoMap["SerialNumber"].toInt());
+    el.exec();
+    if(t.joinable()) {
+        t.join();
+    }
 
-    QMetaObject::invokeMethod(this, "deviceConnected",
-                              Q_ARG(bool, session->device->IsOpen()));
-
-    progressDialog.makeDisappear();
+    deviceConnected(session->device->IsOpen());
 
     return;
 }
 
-void MainWindow::PresetDeviceInThread()
+void MainWindow::OpenDeviceInThread(QEventLoop *el, Device *device, int serialToOpen)
 {
-    progressDialog.makeVisible("Preset Device\n"
-                               "Estimated 3 seconds");
+    device->OpenDeviceWithSerial(serialToOpen);
 
+    while(!el->isRunning()) {
+        Sleep(1);
+    }
+    el->exit();
+}
+
+void MainWindow::Preset()
+{
     // Stop any sweeping
     centralStack->CurrentWidget()->changeMode(MODE_IDLE);
     centralStack->CurrentWidget()->ResetView();
@@ -568,17 +581,33 @@ void MainWindow::PresetDeviceInThread()
         devInfoMap["SerialNumber"] = session->device->SerialNumber();
     }
 
-    // Stop all operation
-    // Preset -> Close -> Wait -> Open
-    session->device->Preset();
+    SHProgressDialog pd("Preset Device\n"
+                        "Estimated 3 seconds", this);
+    pd.show();
 
-    progressDialog.makeDisappear();
+    QEventLoop el;
+    std::thread t = std::thread(&MainWindow::PresetDeviceInThread, this, &el);
+    el.exec();
+    if(t.joinable()) {
+        t.join();
+    }
 
     session->LoadDefaults();
 
-    OpenDeviceInThread(devInfoMap);
+    pd.hide();
+    OpenDevice(devInfoMap);
 
     return;
+
+}
+
+void MainWindow::PresetDeviceInThread(QEventLoop *el)
+{
+    session->device->Preset();
+    while(!el->isRunning()) {
+        Sleep(1);
+    }
+    el->exit();
 }
 
 // Only called once upon opening the program
@@ -586,10 +615,6 @@ void MainWindow::PresetDeviceInThread()
 //   report a number messages to the user.
 void MainWindow::connectDeviceUponOpen()
 {
-    if(device_thread.joinable()) {
-        device_thread.join();
-    }
-
     // Look for no devices or more than one device
     auto list = session->device->GetDeviceList();
     if(list.size() == 0) {
@@ -612,29 +637,18 @@ void MainWindow::connectDeviceUponOpen()
     }
     devInfo["SerialNumber"] = item.serialNumber;
 
-    device_thread = std::thread(&MainWindow::OpenDeviceInThread, this, devInfo);
+    OpenDevice(devInfo);
 }
 
 void MainWindow::connectDevice(QAction *a)
 {
-    if(device_thread.joinable()) {
-        device_thread.join();
-    }
-
     QMap<QString, QVariant> infoMap = a->data().toMap();
-
-    device_thread = std::thread(&MainWindow::OpenDeviceInThread, this, infoMap);
+    OpenDevice(infoMap);
 }
 
 // Add all available devices to the connect menu
 void MainWindow::populateConnectMenu()
 {
-    // Force any connecting thread to finish before populating the list
-    // Prevent the possibility of opening a device twice
-    if(device_thread.joinable()) {
-        device_thread.join();
-    }
-
     connect_menu->clear();
     auto list = session->device->GetDeviceList();
 
@@ -691,9 +705,11 @@ void MainWindow::disconnectDevice()
     status_bar->UpdateDeviceInfo("");
 }
 
+#include <iostream>
 // Call disconnect AND provide user warning
 void MainWindow::forceDisconnectDevice()
 {
+    std::cout << "USB error found\n";
     disconnectDevice();
     QMessageBox::warning(0, "Connectivity Issues", "Device Connection Issues Detected, Ensure the"
                          " device is connected before opening again via the File Menu");
@@ -702,11 +718,7 @@ void MainWindow::forceDisconnectDevice()
 // Preset Button Disconnect Device
 void MainWindow::presetDevice()
 {
-    if(device_thread.joinable()) {
-        device_thread.join();
-    }
-
-    device_thread = std::thread(&MainWindow::PresetDeviceInThread, this);
+    Preset();
 }
 
 void MainWindow::deviceConnected(bool success)
@@ -730,12 +742,8 @@ void MainWindow::deviceConnected(bool success)
     } else {
         QMessageBox::information(this, tr("Connection Status"),
                                  session->device->GetLastStatusString());
-//                                 tr("No device found. Use the file menu to"
-//                                    " open a device once connected."));
         status_bar->SetDeviceType("No Device Connected");
     }
-
-    if(device_thread.joinable()) device_thread.join();
 }
 
 void MainWindow::printView()
@@ -779,12 +787,13 @@ void MainWindow::saveAsImage()
 void MainWindow::setTitle()
 {
     bool ok;
+    // Create Title dialog with existing title present
     QString new_title =
             QInputDialog::getText(this,
                                   tr("Set Title"),
                                   tr("Enter Title (Between 3-63 characters)"),
                                   QLineEdit::Normal,
-                                  QString(),
+                                  session->title,
                                   &ok);
 
     if(ok) {
@@ -1004,6 +1013,19 @@ void MainWindow::startSA124IFOutput()
     centralStack->CurrentWidget()->changeMode(MODE_IDLE);
 
     IFOutputDialog *dlg = new IFOutputDialog(session->device, this);
+    dlg->exec();
+    delete dlg;
+
+    centralStack->CurrentWidget()->changeMode(temp_mode);
+}
+
+void MainWindow::startSelfTest()
+{
+    int temp_mode = session->sweep_settings->Mode();
+
+    centralStack->CurrentWidget()->changeMode(MODE_IDLE);
+
+    SelfTestDialog *dlg = new SelfTestDialog(session->device, this);
     dlg->exec();
     delete dlg;
 

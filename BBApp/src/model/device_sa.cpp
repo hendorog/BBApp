@@ -114,8 +114,7 @@ int DeviceSA::GetNativeDeviceType() const
 
 bool DeviceSA::AttachTg()
 {
-    QProgressDialog pd("Looking for Tracking Generator", QString(), 0, 0, 0);
-    pd.setModal(true);
+    SHProgressDialog pd("Looking for Tracking Generator");
     pd.show();
 
     QEventLoop el;
@@ -223,16 +222,19 @@ bool DeviceSA::GetSweep(const SweepSettings *s, Trace *t)
 {
     saStatus status = saNoError;
 
-//    UpdateDiagnostics();
-
-//    if(update_diagnostics_string) {
-//        QString diagnostics;
-//        //diagnostics.sprintf()
-//    }
-
     int startIx, stopIx;
 
     status = saGetPartialSweep_32f(id, t->Min(), t->Max(), &startIx, &stopIx);
+
+    // Testing Full sweep, not for production
+    //status = saGetSweep_32f(id, t->Min(), t->Max());
+    //startIx = 0;
+    //stopIx = t->Length();
+
+    if(status == saUSBCommErr) {
+        emit connectionIssues();
+        return false;
+    }
 
     t->SetUpdateRange(startIx, stopIx);
 
@@ -247,7 +249,7 @@ bool DeviceSA::GetSweep(const SweepSettings *s, Trace *t)
     return true;
 }
 
-// Stream
+// I/Q streaming setup
 bool DeviceSA::Reconfigure(const DemodSettings *s, IQDescriptor *iqc)
 {
     saAbort(id);
@@ -276,6 +278,11 @@ bool DeviceSA::GetIQ(IQCapture *iqc)
 {
     saStatus status = saGetIQ_32f(id, (float*)(&iqc->capture[0]));
 
+    if(status == saUSBCommErr) {
+        emit connectionIssues();
+        return false;
+    }
+
     adc_overflow = (status == saCompressionWarning);
 
     return true;
@@ -283,7 +290,6 @@ bool DeviceSA::GetIQ(IQCapture *iqc)
 
 bool DeviceSA::GetIQFlush(IQCapture *iqc, bool sync)
 {
-    //GetIQ(iqc);
     int rs;
     if(!sync) {
         return GetIQ(iqc);
@@ -297,28 +303,39 @@ bool DeviceSA::GetIQFlush(IQCapture *iqc, bool sync)
             rs = timer.restart();
             //printf("%d\n", rs);
         } while(rs < 2);
-        //} while(timer.restart() < 2);
     }
     return true;
 }
 
 bool DeviceSA::ConfigureForTRFL(double center,
+                                MeasRcvrRange range,
                                 int atten,
                                 int gain,
                                 IQDescriptor &desc)
 {
     saAbort(id);
 
-//    int atten = (atten == 0) ? SA_AUTO_ATTEN : atten - 1;
-//    int gain = (gain == 0) ? SA_AUTO_GAIN : gain - 1;
-//    saConfigCenterSpan(id, center, 250.0e3);
-//    saConfigLevel(id, s->InputPower(), atten, gain, false);
-//    saConfigIQ(id, 1, 250.0e3);
-//    saInitiate(id, SA_IQ, 0);
+    double refLevel;
+    switch(range) {
+    case MeasRcvrRangeHigh:
+        refLevel = 0.0;
+        break;
+    case MeasRcvrRangeMid:
+        refLevel = -25.0;
+        break;
+    case MeasRcvrRangeLow:
+        refLevel = -50.0;
+        break;
+    }
 
-//    saQueryStreamInfo(id, &desc->returnLen, &desc->bandwidth, &desc->sampleRate);
-//    desc->timeDelta = 1.0 / desc->sampleRate;
-//    desc->decimation = 1;
+    saConfigCenterSpan(id, center, 100.0e3);
+    saConfigLevel(id, refLevel);
+    saConfigGainAtten(id, SA_AUTO_ATTEN, SA_AUTO_GAIN, false);
+    saConfigIQ(id, 2, 100.0e3);
+    saInitiate(id, SA_IQ, 0);
+    saQueryStreamInfo(id, &desc.returnLen, &desc.bandwidth, &desc.sampleRate);
+    desc.timeDelta = 1.0 / desc.sampleRate;
+    desc.decimation = 2;
 
     return true;
 }
@@ -341,7 +358,14 @@ bool DeviceSA::ConfigureAudio(const AudioSettings &as)
 
 bool DeviceSA::GetAudio(float *audio)
 {
-    /*lastStatus = */ saGetAudio(id, audio);
+    saStatus status = saGetAudio(id, audio);
+
+    if(status == saUSBCommErr) {
+        emit connectionIssues();
+        return false;
+    }
+
+    adc_overflow = (status == saCompressionWarning);
 
     return true;
 }
@@ -410,10 +434,18 @@ int DeviceSA::SetTimebase(int newTimebase)
         return timebase_reference;
     }
 
-    if(saEnableExternalReference(id) == saExternalReferenceNotFound) {
+    saStatus status = saEnableExternalReference(id);
+    if(status == saExternalReferenceNotFound) {
         QMessageBox::warning(0, "Warning",
                              "No external reference on port.\n"
                              "Connect reference and try again.");
+        return timebase_reference;
+    }
+
+    if(status == saInvalidDeviceErr) {
+        QMessageBox::warning(0, "Warning",
+                             "The current device does not support\n"
+                             "an external reference.");
         return timebase_reference;
     }
 

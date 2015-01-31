@@ -50,7 +50,9 @@ private:
     TGPlot *plot;
 
 private slots:
-    void settingsChanged(const SweepSettings *ss) { reconfigure = true; }
+    void settingsChanged(const SweepSettings *ss) {
+        reconfigure = true;
+    }
 
 signals:
     void updateView();

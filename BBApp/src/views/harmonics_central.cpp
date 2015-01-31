@@ -111,6 +111,8 @@ void HarmonicsCentral::SweepThread()
             emit updateView();
         }
     }
+
+    session_ptr->device->Abort();
 }
 
 void HarmonicsCentral::settingsChanged(const SweepSettings *ss)

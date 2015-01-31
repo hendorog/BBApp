@@ -13,7 +13,7 @@ TgCtrlPanel::TgCtrlPanel(const QString &title, QWidget *parent, Session *session
     center = new FrequencyEntry("Center Freq", 1.0e9);
     freqStepSize = new FrequencyEntry("Freq Step", 1.0e6);
     DualButtonEntry *freqStep = new DualButtonEntry("Step Down", "Step Up");
-    amp = new NumericEntry("Amplitude", -20.0, "dBm");
+    amp = new NumericEntry("Amplitude", -30.0, "dBm");
     ampStepSize = new NumericEntry("dB Step", 1.0, "dB");
     DualButtonEntry *ampStep = new DualButtonEntry("Step Down", "Step Up");
 
@@ -53,10 +53,15 @@ void TgCtrlPanel::becameVisible(bool checked) {
                                  "Please connect your tracking generator\n"
                                  "and try again");
             toggleViewAction()->toggle();
+            return;
         }
     } else {
         first = false;
     }
+
+    // If everything opened successfully,
+    session_ptr->device->SetTg(center->GetFrequency(),
+                               amp->GetValue());
 }
 
 

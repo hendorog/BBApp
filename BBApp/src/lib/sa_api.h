@@ -17,6 +17,11 @@ enum saDeviceType {
     saDeviceTypeSA124B = 4
 };
 
+enum saBool {
+    saFalse = 0,
+    saTrue = 1
+};
+
 // Limits
 #define SA44_MIN_FREQ (1.0)
 #define SA124_MIN_FREQ (100.0e3)
@@ -76,6 +81,15 @@ enum saDeviceType {
 // TG Notify Flags
 #define TG_THRU_0DB  (0x1)
 #define TG_THRU_20DB  (0x2)
+
+struct saSelfTestResults {
+    // Pass/Fail
+    bool highBandMixer, lowBandMixer;
+    bool attenuator, secondIF, preamplifier;
+    // Readings
+    double highBandMixerValue, lowBandMixerValue;
+    double attenuatorValue, secondIFValue, preamplifierValue;
+};
 
 // Return values
 enum saStatus {
@@ -165,6 +179,7 @@ SA_API saStatus saSetTg(int device, double frequency, double amplitude);
 
 SA_API saStatus saConfigIFOutput(int device, double inputFreq, double outputFreq,
                                  int inputAtten, int outputGain);
+SA_API saStatus saSelfTest(int device, saSelfTestResults *results);
 
 SA_API const char* saGetAPIVersion();
 SA_API const char* saGetErrorString(saStatus code);

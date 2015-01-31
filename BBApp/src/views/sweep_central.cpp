@@ -22,15 +22,6 @@ SweepCentral::SweepCentral(Session *sPtr,
       session_ptr(sPtr),
       trace(true)
 {
-//    SHPushButton *st = new SHPushButton("Store Thru");
-//    st->setFixedSize(100, 26);
-//    toolBar->addWidget(st);
-//    connect(st, SIGNAL(clicked()), this, SLOT(storeThru()));
-//    SHPushButton *stp = new SHPushButton("Store Thru Pad");
-//    stp->setFixedSize(100, 26);
-//    toolBar->addWidget(stp);
-//    connect(stp, SIGNAL(clicked()), this, SLOT(storeThroughPad()));
-
     trace_view = new TraceView(session_ptr, this);
     connect(this, SIGNAL(updateView()), trace_view, SLOT(update()));
 
@@ -109,7 +100,7 @@ void SweepCentral::changeMode(int new_state)
     StopStreaming();
     sweep_count = -1;
 
-    session_ptr->sweep_settings->setMode((OperationalMode) new_state);
+    session_ptr->sweep_settings->setMode((OperationalMode)new_state);
 
     if(new_state == BB_SWEEPING || new_state == BB_REAL_TIME) {
         StartStreaming();
@@ -199,7 +190,8 @@ void SweepCentral::SweepThread()
 
         if(sweep_count) {
             if(!session_ptr->device->GetSweep(session_ptr->sweep_settings, &trace)) {
-                MainWindow::GetStatusBar()->SetMessage(session_ptr->device->GetLastStatusString());
+                sweeping = false;
+                return;
             }
 
             if(trace.IsFullSweep()) {
@@ -223,6 +215,8 @@ void SweepCentral::SweepThread()
             Sleep(10);
         }
     }
+
+    session_ptr->device->Abort();
 }
 
 /*

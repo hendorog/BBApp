@@ -279,7 +279,7 @@ void DemodCentral::Reconfigure(DemodSettings *ds, IQCapture *iqc, IQSweep &iqs)
     reconfigure = false;
 }
 
-void DemodCentral::GetCapture(const DemodSettings *ds,
+bool DemodCentral::GetCapture(const DemodSettings *ds,
                               IQCapture &iqc,
                               IQSweep &iqs,
                               Device *device)
@@ -299,10 +299,11 @@ void DemodCentral::GetCapture(const DemodSettings *ds,
     iqs.triggered = false;
 
     if(ds->TrigType() == TriggerTypeNone) {
-        device->GetIQFlush(&iqc, flush);
+        if(!device->GetIQFlush(&iqc, flush)) return false;
         iqs.triggered = true;
     } else {
-        device->GetIQFlush(&iqc, flush); // Start with flush
+        // Start with flush
+        if(!device->GetIQFlush(&iqc, flush)) return false;
         if(ds->TrigType() == TriggerTypeVideo || ds->TrigType() == TriggerTypeExternal) {
             double trigVal = ds->TrigAmplitude().ConvertToUnits(DBM);
             trigVal = pow(10.0, (trigVal/10.0));
@@ -373,6 +374,58 @@ void DemodCentral::GetCapture(const DemodSettings *ds,
 
     // Store how many total samples we have access to
     iqs.dataLen = retrieved;
+    return true;
+}
+
+void DemodCentral::StreamThread()
+{
+    IQCapture iqc;
+    IQSweep sweep;
+
+    Reconfigure(sessionPtr->demod_settings, &iqc, sweep);
+
+    while(streaming) {
+        if(captureCount) {
+            if(reconfigure) {
+                Reconfigure(sessionPtr->demod_settings, &iqc, sweep);
+            }
+            qint64 start = bb_lib::get_ms_since_epoch();
+
+            if(!GetCapture(sessionPtr->demod_settings, iqc, sweep, sessionPtr->device)) {
+                streaming = false;
+                return;
+            }
+
+            if(recordNext && sweep.triggered) {
+                RecordIQCapture(sweep, iqc, sessionPtr->device);
+            }
+
+            if(demodArea->viewLock.try_lock()) {
+                sweep.Demod();
+                if(sweep.settings.MAEnabled()) {
+                    sweep.CalculateReceiverStats();
+                }
+                sessionPtr->iq_capture = sweep;
+                UpdateView();
+                demodArea->viewLock.unlock();
+            }
+
+            // Force 30 fps update rate
+            qint64 elapsed = bb_lib::get_ms_since_epoch() - start;
+            if(elapsed < MAX_ZERO_SPAN_UPDATE_RATE) {
+                Sleep(MAX_ZERO_SPAN_UPDATE_RATE - elapsed);
+            }
+            if(captureCount > 0) {
+                if(sweep.triggered) {
+                    captureCount--;
+                }
+            }
+        } else {
+            Sleep(MAX_ZERO_SPAN_UPDATE_RATE);
+        }
+    }
+
+    sessionPtr->device->Abort();
 }
 
 void DemodCentral::RecordIQCapture(const IQSweep &sweep, IQCapture &capture, Device *device)
@@ -459,17 +512,17 @@ void DemodCentral::RecordIQCapture(const IQSweep &sweep, IQCapture &capture, Dev
     recordNext = false;
 }
 
-void DemodCentral::CollectThread(Device *device, int captureLen)
-{
-    IQCapture packet;
-    packet.capture.resize(captureLen);
-    //circularBuffer.Resize(captureLen);
+//void DemodCentral::CollectThread(Device *device, int captureLen)
+//{
+//    IQCapture packet;
+//    packet.capture.resize(captureLen);
+//    //circularBuffer.Resize(captureLen);
 
-    while(!reconfigure) {
-        device->GetIQ(&packet);
-        //circularBuffer.Store(packet.capture);
-    }
-}
+//    while(!reconfigure) {
+//        device->GetIQ(&packet);
+//        //circularBuffer.Store(packet.capture);
+//    }
+//}
 
 //void DemodCentral::StreamThread()
 //{
@@ -528,51 +581,6 @@ void DemodCentral::CollectThread(Device *device, int captureLen)
 //    reconfigure = true;
 //    collectThreadHandle.join();
 //}
-
-void DemodCentral::StreamThread()
-{
-    IQCapture iqc;
-    IQSweep sweep;
-
-    Reconfigure(sessionPtr->demod_settings, &iqc, sweep);
-
-    while(streaming) {
-        if(captureCount) {
-            if(reconfigure) {
-                Reconfigure(sessionPtr->demod_settings, &iqc, sweep);
-            }
-            qint64 start = bb_lib::get_ms_since_epoch();
-
-            GetCapture(sessionPtr->demod_settings, iqc, sweep, sessionPtr->device);
-            if(recordNext && sweep.triggered) {
-                RecordIQCapture(sweep, iqc, sessionPtr->device);
-            }
-
-            if(demodArea->viewLock.try_lock()) {
-                sweep.Demod();
-                if(sweep.settings.MAEnabled()) {
-                    sweep.CalculateReceiverStats();
-                }
-                sessionPtr->iq_capture = sweep;
-                UpdateView();
-                demodArea->viewLock.unlock();
-            }
-
-            // Force 30 fps update rate
-            qint64 elapsed = bb_lib::get_ms_since_epoch() - start;
-            if(elapsed < MAX_ZERO_SPAN_UPDATE_RATE) {
-                Sleep(MAX_ZERO_SPAN_UPDATE_RATE - elapsed);
-            }
-            if(captureCount > 0) {
-                if(sweep.triggered) {
-                    captureCount--;
-                }
-            }
-        } else {
-            Sleep(MAX_ZERO_SPAN_UPDATE_RATE);
-        }
-    }
-}
 
 void DemodCentral::updateSettings(const DemodSettings *ds)
 {

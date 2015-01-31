@@ -73,9 +73,11 @@ void TGCentral::changeMode(int newState)
 {
     StopStreaming();
 
-    session_ptr->sweep_settings->setMode(MODE_NETWORK_ANALYZER);
+    session_ptr->sweep_settings->setMode((OperationalMode)newState); //MODE_NETWORK_ANALYZER);
 
-    StartStreaming();
+    if(newState == MODE_NETWORK_ANALYZER) {
+        StartStreaming();
+    }
 }
 
 void TGCentral::singlePressed()
@@ -97,7 +99,8 @@ void TGCentral::SweepThread()
     reconfigure = true;
 
     while(sweeping) {
-        if(*session_ptr->sweep_settings != lastConfig) reconfigure = true;
+        // Why was I doing this?
+        //if(*session_ptr->sweep_settings != lastConfig) reconfigure = true;
 
         if(reconfigure) {
             lastConfig = *session_ptr->sweep_settings;
@@ -117,5 +120,7 @@ void TGCentral::SweepThread()
             }
         }
     }
+
+    session_ptr->device->Abort();
 }
 

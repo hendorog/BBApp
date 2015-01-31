@@ -617,7 +617,12 @@ void TraceView::RenderTraces()
     manager->Unlock();
 
     if(manager->GetLimitLine()->Active()) {
-        normalize_trace(&manager->GetLimitLine()->store, traces[0], grat_sz);
+        const SweepSettings *ss = GetSession()->sweep_settings;
+        normalize_trace(&manager->GetLimitLine()->store,
+                        traces[0],
+                        grat_sz,
+                        ss->RefLevel(),
+                        ss->Div());
         DrawLimitLines(&manager->GetLimitLine()->store, traces[0]);
     }
 
@@ -997,6 +1002,9 @@ void TraceView::DrawLimitLines(const Trace *limitTrace, const GLVector &v)
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     glLineWidth(1.0);
+
+    // Unbind array
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void TraceView::DrawBackdrop(QPoint pos, QPoint size)

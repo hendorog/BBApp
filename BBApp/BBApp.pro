@@ -56,7 +56,8 @@ SOURCES += src/main.cpp \
     src/widgets/tg_panel.cpp \
     src/views/phase_noise_central.cpp \
     src/views/phase_noise_plot.cpp \
-    src/widgets/if_output_dialog.cpp
+    src/widgets/if_output_dialog.cpp \
+    src/widgets/self_test_dialog.cpp
 
 HEADERS += src/mainwindow.h \
     src/lib/frequency.h \
@@ -113,7 +114,8 @@ HEADERS += src/mainwindow.h \
     src/widgets/tg_panel.h \
     src/views/phase_noise_central.h \
     src/views/phase_noise_plot.h \
-    src/widgets/if_output_dialog.h
+    src/widgets/if_output_dialog.h \
+    src/widgets/self_test_dialog.h
 
 OTHER_FILES += \
     style_sheet.css \

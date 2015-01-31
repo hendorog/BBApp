@@ -274,6 +274,8 @@ void PhaseNoiseCentral::SweepThread()
 
         emit updateView();
     }
+
+    session_ptr->device->Abort();
 }
 
 void PhaseNoiseCentral::settingsChanged(const SweepSettings *ss)

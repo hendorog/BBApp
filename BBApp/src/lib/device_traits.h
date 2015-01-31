@@ -34,6 +34,7 @@ public:
     static double max_real_time_span();
     static double min_iq_bandwidth();
     static double max_iq_bandwidth(int decimation_order);
+    static int default_decimation();
     static int max_atten();
     static int max_gain();
     static double sample_rate();
