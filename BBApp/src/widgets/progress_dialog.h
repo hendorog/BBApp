@@ -12,7 +12,7 @@ class SHProgressDialog : public QProgressDialog {
 
 public:
     SHProgressDialog(QString text, QWidget *parent = 0) :
-        QProgressDialog(text, QString(), 0, 0, parent, Qt::WindowStaysOnTopHint)
+        QProgressDialog(text, QString(), 0, 0, parent/*, Qt::WindowStaysOnTopHint*/)
     {
         setModal(true);
     }

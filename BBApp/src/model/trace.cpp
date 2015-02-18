@@ -90,8 +90,9 @@ void Trace::Clear() {
 
 void Trace::SetType(TraceType type)
 {
-    if(_type == type)
+    if(_type == type) {
         return;
+    }
 
     // Clear contents, next update will generate new values
     Clear();
@@ -140,6 +141,21 @@ void Trace::GetSignalPeak(double *freq, double *amp) const
 
     if(amp) *amp = max;
     if(freq) *freq = _start + maxIndex * _binSize;
+}
+
+int Trace::GetPeakIndex() const
+{
+    double max = -1000.0;
+    int maxIndex = 0;
+
+    for(int i = 0; i < _size; i++) {
+        if(_maxBuf[i] > max) {
+            max = _maxBuf[i];
+            maxIndex = i;
+        }
+    }
+
+    return maxIndex;
 }
 
 // Mean
@@ -407,9 +423,11 @@ void Trace::GetOccupiedBandwidth(OccupiedBandwidthInfo &info) const
     Frequency leftFreq = StartFreq() + BinSize() * info.lix;
 
     info.leftMarker.Place(StartFreq() + BinSize() * info.lix);
+    //info.leftMarker.Place(info.lix);
     info.leftMarker.UpdateMarker(this, this->GetSettings());
 
     info.rightMarker.Place(StartFreq() + BinSize() * info.rix);
+    //info.rightMarker.Place(info.rix);
     info.rightMarker.UpdateMarker(this, this->GetSettings());
 
     info.bandwidth = info.rightMarker.Freq() - info.leftMarker.Freq();

@@ -27,7 +27,7 @@ private:
 //    GLVector grat, gratBorder;
 //    GLuint gratVBO, gratBorderVBO;
 
-    GLVector spectrum;
+    GLVector spectrum, spectrumToDraw;
     GLuint traceVBO;
     GLFont textFont, divFont;
 

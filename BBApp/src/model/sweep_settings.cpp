@@ -207,7 +207,7 @@ bool SweepSettings::IsAveragePower() const
 void SweepSettings::AutoBandwidthAdjust(bool force)
 {    
     if(Mode() == BB_REAL_TIME) {
-        native_rbw = true;
+        native_rbw = device_traits::has_native_bandwidths();
     }
 
     if(auto_rbw || force) {
@@ -267,19 +267,22 @@ void SweepSettings::setMode(OperationalMode new_mode)
     double maxRealTimeSpan = device_traits::max_real_time_span();
 
     if(mode == BB_REAL_TIME) {
-        native_rbw = true;
+        native_rbw = device_traits::has_native_bandwidths();
         auto_rbw = true;
         auto_vbw = true;
-        if(span > maxRealTimeSpan) {
-            span = maxRealTimeSpan;
+        if(bb_lib::clamp(span, Frequency(device_traits::min_real_time_span()),
+                         Frequency(device_traits::max_real_time_span()))) {
+            // if(span > maxRealTimeSpan) {
+//            span = maxRealTimeSpan;
             start = center - (maxRealTimeSpan / 2.0);
             stop = center + (maxRealTimeSpan / 2.0);
         }
 
         AutoBandwidthAdjust(true);
         // Force settings panel to update?
-        UpdateProgram();
+        //UpdateProgram(); // Not needed?
     }
+
     UpdateProgram();
 }
 
@@ -590,7 +593,12 @@ void SweepSettings::setProcUnits(int new_units)
 
 void SweepSettings::setSweepTime(Time new_sweep_time)
 {    
-    sweepTime = new_sweep_time;
+    double st = new_sweep_time.Val();
+
+    if(st < 0.001) st = 0.001;
+    if(st > 0.100) st = 0.100;
+
+    sweepTime = st;
 
     UpdateProgram();
 }

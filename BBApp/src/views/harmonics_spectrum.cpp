@@ -88,8 +88,12 @@ void HarmonicsSpectrumPlot::paintEvent(QPaintEvent *)
 
     for(int i = 0; i < 5; i++) {
         double freq = 0.0;
+
         harmonics[i].GetSignalPeak(&freq, &markerReadings[i]);
         markers[i].Place(freq);
+        //markers[i].Place((double)harmonics[i].GetPeakIndex() / harmonics[i].Length());
+        //markers[i].Place(harmonics[i].GetPeakIndex());
+
         markers[i].UpdateMarker(&harmonics[i], GetSession()->sweep_settings);
     }
 

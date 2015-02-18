@@ -7,6 +7,8 @@
 #include "widgets/if_output_dialog.h"
 #include "widgets/self_test_dialog.h"
 
+#include "version.h"
+
 #include <QFile>
 #include <QSplitter>
 #include <QTreeView>
@@ -737,6 +739,8 @@ void MainWindow::deviceConnected(bool success)
         connect(session->device, SIGNAL(connectionIssues()),
                 this, SLOT(forceDisconnectDevice()));
 
+        sweep_panel->DeviceConnected(session->device->GetDeviceType());
+
         ChangeMode(MODE_SWEEPING);
         centralStack->CurrentWidget()->changeMode(BB_SWEEPING);
     } else {
@@ -751,9 +755,10 @@ void MainWindow::printView()
     QPrinter printer;
     printer.setOrientation(QPrinter::Landscape);
 
-    QPrintDialog *dialog = new QPrintDialog(&printer, this);
-    if(dialog->exec() != QDialog::Accepted)
+    QPrintDialog dialog(&printer, this);
+    if(dialog.exec() != QDialog::Accepted) {
         return;
+    }
 
     QPainter painter(&printer);
     QRect rect = painter.viewport();
@@ -778,7 +783,6 @@ void MainWindow::saveAsImage()
     if(file_name.isNull()) return;
 
     QImage image;
-    //central_widget->GetViewImage(image);
     centralStack->CurrentWidget()->GetViewImage(image);
 
     image.save(file_name);
@@ -1065,10 +1069,18 @@ QChar copyright_char(short(169));
 const QString about_string =
         QWidget::tr("Signal Hound") + trademark_char + QWidget::tr("\n") +
         QWidget::tr("Copyright ") + copyright_char + QWidget::tr(" 2015\n");
-const QString gui_version = QWidget::tr("Software Version 3.0.0\n");
+const QString gui_version = "Software Version "
+        + QString(VER_PRODUCTVERSION_STR)
+        + QString("\n");
 
 void MainWindow::showAboutBox()
 {
-    QString api_string = tr("API Version ") + tr(bbGetAPIVersion());
-    QMessageBox::about(this, tr("About"), about_string + gui_version + api_string);
+    QString bb_api_string = tr("BB API Version ") + tr(bbGetAPIVersion());
+    QString sa_api_string = tr("SA API Version ") + tr(saGetAPIVersion());
+    QMessageBox::about(this, tr("About"),
+                       about_string
+                       + gui_version
+                       + bb_api_string
+                       + "\n"
+                       + sa_api_string);
 }

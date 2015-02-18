@@ -125,8 +125,15 @@ PreferenceColorPanel::PreferenceColorPanel(const QString &panelTitle,
 
     playbackDelay = new NumericEntry(tr("Playback Sweep Delay"), 0.0, tr("ms"));
     playbackDelay->setToolTip(tr("Set the speed at which a file is played back."));
+
     maxSaveFileSize = new NumericEntry(tr("Max Save File Size"), 0.0, tr("GB"));
     maxSaveFileSize->setToolTip(tr("Set the maximum allowable trace file to be recorded."));
+
+    // Disable file size selection on 32-bit systems
+#if !_WIN64
+    maxSaveFileSize->setDisabled(true);
+    maxSaveFileSize->setToolTip("Max File Size is 1GB on 32-bit systems");
+#endif
 
     dockPage->AddWidget(playbackDelay);
     dockPage->AddWidget(maxSaveFileSize);

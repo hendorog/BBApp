@@ -183,7 +183,7 @@ public:
                    QWidget *parent = 0);
     ~FrequencyEntry() {}
 
-    void SetFrequency(Frequency &f);
+    void SetFrequency(const Frequency &f);
     Frequency GetFrequency() const { return freq; }
 
 protected:
@@ -466,6 +466,10 @@ public:
 
     bool IsChecked() const { return check_box->isChecked(); }
     void SetChecked(bool checked) { check_box->setChecked(checked); }
+    void Enable(bool enable) {
+        label->setEnabled(enable);
+        check_box->setEnabled(enable);
+    }
 
 protected:
     void resizeEvent(QResizeEvent *);

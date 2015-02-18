@@ -69,12 +69,15 @@ public:
         if(NativeRBW()) {
             return 2.02;
         } else {
-            return bb_lib::get_flattop_bandwidth(rbw);
+            double b = device_traits::get_flattop_window_bandwidth(rbw);
+            return b;
         }
     }
 
     // Returns true if settings fine for CP/OCBW
     bool IsAveragePower() const;
+
+    Amplitude refLevel;
 
     int tgSweepSize;
     bool tgHighRangeSweep;
@@ -100,7 +103,6 @@ private:
     bool auto_vbw;
     bool native_rbw;
 
-    Amplitude refLevel;
     double div; // dB
     int attenuation;
     int gain; // From 0 -> 4, where 0 equals auto, 1-4 = levels

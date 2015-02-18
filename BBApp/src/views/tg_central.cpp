@@ -1,6 +1,8 @@
 #include "tg_central.h"
 #include "model/session.h"
 
+#include <iostream>
+
 TGCentral::TGCentral(Session *sPtr,
                      QToolBar *mainToolBar,
                      QWidget *parent,

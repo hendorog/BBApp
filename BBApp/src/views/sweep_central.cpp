@@ -20,7 +20,8 @@ SweepCentral::SweepCentral(Session *sPtr,
                            Qt::WindowFlags f)
     : CentralWidget(parent, f),
       session_ptr(sPtr),
-      trace(true)
+      trace(true),
+      programClosing(false)
 {
     trace_view = new TraceView(session_ptr, this);
     connect(this, SIGNAL(updateView()), trace_view, SLOT(update()));
@@ -87,6 +88,7 @@ SweepCentral::SweepCentral(Session *sPtr,
 
 SweepCentral::~SweepCentral()
 {
+    programClosing = true;
     playback->Stop();
     StopStreaming();
 
@@ -160,16 +162,9 @@ void SweepCentral::Reconfigure()
     if(!session_ptr->device->Reconfigure(
                 session_ptr->sweep_settings, &trace)) {
         *session_ptr->sweep_settings = last_config;
-//        session_ptr->device->Reconfigure(
-//                    session_ptr->sweep_settings, &trace);
     } else {
         last_config = *session_ptr->sweep_settings;
     }
-
-//    QString diagnostics;
-//    diagnostics.sprintf("%.2f C  --  %.2f V", session_ptr->device->CurrentTemp(),
-//                        session_ptr->device->Voltage());
-//    MainWindow::GetStatusBar()->SetDiagnostics(diagnostics);
 
     if(sweep_count == 0) {
         sweep_count = 1;
@@ -299,7 +294,7 @@ void SweepCentral::playFromFile(bool play)
     } else {
         session_ptr->isInPlaybackMode = false;
         emit updateView();
-        if(session_ptr->device->IsOpen()) {
+        if(session_ptr->device->IsOpen() && !programClosing) {
             StartStreaming();
         }
     }

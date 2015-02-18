@@ -115,13 +115,13 @@ HEADERS += src/mainwindow.h \
     src/views/phase_noise_central.h \
     src/views/phase_noise_plot.h \
     src/widgets/if_output_dialog.h \
-    src/widgets/self_test_dialog.h
+    src/widgets/self_test_dialog.h \
+    src/version.h
 
 OTHER_FILES += \
     style_sheet.css \
     todo.txt \
     bb_app.rc \
-    bb_icon.ico \
     spike.ico
 
 LIBS += \

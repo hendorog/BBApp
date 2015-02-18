@@ -33,7 +33,7 @@ public slots:
     void continuousPressed() { sweepCount = -1; }
 
 private:
-    void Reconfigure(SweepSettings &ss);
+    void Reconfigure(double &peakFreq, double &peakAmp);
     void SweepThread();
 
     std::thread sweepThreadHandle;
@@ -42,6 +42,7 @@ private:
     std::atomic<int> sweepCount;
     int startDecade, stopDecade;
     int tempStartDecade, tempStopDecade;
+    //double peakAmplitude;
 
     Session *session_ptr;
     PhaseNoisePlot *plot;
@@ -53,6 +54,7 @@ private slots:
     void settingsChanged(const SweepSettings *ss);
     void startDecadeChanged(int);
     void stopDecadeChanged(int);
+    void forceUpdateView();
 
 signals:
     void updateView();

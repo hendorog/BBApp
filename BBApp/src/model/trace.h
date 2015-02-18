@@ -86,6 +86,7 @@ public:
     double StopFreq() const { return _start + _binSize * _size; }
     double BinSize() const { return _binSize; }
     void GetSignalPeak(double *freq, double *amp) const;
+    int GetPeakIndex() const;
     double GetMean() const;
     double GetVariance() const;
     double GetVarianceFromMean(const double mean) const;

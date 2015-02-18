@@ -1,8 +1,8 @@
 #include "device_traits.h"
 
+#include "bb_lib.h"
 #include "sa_api.h"
 #include "bb_api.h"
-#include "bb_lib.h"
 #include "model/sweep_settings.h"
 
 #include <QtGlobal>
@@ -117,7 +117,7 @@ std::pair<double, double> device_traits::full_span_frequencies()
 {
     switch(type) {
     case DeviceTypeSA44A: case DeviceTypeSA44B:
-        return std::make_pair(100.0e3, SA44_MAX_FREQ);
+        return std::make_pair(1.0, SA44_MAX_FREQ);
     case DeviceTypeSA124:
         return std::make_pair(100.0e3, 12.4e9);
     case DeviceTypeBB60A: case DeviceTypeBB60C:
@@ -235,7 +235,7 @@ double device_traits::min_real_time_span()
 {
     switch(type) {
     case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
-        return 100.0e3;
+        return 1.0e3;
     case DeviceTypeBB60A: case DeviceTypeBB60C:
         return BB_MIN_RT_SPAN;
     }
@@ -356,4 +356,50 @@ int device_traits::audio_rate()
         return 32000;
     }
     return 32000;
+}
+
+inline int fft_size_from_flattop_rbw_sa(const double rbw)
+{
+    double min_bin_sz = rbw / 3.2;
+    double min_fft = 486111.111 / min_bin_sz;
+    int order = (int)ceil(bb_lib::log2(min_fft));
+    return bb_lib::pow2(order);
+}
+
+inline int fft_size_from_flattop_rbw_bb(const double rbw)
+{
+    double min_bin_sz = rbw / 3.2;
+    double min_fft = 80.0e6 / min_bin_sz;
+    int order = (int)ceil(bb_lib::log2(min_fft));
+    return bb_lib::pow2(order);
+}
+
+inline double get_flattop_bin_sa(double rbw)
+{
+    return (rbw * (double)fft_size_from_flattop_rbw_sa(rbw)) / 486111.111;
+}
+
+inline double get_flattop_bin_bb(double rbw)
+{
+    return (rbw * (double)fft_size_from_flattop_rbw_bb(rbw)) / 80.0e6;
+}
+
+double device_traits::get_flattop_window_bandwidth(double rbw)
+{
+    switch(type) {
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return get_flattop_bin_sa(rbw);
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return get_flattop_bin_bb(rbw);
+    }
+}
+
+bool device_traits::has_native_bandwidths()
+{
+    switch(type) {
+    case DeviceTypeSA44A: case DeviceTypeSA44B: case DeviceTypeSA124:
+        return false;
+    case DeviceTypeBB60A: case DeviceTypeBB60C:
+        return true;
+    }
 }

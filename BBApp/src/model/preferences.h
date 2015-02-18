@@ -7,6 +7,12 @@
 
 #include "lib/bb_lib.h"
 
+#if _WIN64
+static const int platformMaxFileSize = 4;
+#else
+static const int platformMaxFileSize = 1;
+#endif
+
 // Keep everything public for now
 class Preferences {
 public:
@@ -17,7 +23,7 @@ public:
         programStyle = LIGHT_STYLE_SHEET;
 
         playbackDelay = 64;
-        playbackMaxFileSize = 4;
+        playbackMaxFileSize = platformMaxFileSize;
 
         trace_width = 1.0;
         graticule_width = 1.0;
@@ -35,7 +41,7 @@ public:
         SetProgramStyle(style);
 
         playbackDelay = s.value("PlaybackPrefs/Delay", 64).toInt();
-        playbackMaxFileSize = s.value("PlaybackPrefs/MaxFileSize", 4).toInt();
+        playbackMaxFileSize = s.value("PlaybackPrefs/MaxFileSize", platformMaxFileSize).toInt();
 
         trace_width = s.value("ViewPrefs/TraceWidth", 1.0).toFloat();
         graticule_width = s.value("ViewPrefs/GraticuleWidth", 1.0).toFloat();

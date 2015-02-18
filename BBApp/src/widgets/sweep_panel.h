@@ -20,6 +20,8 @@ public:
                Session *session);
     ~SweepPanel();
 
+    void DeviceConnected(DeviceType type);
+
 private:
     DockPage *tg_page;
     DockPage *frequency_page, *amplitude_page;

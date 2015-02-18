@@ -153,6 +153,15 @@ int TraceManager::SolveMarkers(const SweepSettings *s)
     return GetVisibleMarkerCount();
 }
 
+int TraceManager::SolveMarkersForPhaseNoise(const SweepSettings *s)
+{
+    for(int i = 0; i < MARKER_COUNT; i++) {
+        GetMarker(i)->UpdateMarkerForPhaseNoise(GetTrace(GetMarker(i)->OnTrace()), s);
+    }
+
+    return GetVisibleMarkerCount();
+}
+
 //int TraceManager::SolveMarkers(const DemodSettings *ds)
 //{
 //    for(int i = 0; i < MARKER_COUNT; i++) {
@@ -204,7 +213,7 @@ int TraceManager::GetVisibleMarkerCount()
     return count;
 }
 
-void TraceManager::PlaceMarker(Frequency f)
+void TraceManager::PlaceMarkerFrequency(Frequency f)
 {
     int marker_on_trace = GetActiveMarker()->OnTrace();
 
@@ -217,7 +226,7 @@ void TraceManager::PlaceMarker(Frequency f)
     emit updated();
 }
 
-void TraceManager::PlaceMarker(double percent)
+void TraceManager::PlaceMarkerPercent(double percent)
 {
     int marker_on_trace = GetActiveMarker()->OnTrace();
 
@@ -227,16 +236,34 @@ void TraceManager::PlaceMarker(double percent)
     }
 
     const SweepSettings *s = traces[marker_on_trace].GetSettings();
-    GetActiveMarker()->Place(s->Start() + s->Span() * percent);
+    GetActiveMarker()->Place(s->Start() + s->Span() * percent, percent);
+
     emit updated();
 }
 
+//void TraceManager::PlaceMarkerPhaseNoise(double percent)
+//{
+//    int marker_on_trace = GetActiveMarker()->OnTrace();
+
+//    if(!traces[marker_on_trace].Active()) {
+//        marker_on_trace = GetFirstActiveTrace();
+//        GetActiveMarker()->SetOnTrace(marker_on_trace);
+//    }
+
+//    const SweepSettings *s = traces[marker_on_trace].GetSettings();
+//    GetActiveMarker()->Place(s->Start() + s->Span() * percent, percent);
+
+//    emit updated();
+//}
+
 void TraceManager::BumpMarker(bool right)
 {
-    double constant = right ? 1.0 : -1.0;
-
     Marker *marker = GetActiveMarker();
-    marker->AdjustFrequency(traces[marker->OnTrace()].BinSize() * constant);
+
+    double constant = right ? 1.0 : -1.0;
+    marker->AdjustFrequency(traces[marker->OnTrace()].BinSize() * constant, right);
+
+    //marker->AdjustMarker(right);
 }
 
 void TraceManager::setActiveIndex(int index)
@@ -340,10 +367,15 @@ void TraceManager::markerPeakSearch()
 
     double freq = 0.0;
     GetTrace(t)->GetSignalPeak(&freq, nullptr);
-
     if(GetActiveMarker()->Place(freq)) {
         emit updated();
     }
+
+    //int ix = GetTrace(t)->GetPeakIndex();
+    //GetActiveMarker()->Place((double)ix / GetTrace(t)->Length());
+    //GetActiveMarker()->Place(ix);
+
+    emit updated();
 }
 
 void TraceManager::markerDeltaClicked()
@@ -398,6 +430,8 @@ void TraceManager::markerPeakLeft()
     } else {
         marker_ptr->Place(trace_ptr->StartFreq() +
                           trace_ptr->BinSize() * peak_list[peak_ix-1]);
+        //marker_ptr->Place((double)peak_list[peak_ix-1] / trace_ptr->Length());
+        //marker_ptr->Place(peak_list[peak_ix-1]);
     }
 
     emit updated();
@@ -438,6 +472,8 @@ void TraceManager::markerPeakRight()
     } else {
         marker_ptr->Place(trace_ptr->StartFreq() +
                           trace_ptr->BinSize() * peak_list[peak_ix]);
+        //marker_ptr->Place((double)peak_list[peak_ix] / trace_ptr->Length());
+        //marker_ptr->Place(peak_list[peak_ix]);
     }
 
     emit updated();

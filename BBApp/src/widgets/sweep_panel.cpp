@@ -83,8 +83,8 @@ SweepPanel::SweepPanel(const QString &title,
     tg_page->AddWidget(tgHighDynamicRange);
     tg_page->AddWidget(tgStoreThru);
 
-    frequency_page->AddWidget(span);
     frequency_page->AddWidget(center);
+    frequency_page->AddWidget(span);
     frequency_page->AddWidget(start);
     frequency_page->AddWidget(stop);
     frequency_page->AddWidget(step);
@@ -182,6 +182,22 @@ SweepPanel::~SweepPanel()
 {
     // Don't delete widgets on pages
     delete tg_page;
+}
+
+void SweepPanel::DeviceConnected(DeviceType type)
+{
+    native_rbw->Enable(type == DeviceTypeBB60A
+                       || type == DeviceTypeBB60C);
+
+    QStringList atten_sl;
+    if(type == DeviceTypeSA44A || type == DeviceTypeSA44B) {
+        atten_sl << tr("Auto Atten") << tr("0 dB") << tr("5 dB")
+                 << tr("10 dB") << tr("15 dB");
+    } else {
+        atten_sl << tr("Auto Atten") << tr("0 dB") << tr("10 dB")
+                 << tr("20 dB") << tr("30 dB");
+    }
+    atten->setComboText(atten_sl);
 }
 
 void SweepPanel::updatePanel(const SweepSettings *settings)

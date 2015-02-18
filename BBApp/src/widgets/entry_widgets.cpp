@@ -118,7 +118,7 @@ FrequencyEntry::FrequencyEntry(const QString &label_text,
     connect(entry, SIGNAL(entryUpdated()), this, SLOT(editUpdated()));
 }
 
-void FrequencyEntry::SetFrequency(Frequency &f)
+void FrequencyEntry::SetFrequency(const Frequency &f)
 {
     if(f == freq) {
         return;
@@ -460,8 +460,10 @@ void ComboEntry::setComboIndex(int ix)
 
 void ComboEntry::setComboText(const QStringList &list)
 {
+    int ix = combo_box->currentIndex();
     combo_box->clear();
     combo_box->insertItems(0, list);
+    combo_box->setCurrentIndex(ix);
 }
 
 void ComboEntry::resizeEvent(QResizeEvent *)

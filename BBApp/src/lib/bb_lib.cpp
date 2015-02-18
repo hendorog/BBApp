@@ -1187,7 +1187,7 @@ int find_falling_trigger(const complex_f *array, double t, int len)
         ix++;
     }
 
-    if(ix >= len) return 0;
+    if(ix >= len) return -1;
 
     while(ix < len) {
         double val = array[ix].re * array[ix].re +

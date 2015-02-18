@@ -65,6 +65,7 @@ MeasurePanel::MeasurePanel(const QString &title,
     // Marker stuff
     marker_select = new ComboEntry("Marker");
     on_trace_select = new ComboEntry("Place On");
+    setMarkerFreq = new FrequencyEntry("Set Freq", 1.0e6);
     marker_update = new CheckBoxEntry("Update");
     marker_active = new CheckBoxEntry("Active");
     peak_delta = new DualButtonEntry("Peak Search", "Delta");
@@ -81,6 +82,7 @@ MeasurePanel::MeasurePanel(const QString &title,
 
     marker_page->AddWidget(marker_select);
     marker_page->AddWidget(on_trace_select);
+    marker_page->AddWidget(setMarkerFreq);
     marker_page->AddWidget(marker_update);
     marker_page->AddWidget(marker_active);
     marker_page->AddWidget(peak_delta);
@@ -93,6 +95,8 @@ MeasurePanel::MeasurePanel(const QString &title,
             this, SLOT(updateMarkerView(int)));
     connect(on_trace_select, SIGNAL(comboIndexChanged(int)),
             trace_manager_ptr, SLOT(setMarkerOnTrace(int)));
+    connect(setMarkerFreq, SIGNAL(freqViewChanged(Frequency)),
+            this, SLOT(setMarkerFrequencyChanged(Frequency)));
     connect(marker_update, SIGNAL(clicked(bool)),
             trace_manager_ptr, SLOT(markerUpdate(bool)));
     connect(marker_active, SIGNAL(clicked(bool)),
@@ -192,6 +196,7 @@ void MeasurePanel::updateTraceView(int new_ix)
     trace_manager_ptr->setActiveIndex(new_ix);
     const Trace *t = trace_manager_ptr->GetActiveTrace();
 
+    trace_select->setComboIndex(new_ix);
     trace_type->setComboIndex((int)t->GetType());
     trace_color->SetColor(t->Color());
     //trace_active->SetChecked(t->Active());
@@ -218,6 +223,7 @@ void MeasurePanel::updateMarkerView(int new_ix)
     trace_manager_ptr->setActiveMarkerIndex(new_ix);
     const Marker *m = trace_manager_ptr->GetActiveMarker();
 
+    marker_select->setComboIndex(new_ix);
     on_trace_select->setComboIndex(m->OnTrace());
     marker_update->SetChecked(m->Updating());
     marker_active->SetChecked(m->Active());
@@ -227,8 +233,8 @@ void MeasurePanel::setMode(OperationalMode mode)
 {
     bool pagesEnabled = !(mode == MODE_NETWORK_ANALYZER);
 
-    channel_power_page->setEnabled(pagesEnabled);
-    occupied_bandwidth_page->setEnabled(pagesEnabled);
+    channel_power_page->SetPageEnabled(pagesEnabled);
+    occupied_bandwidth_page->SetPageEnabled(pagesEnabled);
 }
 
 void MeasurePanel::channelPowerUpdated()
@@ -258,4 +264,15 @@ void MeasurePanel::occupiedBandwidthUpdated()
     }
     trace_manager_ptr->SetOccupiedBandwidth(ocbw_enabled->IsChecked(),
                                             percentPower->GetValue());
+}
+
+void MeasurePanel::setMarkerFrequencyChanged(Frequency f)
+{
+    if(f.Val() < 0.0) {
+        f = 0.0;
+        setMarkerFreq->SetFrequency(f);
+        return;
+    }
+
+    trace_manager_ptr->PlaceMarkerFrequency(f);
 }

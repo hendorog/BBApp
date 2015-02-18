@@ -1,9 +1,11 @@
 #include "demod_spectrum_plot.h"
+#include <iostream>
 
 DemodSpectrumPlot::DemodSpectrumPlot(Session *sPtr, QWidget *parent) :
     GLSubView(sPtr, parent),
     textFont(14),
-    divFont(12)
+    divFont(12),
+    traceVBO(0)
 {
     makeCurrent();
 
@@ -13,6 +15,7 @@ DemodSpectrumPlot::DemodSpectrumPlot(Session *sPtr, QWidget *parent) :
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
     context()->format().setDoubleBuffer(true);
+    glGenBuffers(1, &traceVBO);
 
     doneCurrent();
 
@@ -74,11 +77,13 @@ void DemodSpectrumPlot::DrawSpectrum()
 {
     spectrum.clear();
 
-     IQSweep &sweep = GetSession()->iq_capture;
+    IQSweep &sweep = GetSession()->iq_capture;
     const DemodSettings *ds = GetSession()->demod_settings;
     double ref, botRef;
 
-    if(sweep.iq.size() < 2) {
+    std::cout << "I/Q Size " << sweep.iq.size() << " " << sweep.sweepLen << std::endl;
+
+    if(sweep.sweepLen <= 2) {
         return;
     }
 
@@ -91,14 +96,27 @@ void DemodSpectrumPlot::DrawSpectrum()
     }
 
     // May need to resize the fft if it goes below MAX_FFT_SIZE
-    int fftSize = bb_lib::min2(MAX_FFT_SIZE, sweep.sweepLen);
+    int fftSize = bb_lib::min2(MAX_FFT_SIZE, (int)sweep.sweepLen/*sweep.iq.size()*/);
     fftSize = bb_lib::round_down_power_two(fftSize);
+
+    std::cout << "FFT Size " << fftSize << std::endl;
 
     if(fftSize != fft->Length()) {
         fft = std::unique_ptr<FFT>(new FFT(fftSize, false));
     }
 
     postTransform.resize(MAX_FFT_SIZE);
+    for(int i = 0; i < MAX_FFT_SIZE; i++) {
+        postTransform[i].re = 0.0;
+        postTransform[i].im = 0.0;
+    }
+
+    if(sweep.sweepLen < fftSize) {
+        return;
+    }
+    if(fftSize > MAX_FFT_SIZE) {
+        return;
+    }
 
     fft->Transform(&sweep.iq[0], &postTransform[0]);
     for(int i = 0; i < fftSize; i++) {
@@ -143,7 +161,8 @@ void DemodSpectrumPlot::DrawSpectrum()
     glLineWidth(GetSession()->prefs.trace_width);
 
     qglColor(QColor(255, 0, 0));
-    DrawTrace(spectrum);
+    spectrumToDraw = spectrum;
+    DrawTrace(spectrumToDraw);
 
     // Disable nice lines
     glLineWidth(1.0);
@@ -158,12 +177,14 @@ void DemodSpectrumPlot::DrawSpectrum()
 
 void DemodSpectrumPlot::DrawTrace(const GLVector &v)
 {
-    if(v.size() < 2) {
+    if(v.size() <= 4) {
         return;
     }
 
+    std::cout << "Draw Size " << v.size() << std::endl;
+
     glBindBuffer(GL_ARRAY_BUFFER, traceVBO);
-    glBufferData(GL_ARRAY_BUFFER, v.size() * sizeof(float),
+    glBufferData(GL_ARRAY_BUFFER, v.size()*sizeof(float),
                  &v[0], GL_DYNAMIC_DRAW);
     glVertexPointer(2, GL_FLOAT, 0, INDEX_OFFSET(0));
 

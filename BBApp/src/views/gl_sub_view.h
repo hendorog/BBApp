@@ -14,7 +14,10 @@ class GLFont {
 public:
     GLFont(int size, const QString &family = "Arial", int weight = -1, bool italic = false) :
         font(family, size, weight, italic),
-        fontMetrics(font) {}
+        fontMetrics(font)
+    {
+        //font.setStyleStrategy(QFont::OpenGLCompatible);
+    }
     ~GLFont() {}
 
     const QFont& Font() const { return font; }

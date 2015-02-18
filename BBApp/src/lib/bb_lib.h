@@ -447,12 +447,12 @@ inline int pow2(int val) {
     return 0x1 << val;
 }
 
-inline int fft_size_from_non_native_rbw(const double rbw) {
-    double min_bin_sz = rbw / 3.2;
-    double min_fft = 80.0e6 / min_bin_sz;
-    int order = (int)ceil(log2(min_fft));
-    return pow2(order);
-}
+//inline int fft_size_from_non_native_rbw(const double rbw) {
+//    double min_bin_sz = rbw / 3.2;
+//    double min_fft = 80.0e6 / min_bin_sz;
+//    int order = (int)ceil(log2(min_fft));
+//    return pow2(order);
+//}
 
 // Rounds value up to the closest power of 2
 inline unsigned int round_up_power_two(unsigned int val)
@@ -479,10 +479,10 @@ inline unsigned int round_down_power_two(unsigned int val)
     return next >> 1;
 }
 
-// For non-native bandwidths only
-inline int get_flattop_bandwidth(double rbw) {
-    return (rbw * (double)fft_size_from_non_native_rbw(rbw)) / 80.0e6;
-}
+//// For non-native bandwidths only
+//inline double get_flattop_bandwidth(double rbw) {
+//    return (rbw * (double)fft_size_from_non_native_rbw(rbw));
+//}
 
 // Adjust rbw to prevent small(<1) and large(>1.2m) sweep sizes
 // Return true if adjustment made

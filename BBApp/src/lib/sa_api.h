@@ -17,11 +17,6 @@ enum saDeviceType {
     saDeviceTypeSA124B = 4
 };
 
-enum saBool {
-    saFalse = 0,
-    saTrue = 1
-};
-
 // Limits
 #define SA44_MIN_FREQ (1.0)
 #define SA124_MIN_FREQ (100.0e3)
@@ -35,9 +30,10 @@ enum saBool {
 #define SA_MAX_RBW (6.0e6)
 #define SA_MIN_RT_RBW (100.0)
 #define SA_MAX_RT_RBW (10000.0)
-#define SA_MAX_SWEEP_TIME (30000) // ms
 #define SA_MIN_IQ_BANDWIDTH (100.0)
 #define SA_MAX_IQ_DECIMATION (128)
+
+#define SA_IQ_SAMPLE_RATE (486111.111)
 
 // Modes
 #define SA_IDLE      (-1)
@@ -54,17 +50,12 @@ enum saBool {
 // Scales
 #define SA_LOG_SCALE      (0x0)
 #define SA_LIN_SCALE      (0x1)
-#define SA_LOG_FULL_SCALE (0x2)
-#define SA_LIN_FULL_SCALE (0x3)
+#define SA_LOG_FULL_SCALE (0x2) // N/A
+#define SA_LIN_FULL_SCALE (0x3) // N/A
 
 // Levels
 #define SA_AUTO_ATTEN (-1)
 #define SA_AUTO_GAIN  (-1)
-
-// Pre-amplifier
-#define SA_PREAMP_AUTO (-1)
-#define SA_PREAMP_OFF  (0x0)
-#define SA_PREAMP_ON   (0x1)
 
 // Video Processing Units
 #define SA_LOG_UNITS   (0x0)

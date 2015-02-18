@@ -3,7 +3,8 @@
 DemodIQTimePlot::DemodIQTimePlot(Session *session, QWidget *parent) :
     GLSubView(session, parent),
     textFont(14),
-    divFont(12)
+    divFont(12),
+    traceVBO(0)
 {
     makeCurrent();
 
@@ -13,7 +14,6 @@ DemodIQTimePlot::DemodIQTimePlot(Session *session, QWidget *parent) :
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
     context()->format().setDoubleBuffer(true);
-
     glGenBuffers(1, &traceVBO);
 
     doneCurrent();
@@ -79,6 +79,7 @@ void DemodIQTimePlot::DrawIQLines()
     const std::vector<complex_f> &iq = sweep.iq;
 
     if(sweep.iq.size() <= 0) return;
+    if(sweep.sweepLen <= 0) return;
 
     glColor3f(1.0, 0.0, 0.0);
 
@@ -133,7 +134,7 @@ void DemodIQTimePlot::DrawIQLines()
 
 void DemodIQTimePlot::DrawTrace(const GLVector &v)
 {
-    if(v.size() < 2) {
+    if(v.size() <= 4) {
         return;
     }
 

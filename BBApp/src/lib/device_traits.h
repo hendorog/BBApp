@@ -41,6 +41,8 @@ public:
     static bool default_spur_reject();
     static int mod_analysis_decimation_order();
     static int audio_rate();
+    static double get_flattop_window_bandwidth(double rbw);
+    static bool has_native_bandwidths();
 
 private:
     static DeviceType type;

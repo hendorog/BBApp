@@ -33,6 +33,7 @@ private:
     // Marker Widgets
     ComboEntry *marker_select;
     ComboEntry *on_trace_select;
+    FrequencyEntry *setMarkerFreq;
     CheckBoxEntry *marker_update;
     CheckBoxEntry *marker_active;
     DualButtonEntry *peak_delta;
@@ -65,6 +66,8 @@ public slots:
 private slots:
     void channelPowerUpdated();
     void occupiedBandwidthUpdated();
+
+    void setMarkerFrequencyChanged(Frequency);
 
 signals:
 

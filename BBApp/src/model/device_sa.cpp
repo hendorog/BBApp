@@ -180,19 +180,17 @@ bool DeviceSA::Reconfigure(const SweepSettings *s, Trace *t)
 
     int atten = (s->Atten() == 0) ? SA_AUTO_ATTEN : s->Atten() - 1;
     int gain = (s->Gain() == 0) ? SA_AUTO_GAIN : s->Gain() - 1;
-    int preamp = (s->Preamp() == 0) ? SA_PREAMP_AUTO : s->Preamp() - 1;
+    bool preamp = (s->Preamp() == 2);
     int scale = (s->RefLevel().IsLogScale() ? SA_LOG_SCALE : SA_LIN_SCALE);
 
     saConfigCenterSpan(id, s->Center(), s->Span());
     saConfigAcquisition(id, s->Detector(), scale);
 
-    saConfigLevel(id, s->RefLevel());
-    saConfigGainAtten(id, atten, gain, s->Preamp());
-
     if(atten == SA_AUTO_ATTEN || gain == SA_AUTO_GAIN) {
         saConfigLevel(id, s->RefLevel().ConvertToUnits(AmpUnits::DBM));
+        saConfigGainAtten(id, SA_AUTO_ATTEN, SA_AUTO_GAIN, true);
     } else {
-        saConfigGainAtten(id, s->Atten(), s->Gain(), s->Preamp());
+        saConfigGainAtten(id, atten, gain, preamp);
     }
 
     saConfigSweepCoupling(id, s->RBW(), s->VBW(), s->Rejection());

@@ -51,10 +51,13 @@ public:
 
     // Returns the number of active and in-view markers
     int SolveMarkers(const SweepSettings *s); // For freq sweeps
+    int SolveMarkersForPhaseNoise(const SweepSettings *s); // For phase noise sweeps
     //int SolveMarkers(const DemodSettings *ds); // For time sweeps
 
     // Modify active index
-    int GetActiveTraceIndex() const { return activeTrace; }
+    int GetActiveTraceIndex() const {
+        return activeTrace;
+    }
 
     // Get traces
     Trace* GetActiveTrace() { return &traces[activeTrace]; }
@@ -71,11 +74,13 @@ public:
     // Call after SolveMarkers()
     int GetVisibleMarkerCount();
     // Place the current marker on the current trace
-    void PlaceMarker(Frequency f); // Place on frequency
-    void PlaceMarker(double percent); // Place with percent
+    void PlaceMarkerFrequency(Frequency f); // Place on frequency
+    void PlaceMarkerPercent(double percent); // Place with percent
+    //void PlaceMarkerPhaseNoise(double percent);
     // Move active marker one step, if(right) increase frequency
     void BumpMarker(bool right);
 
+    const PathLossTable& GetPathLossTable() const { return pathLoss; }
     const LimitLineTable* GetLimitLine() const { return &limitLine; }
 
     double RefOffset() const { return ref_offset; }

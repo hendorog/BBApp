@@ -16,24 +16,35 @@ public:
         stopDecade = stop;
     }
 
-    Trace trace;
+    //Trace trace;
 
 protected:
     void resizeEvent(QResizeEvent *);
+    void mousePressEvent(QMouseEvent *);
     void paintEvent(QPaintEvent *);
 
 private:
     void BuildGraticule();
     void DrawTraces();
-    void DrawTrace(const Trace *t, const GLVector &v, GLuint vbo);
+    void DrawTrace(const Trace *t, const GLVector &v);
     void DrawGratText();
     void DrawMarkers();
+    void DrawMarker(int x, int y, int num);
+    void DrawDeltaMarker(int x, int y, int num);
 
+    bool PointInGrat(const QPoint &p) const {
+        return QRect(grat_ul.x(), height() - grat_ul.y(),
+                     grat_sz.x(), grat_sz.y()).contains(p);
+    }
+
+    GLVector traces[TRACE_COUNT]; // Normalized traces
     GLuint traceBufferObject;
     GLVector normalizedTrace;
 
     GLFont textFont, divFont;
     int startDecade, stopDecade;
+
+    QTime time;
 
 private:
     Q_DISABLE_COPY(PhaseNoisePlot)

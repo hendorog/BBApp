@@ -128,7 +128,7 @@ public:
         return s + amp_unit_string[(int)units];
     }
 
-    // Get string of the value with the supplied unit string
+    // Get string of the value without the supplied unit string
     QString GetValueString() const {
         QString s;
         s.sprintf("%.3f ", amplitude);

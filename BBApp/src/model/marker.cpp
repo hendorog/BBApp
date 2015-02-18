@@ -27,6 +27,8 @@ void Marker::EnableDelta()
     deltaIndex = index;
     deltaFreq = freq;
     deltaAmp = amp;
+    delta_xr = xr;
+    delta_yr = yr;
 }
 
 void Marker::Reset()
@@ -51,12 +53,63 @@ void Marker::SetActive(bool a)
     active = a;
 }
 
-void Marker::AdjustFrequency(Frequency adjust)
+void Marker::AdjustFrequency(Frequency adjust, bool right)
 {
     if(active) {
         freq += adjust;
     }
+
+    if(right) {
+        index++;
+    } else {
+        index--;
+    }
 }
+
+void Marker::AdjustMarker(bool increase)
+{
+    if(increase) {
+        index--;
+        if(index < 0) index = 0;
+    } else {
+        index++;
+    }
+}
+
+//bool Marker::Place(double percent)
+//{
+//    xr = percent;
+
+//    if(!active) {
+//        active = true;
+//    }
+
+//    return true;
+//}
+
+//bool Marker::Place(int newIndex)
+//{
+//    index = newIndex;
+
+//    if(!active) {
+//        active = true;
+//    }
+
+//    return true;
+//}
+
+//// Return true if the marker was activated
+//bool Marker::Place(Time t)
+//{
+//    time = t;
+
+//    if(!active) {
+//        active = true;
+//        return true;
+//    }
+
+//    return false;
+//}
 
 bool Marker::Place(Frequency f)
 {
@@ -70,17 +123,17 @@ bool Marker::Place(Frequency f)
     return true;
 }
 
-// Return true if the marker was activated
-bool Marker::Place(Time t)
+bool Marker::Place(Frequency f, double percent)
 {
-    time = t;
+    freq = f;
+    xr = percent;
 
     if(!active) {
         active = true;
         return true;
     }
 
-    return false;
+    return true;
 }
 
 /*
@@ -90,18 +143,16 @@ bool Marker::Place(Time t)
 void Marker::UpdateMarker(const Trace* trace,
                           const SweepSettings *s)
 {
-    if(!active || !update) {
-        return;
-    }
-
+    if(!active || !update) return;
     if(!trace->Active()) {
         inView = false;
         return;
     }
 
     // Regular marker determined by frequency
-    Frequency num = freq - trace->StartFreq() + 0.5;
-    index = (int)(num / trace->BinSize());
+    Frequency num = freq - trace->StartFreq();// + 0.5;
+    //index = xr * trace->Length();
+    index = (int)((num / trace->BinSize()) + 0.5);
     freq = trace->StartFreq() + index * trace->BinSize();
     bool log_scale = s->RefLevel().IsLogScale();
 
@@ -131,8 +182,8 @@ void Marker::UpdateMarker(const Trace* trace,
     // Delta marker
     if(deltaOn) {
         QString unit_string = log_scale ? "dB" : "mV";
-        Frequency num = deltaFreq - trace->StartFreq() + 0.5;
-        deltaIndex = (int)(num / trace->BinSize());
+        Frequency num = deltaFreq - trace->StartFreq();
+        deltaIndex = (int)((num / trace->BinSize()) + 0.5);
         deltaFreq = trace->StartFreq() + deltaIndex * trace->BinSize();
 
         if(deltaIndex < 0 || deltaIndex >= trace->Length()) {
@@ -153,6 +204,46 @@ void Marker::UpdateMarker(const Trace* trace,
         Amplitude dif(amp.Val() - deltaAmp.Val(), s->RefLevel().Units());
         deltaText = (freq - deltaFreq).GetFreqString(6, true) +
                 ", " + dif.GetValueString() + unit_string;
+    }
+}
+
+void Marker::UpdateMarkerForPhaseNoise(const Trace *trace, const SweepSettings *s)
+{
+    if(!active || !update) return;
+    if(!trace->Active()) {
+        inView = false;
+        return;
+    }
+
+    index = xr * trace->Length();
+    if(index >= 0 && index < trace->Length()) {
+        inView = true;
+        xr = double(index) / (trace->Length() - 1);
+        amp = Amplitude(trace->Max()[index], DBM);
+        yr = amp.Val() - (s->RefLevel().ConvertToUnits(DBM) - (10.0 * s->Div()));
+        yr /= (10.0 * s->Div());
+        bb_lib::clamp(yr, 0.0, 1.0);
+
+        text = (freq).GetFreqString(6, true) +
+                ", " + amp.GetString();
+    } else {
+        inView = false;
+    }
+
+    if(deltaOn) {
+        if(deltaIndex >= 0 && deltaIndex < trace->Length()) {
+            deltaInView = true;
+            delta_xr = (double)deltaIndex / (trace->Length()-1);
+            delta_yr = deltaAmp.Val() - (s->RefLevel() - (10.0 * s->Div()));
+            delta_yr /= (10.0 * s->Div());
+            bb_lib::clamp(delta_yr, 0.0, 1.0);
+        } else {
+            deltaInView = false;
+        }
+        // Update delta text even if not in view
+        Amplitude dif(amp.Val() - deltaAmp.Val(), s->RefLevel().Units());
+        deltaText = (freq - deltaFreq).GetFreqString(6, true) +
+                ", " + dif.GetValueString() + "dBc/Hz";
     }
 }
 

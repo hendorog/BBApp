@@ -107,6 +107,11 @@ TraceView::TraceView(Session *session, QWidget *parent)
     makeCurrent();
     initializeOpenGLFunctions();
 
+    if(!hasOpenGLFeature(QOpenGLFunctions::Buffers)) {
+        // Doesn't have support for Vertext buffers!
+        // What to do?
+    }
+
     glShadeModel(GL_SMOOTH);
     glClearDepth(1.0);
     glDepthFunc(GL_LEQUAL);
@@ -245,7 +250,7 @@ void TraceView::mousePressEvent(QMouseEvent *e)
             return;
         }
 
-        GetSession()->trace_manager->PlaceMarker((double)x_pos / grat_sz.x());
+        GetSession()->trace_manager->PlaceMarkerPercent((double)x_pos / grat_sz.x());
 
     } else if (waterfall_state == Waterfall3D) {
         dragging = true;
@@ -367,6 +372,8 @@ void TraceView::Paint()
     glLoadIdentity();
     glOrtho(0, width(), 0, height(), -1, 1);
 
+    glDisable(GL_BLEND);
+    glDisable(GL_STENCIL_TEST);
     glEnable(GL_DEPTH_TEST);
     glEnableClientState(GL_VERTEX_ARRAY);
 
@@ -398,6 +405,20 @@ void TraceView::Paint()
         RenderChannelPower();
         RenderOccupiedBandwidth();
     }
+
+//    glPushAttrib(GL_ALL_ATTRIB_BITS);
+//    QPainter p(this);
+//    p.setBackgroundMode(Qt::TransparentMode);
+//    p.setRenderHint(QPainter::TextAntialiasing);
+//    p.setRenderHint(QPainter::Antialiasing);
+//    p.setFont(textFont.Font());
+//    for(int i = 0; i < 10; i++) {
+//        QString s;
+//        s.sprintf("Hello World %f", i * 1.12345);
+//        p.drawText(200, i*20, s);
+//    }
+//    p.end();
+//    glPopAttrib();
 
     doneCurrent();
 }
@@ -544,6 +565,10 @@ void TraceView::RenderGratText()
             DrawString("Device Temp", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
             uncal_y -= textHeight;
         }
+        if(GetSession()->trace_manager->GetPathLossTable().Active()) {
+            DrawString("PLT", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+            uncal_y -= textHeight;
+        }
         if(uncal) {
             DrawString("Uncal", textFont, grat_ul.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
         }
@@ -595,8 +620,8 @@ void TraceView::RenderTraces()
     glOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0);
 
     // Nice lines, doesn't smooth quads
-    glEnable(GL_BLEND);
     glEnable(GL_LINE_SMOOTH);
+    glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBlendEquation(GL_FUNC_ADD);
     glLineWidth(GetSession()->prefs.trace_width);

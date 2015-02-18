@@ -24,8 +24,10 @@ public:
     bool DeltaInView() const { return deltaInView; }
     Frequency Freq() const { return freq; }
     Amplitude Amp() const { return amp; }
+    Amplitude DeltaAmp() const { return deltaAmp; }
 
     int Index() const { return index; }
+    int DeltaIndex() const { return deltaIndex; }
     double xRatio() const { return xr; }
     double yRatio() const { return yr; }
     double delxRatio() const { return delta_xr; }
@@ -37,19 +39,24 @@ public:
     void SetActive(bool a);
     void SetUpdate(bool u) { update = u; }
     // Add adjust to frequency
-    void AdjustFrequency(Frequency adjust);
+    void AdjustFrequency(Frequency adjust, bool right);
+    void AdjustMarker(bool increase);
 
     void EnableDelta();
 
     // Place the marker at a given frequency, and
     //   activate it if it is not already
+    //bool Place(double percent);
+    //bool Place(int newIndex);
+    //bool Place(Time t);
     bool Place(Frequency f);
-    bool Place(Time t);
+    bool Place(Frequency f, double percent);
+    //bool Place(int index); // For phase noise
 
     // Use the frequency to determine the index, amplitude
     //  and delta values, do nothing if not active
-    void UpdateMarker(const Trace* trace,
-                      const SweepSettings *s);
+    void UpdateMarker(const Trace *trace, const SweepSettings *s);
+    void UpdateMarkerForPhaseNoise(const Trace *trace, const SweepSettings *s);
     //void UpdateMarker(const Trace* trace, const DemodSettings *ds);
 
 private:

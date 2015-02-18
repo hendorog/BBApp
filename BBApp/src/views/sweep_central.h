@@ -58,6 +58,7 @@ private:
     Session *session_ptr;
 
     std::thread thread_handle;
+    bool programClosing;
     std::atomic<bool> sweeping;
     std::atomic<int> sweep_count;
 

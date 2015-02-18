@@ -46,8 +46,7 @@ void TGPlot::mousePressEvent(QMouseEvent *e)
             return;
         }
 
-        GetSession()->trace_manager->PlaceMarker((double)x_pos / grat_sz.x());
-
+        GetSession()->trace_manager->PlaceMarkerPercent((double)x_pos / grat_sz.x());
     }
 
     QGLWidget::mousePressEvent(e);
