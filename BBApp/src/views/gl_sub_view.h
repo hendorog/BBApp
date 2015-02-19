@@ -9,6 +9,9 @@
 #include "lib/bb_lib.h"
 #include "model/session.h"
 
+#define sh_save_gl_state \
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+
 // Convenience wrapper of Font and Metrics for OpenGL rasterization
 class GLFont {
 public:
@@ -37,6 +40,12 @@ private:
     QFontMetrics fontMetrics;
 };
 
+struct TextToDraw {
+    QString s;
+    QPoint p;
+
+};
+
 // Extend the QGLWidget class with custom text rendering functions
 class GLSubView : public QGLWidget, public QOpenGLFunctions {
     Q_OBJECT
@@ -54,10 +63,26 @@ protected:
         CENTER_ALIGNED
     };
 
-    void DrawString(const QString &s, const GLFont &f,
-                    QPoint p, TextAlignment alignment);
-    void DrawString(const QString &s, const GLFont &f,
-                    int x, int y, TextAlignment alignment);
+    void DrawString(const QString &s,
+                    const GLFont &f,
+                    QPoint p,
+                    TextAlignment alignment);
+    void DrawString(const QString &s,
+                    const GLFont &f,
+                    int x, int y,
+                    TextAlignment alignment);
+    // Overpainting
+    void DrawString(QPainter &painter,
+                    const QString &s,
+                    const GLFont &f,
+                    QPoint p,
+                    TextAlignment alignment);
+    void DrawString(QPainter &painter,
+                    const QString &s,
+                    const GLFont &f,
+                    int x, int y,
+                    TextAlignment alignment);
+
     void SetGraticuleDimensions(QPoint bottomLeft, QPoint size)
     {
         grat_ll = bottomLeft;
@@ -75,6 +100,7 @@ protected:
     QPoint grat_ll;
     QPoint grat_ul;
     QPoint grat_sz;
+    QRect grat;
 
     GLuint gratVBO;
     GLuint gratBorderVBO;

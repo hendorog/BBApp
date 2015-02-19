@@ -412,10 +412,10 @@ void TraceView::Paint()
 //    p.setRenderHint(QPainter::TextAntialiasing);
 //    p.setRenderHint(QPainter::Antialiasing);
 //    p.setFont(textFont.Font());
-//    for(int i = 0; i < 10; i++) {
+//    for(int i = 0; i < 100; i++) {
 //        QString s;
 //        s.sprintf("Hello World %f", i * 1.12345);
-//        p.drawText(200, i*20, s);
+//        p.drawText(200, i*5, s);
 //    }
 //    p.end();
 //    glPopAttrib();

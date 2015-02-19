@@ -85,6 +85,7 @@ void GLSubView::DrawString(const QString &s,
     } else if(alignment == CENTER_ALIGNED) {
         p -= QPoint(f.GetTextWidth(s) / 2, 0);
     }
+
     renderText(p.x(), p.y(), 0, s, f.Font());
 }
 
@@ -95,6 +96,33 @@ void GLSubView::DrawString(const QString &s,
                            TextAlignment alignment)
 {
     DrawString(s, f, QPoint(x, y), alignment);
+}
+
+void GLSubView::DrawString(QPainter &painter,
+                           const QString &s,
+                           const GLFont &f,
+                           QPoint p,
+                           TextAlignment alignment)
+{
+    if(alignment == RIGHT_ALIGNED) {
+        p -= QPoint(f.GetTextWidth(s), 0);
+    } else if(alignment == CENTER_ALIGNED) {
+        p -= QPoint(f.GetTextWidth(s) / 2, 0);
+    }
+
+    p.setY(-p.y());
+    painter.drawText(p, s);
+    //renderText(p.x(), p.y(), 0, s, f.Font());
+}
+
+void GLSubView::DrawString(QPainter &painter,
+                           const QString &s,
+                           const GLFont &f,
+                           int x,
+                           int y,
+                           TextAlignment alignment)
+{
+    DrawString(painter, s, f, QPoint(x, y), alignment);
 }
 
 void GLSubView::DrawGraticule()

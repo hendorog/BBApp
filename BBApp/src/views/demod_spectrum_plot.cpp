@@ -81,8 +81,6 @@ void DemodSpectrumPlot::DrawSpectrum()
     const DemodSettings *ds = GetSession()->demod_settings;
     double ref, botRef;
 
-    std::cout << "I/Q Size " << sweep.iq.size() << " " << sweep.sweepLen << std::endl;
-
     if(sweep.sweepLen <= 2) {
         return;
     }
@@ -98,8 +96,6 @@ void DemodSpectrumPlot::DrawSpectrum()
     // May need to resize the fft if it goes below MAX_FFT_SIZE
     int fftSize = bb_lib::min2(MAX_FFT_SIZE, (int)sweep.sweepLen/*sweep.iq.size()*/);
     fftSize = bb_lib::round_down_power_two(fftSize);
-
-    std::cout << "FFT Size " << fftSize << std::endl;
 
     if(fftSize != fft->Length()) {
         fft = std::unique_ptr<FFT>(new FFT(fftSize, false));
@@ -180,8 +176,6 @@ void DemodSpectrumPlot::DrawTrace(const GLVector &v)
     if(v.size() <= 4) {
         return;
     }
-
-    std::cout << "Draw Size " << v.size() << std::endl;
 
     glBindBuffer(GL_ARRAY_BUFFER, traceVBO);
     glBufferData(GL_ARRAY_BUFFER, v.size()*sizeof(float),

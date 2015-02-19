@@ -19,7 +19,8 @@ protected:
 private:
     void DrawIQLines();
     void DrawTrace(const GLVector &v);
-    void DrawPlotText();
+
+    void DrawPlotText(QPainter &p);
 
     // I/Q traces
     GLVector traces[2];
