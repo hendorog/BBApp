@@ -82,6 +82,10 @@ void DemodSweepPlot::paintEvent(QPaintEvent *)
                            QPoint(grat_sz.x(), height() - textHeight*4));
 
     glViewport(0, 0, width(), height());
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
 
     DrawGraticule();
     DemodAndDraw();
@@ -90,17 +94,31 @@ void DemodSweepPlot::paintEvent(QPaintEvent *)
     glDisableClientState(GL_VERTEX_ARRAY);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    DrawPlotText();
     DrawMarkers();
 
-    swapBuffers();
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    QPainter p(this);
+    p.setRenderHint(QPainter::TextAntialiasing);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.translate(0.0, height());
+    p.setPen(QPen(GetSession()->colors.text));
+    p.setFont(textFont.Font());
+
+    DrawTextQueue(p);
+    DrawPlotText(p);
+
+    p.end();
+    glPopAttrib();
+
     doneCurrent();
+    swapBuffers();
 }
 
 void DemodSweepPlot::DemodAndDraw()
 {
     const DemodSettings *ds = GetSession()->demod_settings;
     const IQSweep &sweep = GetSession()->iq_capture;
+    if(sweep.sweepLen <= 4) return;
     if(sweep.iq.size() <= 1) return;
 
     trace.clear();
@@ -187,36 +205,23 @@ void DemodSweepPlot::DemodAndDraw()
     glPopMatrix();
 }
 
-void DemodSweepPlot::DrawPlotText()
+void DemodSweepPlot::DrawPlotText(QPainter &p)
 {
     int textHeight = textFont.GetTextHeight();
-
-    glPushAttrib(GL_VIEWPORT_BIT);
-    glViewport(0, 0, width(), height());
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0, width(), 0, height(), -1, 1);
 
     const DemodSettings *ds = GetSession()->demod_settings;
     const IQSweep &sweep = GetSession()->iq_capture;
     QString str;
 
-    glQColor(GetSession()->colors.text);
-
-    DrawString("Center " + ds->CenterFreq().GetFreqString(), textFont,
+    DrawString(p, "Center " + ds->CenterFreq().GetFreqString(),
                grat_ul.x() + grat_sz.x()/2, grat_ll.y() - textHeight, CENTER_ALIGNED);
     str.sprintf("%f ms per div", ds->SweepTime() * 100.0);
-    DrawString(str, textFont, grat_ll.x() + grat_sz.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
+    DrawString(p, str, grat_ll.x() + grat_sz.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
     str.sprintf("%d pts", GetSession()->iq_capture.sweepLen);
-    DrawString(str, textFont, grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - textHeight, RIGHT_ALIGNED);
+    DrawString(p, str, grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - textHeight, RIGHT_ALIGNED);
 
     if(demodType == DemodTypeAM) {
-        DrawString("Ref " + ds->InputPower().GetString(), textFont,
+        DrawString(p, "Ref " + ds->InputPower().GetString(),
                    QPoint(grat_ul.x() + 5, grat_ul.y() + 2), LEFT_ALIGNED);
         double botVal, step;
         if(ds->InputPower().IsLogScale()) {
@@ -226,38 +231,42 @@ void DemodSweepPlot::DrawPlotText()
             botVal = 0;
             step = ds->InputPower() / 10.0;
         }
+        p.setFont(divFont.Font());
         for(int i = 0; i <= 8; i += 2) {
             int x_pos = grat_ul.x() - 2, y_pos = (grat_sz.y() / 10) * i + grat_ll.y() - 5;
             str.sprintf("%.2f", botVal + step * i);
-            DrawString(str, divFont, x_pos, y_pos, RIGHT_ALIGNED);
+            DrawString(p, str, x_pos, y_pos, RIGHT_ALIGNED);
         }
     } else if(demodType == DemodTypeFM) {
         Frequency ref = sweep.descriptor.sampleRate / 2.0;
         double div = ref / 5.0;
-        DrawString("Ref " + ref.GetFreqString(), textFont,
+        DrawString(p, "Ref " + ref.GetFreqString(),
                    QPoint(grat_ul.x() + 5, grat_ul.y() + 2), LEFT_ALIGNED);
+        p.setFont(divFont.Font());
         for(int i = 1; i <= 9; i += 2) {
             int x_pos = grat_ul.x() - 2, y_pos = (grat_sz.y() / 10) * i + grat_ll.y() - 5;
             str.sprintf("%.2fM", (-ref + i * div) * 1.0e-6);
-            DrawString(str, divFont, x_pos, y_pos, RIGHT_ALIGNED);
+            DrawString(p, str, x_pos, y_pos, RIGHT_ALIGNED);
         }
     } else if(demodType == DemodTypePM) {
-        DrawString("Ref 3.14159 Deg", textFont,
+        DrawString(p, "Ref 3.14159 Deg",
                    QPoint(grat_ul.x() + 5, grat_ul.y() + 2), LEFT_ALIGNED);
+        p.setFont(divFont.Font());
         for(int i = 1; i <= 9; i += 2) {
             int x_pos = grat_ul.x() - 2, y_pos = (grat_sz.y() / 10) * i + grat_ll.y() - 5;
             str.sprintf("%.2f", - 3.14159 + i * ((2 * BB_PI) / 10.0));
-            DrawString(str, divFont, x_pos, y_pos, RIGHT_ALIGNED);
+            DrawString(p, str, x_pos, y_pos, RIGHT_ALIGNED);
         }
     }
 
+    p.setFont(textFont.Font());
     if(ds->TrigType() == TriggerTypeExternal || ds->TrigType() == TriggerTypeVideo) {
         if(GetSession()->iq_capture.triggered) {
             str.sprintf("Triggered");
         } else {
             str.sprintf("Armed");
         }
-        DrawString(str, textFont, grat_ul.x() + grat_sz.x() / 2,
+        DrawString(p, str, grat_ul.x() + grat_sz.x() / 2,
                    grat_ul.y() + 2, CENTER_ALIGNED);
     }
 
@@ -267,34 +276,27 @@ void DemodSweepPlot::DrawPlotText()
     glColor3f(1.0, 0.0, 0.0);
     if(!GetSession()->device->IsPowered()) {
         uncal = true;
-        DrawString("Low Voltage", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+        DrawString(p, "Low Voltage", uncal_x, uncal_y, LEFT_ALIGNED);
         uncal_y -= textHeight;
     }
     if(GetSession()->device->ADCOverflow()) {
         uncal = true;
-        DrawString("IF Overload", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+        DrawString(p, "IF Overload", uncal_x, uncal_y, LEFT_ALIGNED);
         uncal_y -= textHeight;
     }
     if(GetSession()->device->NeedsTempCal()) {
         uncal = true;
-        DrawString("Device Temp", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+        DrawString(p, "Device Temp", uncal_x, uncal_y, LEFT_ALIGNED);
         uncal_y -= textHeight;
     }
     if(uncal) {
-        DrawString("Uncal", textFont, grat_ul.x() - 5, grat_ul.y() - 22, RIGHT_ALIGNED);
+        DrawString(p, "Uncal", grat_ul.x() - 5, grat_ul.y() - 22, RIGHT_ALIGNED);
     }
 
     if(GetSession()->demod_settings->MAEnabled()) {
         glQColor(GetSession()->colors.text);
-        DrawModAnalysisReport();
+        DrawModAnalysisReport(p);
     }
-
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-
-    glPopAttrib();
 }
 
 void DemodSweepPlot::DrawMarkers()
@@ -343,7 +345,8 @@ void DemodSweepPlot::DrawMarkers()
 
     // Viewport on grat, full pixel scale
     glPushAttrib(GL_VIEWPORT_BIT);
-    glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
+    //glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
+    glViewport(0, 0, width(), height());
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -351,7 +354,8 @@ void DemodSweepPlot::DrawMarkers()
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, grat_sz.x(), 0, grat_sz.y(), -1, 1);
+//    glOrtho(0, grat_sz.x(), 0, grat_sz.y(), -1, 1);
+    glOrtho(0, width(), 0, height(), -1, 1);
 
     // Nice lines
     glEnable(GL_LINE_SMOOTH);
@@ -361,13 +365,20 @@ void DemodSweepPlot::DrawMarkers()
     glLineWidth(1.0);
 
     glDisable(GL_DEPTH_TEST);
-    DrawMarker(markerPos.x() * grat_sz.x(), markerPos.y() * grat_sz.y(), 1);    
+    DrawMarker(grat_ll.x() + markerPos.x() * grat_sz.x(),
+               grat_ll.y() + markerPos.y() * grat_sz.y(), 1);
 
     if(deltaOn) {
-        DrawDeltaMarker(deltaPos.x() * grat_sz.x(), deltaPos.y() * grat_sz.y(), 1);
+        DrawDeltaMarker(grat_ll.x() + deltaPos.x() * grat_sz.x(),
+                        grat_ll.y() + deltaPos.y() * grat_sz.y(), 1);
         double diff = markerVal - deltaVal;
-        delStr = "Delta : ";
-        delStr += QVariant((markerIndex - deltaIndex) * binSize * 1000.0).toString() + " ms, ";
+        Time(0).GetString();
+        //delStr.sprintf("Delta : %.2f ms, ", (markerIndex - deltaIndex) * binSize * 1000.0);
+        delStr = QString("Delta : ") +
+                getPreciseTimeString((markerIndex - deltaIndex) * binSize) +
+                QString(", ");
+//        delStr = "Delta : ";
+//        delStr += QVariant((markerIndex - deltaIndex) * binSize * 1000.0).toString() + " ms, ";
         if(demodType == DemodTypeAM) {
             QString val;
             val.sprintf("%.2f %s", diff, ds->InputPower().IsLogScale() ? "dB" : "mV");
@@ -382,8 +393,12 @@ void DemodSweepPlot::DrawMarkers()
     }
 
     glQColor(GetSession()->colors.text);
-    DrawString(str, textFont, grat_sz.x() - 5, grat_sz.y() - 22, RIGHT_ALIGNED);
-    DrawString(delStr, textFont, grat_sz.x() - 5, grat_sz.y() - 42, RIGHT_ALIGNED);
+    AddTextToRender(str, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ll.y() + grat_sz.y() - 22),
+                    RIGHT_ALIGNED, textFont.Font(), GetSession()->colors.text);
+    AddTextToRender(delStr, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ll.y() + grat_sz.y() - 42),
+                    RIGHT_ALIGNED, textFont.Font(), GetSession()->colors.text);
+//    DrawString(str, textFont, grat_sz.x() - 5, grat_sz.y() - 22, RIGHT_ALIGNED);
+//    DrawString(delStr, textFont, grat_sz.x() - 5, grat_sz.y() - 42, RIGHT_ALIGNED);
 
     // Disable nice lines
     glDisable(GL_LINE_SMOOTH);
@@ -438,8 +453,10 @@ void DemodSweepPlot::DrawMarker(int x, int y, int num)
     glQColor(GetSession()->colors.markerText);
     QString str;
     str.sprintf("%d", num);
-    DrawString(str, divFont,
-               QPoint(x, y + 10), CENTER_ALIGNED);
+    AddTextToRender(str, QPoint(x, y+10), CENTER_ALIGNED,
+                    divFont.Font(), GetSession()->colors.markerText);
+//    DrawString(str, divFont,
+//               QPoint(x, y + 10), CENTER_ALIGNED);
 }
 
 void DemodSweepPlot::DrawDeltaMarker(int x, int y, int num)
@@ -466,58 +483,58 @@ void DemodSweepPlot::DrawDeltaMarker(int x, int y, int num)
     glQColor(GetSession()->colors.markerText);
     QString str;
     str.sprintf("R%d", num);
-    DrawString(str, divFont,
-               QPoint(x, y+11), CENTER_ALIGNED);
+    AddTextToRender(str, QPoint(x, y+11), CENTER_ALIGNED,
+                    divFont.Font(), GetSession()->colors.markerText);
+//    DrawString(str, divFont,
+//               QPoint(x, y+11), CENTER_ALIGNED);
 }
 
-void DemodSweepPlot::DrawModAnalysisReport()
+void DemodSweepPlot::DrawModAnalysisReport(QPainter &p)
 {
     const ModAnalysisReport stats = GetSession()->iq_capture.stats;
 
     QPoint textHeight(0, textFont.GetTextHeight());
-
     QPoint leftPos(width() / 2 + grat_ll.x(), grat_ul.y() - 20);
     QPoint rightPos(leftPos.x() + grat_sz.x() / 2, leftPos.y() - textHeight.y() * 3.5);
-
     QString str;
 
-    DrawString("AM/FM Modulation Analysis", textFont, leftPos, LEFT_ALIGNED);
+    DrawString(p, "AM/FM Modulation Analysis", leftPos, LEFT_ALIGNED);
     leftPos -= textHeight*2;
-    DrawString("RF Center " + Frequency(stats.rfCenter).GetFreqString(12, true), textFont, leftPos, LEFT_ALIGNED);
+    DrawString(p, "RF Center " + Frequency(stats.rfCenter).GetFreqString(12, true), leftPos, LEFT_ALIGNED);
     leftPos -= textHeight*1.5;
 
-    DrawString("FM RMS: " + Frequency(stats.fmRMS).GetFreqString(), textFont, leftPos, LEFT_ALIGNED);
+    DrawString(p, "FM RMS: " + Frequency(stats.fmRMS).GetFreqString(), leftPos, LEFT_ALIGNED);
     leftPos -= textHeight;
-    DrawString("FM Peak+: " + Frequency(stats.fmPeakPlus).GetFreqString(), textFont, leftPos, LEFT_ALIGNED);
+    DrawString(p, "FM Peak+: " + Frequency(stats.fmPeakPlus).GetFreqString(), leftPos, LEFT_ALIGNED);
     leftPos -= textHeight;
-    DrawString("FM Peak-: " + Frequency(stats.fmPeakMinus).GetFreqString(), textFont, leftPos, LEFT_ALIGNED);
+    DrawString(p, "FM Peak-: " + Frequency(stats.fmPeakMinus).GetFreqString(), leftPos, LEFT_ALIGNED);
     leftPos -= textHeight;
-    DrawString("FM Rate: " + Frequency(stats.fmAudioFreq).GetFreqString(), textFont, leftPos, LEFT_ALIGNED);
+    DrawString(p, "FM Rate: " + Frequency(stats.fmAudioFreq).GetFreqString(), leftPos, LEFT_ALIGNED);
     leftPos -= textHeight*2;
 
     str.sprintf("AM RMS %.3lf%%", stats.amRMS * 100.0);
-    DrawString(str, textFont, rightPos, LEFT_ALIGNED);
+    DrawString(p, str, rightPos, LEFT_ALIGNED);
     rightPos -= textHeight;
     str.sprintf("AM Peak+ %.3lf%%", stats.amPeakPlus * 100.0);
-    DrawString(str, textFont, rightPos, LEFT_ALIGNED);
+    DrawString(p, str, rightPos, LEFT_ALIGNED);
     rightPos -= textHeight;
     str.sprintf("AM Peak- %.3lf%%", stats.amPeakMinus * 100.0);
-    DrawString(str, textFont, rightPos, LEFT_ALIGNED);
+    DrawString(p, str, rightPos, LEFT_ALIGNED);
     rightPos -= textHeight;
-    DrawString("AM Rate " + Frequency(stats.amAudioFreq).GetFreqString(), textFont, rightPos, LEFT_ALIGNED);
+    DrawString(p, "AM Rate " + Frequency(stats.amAudioFreq).GetFreqString(), rightPos, LEFT_ALIGNED);
     rightPos -= textHeight;
 
     if(demodType == DemodTypeAM) {
         str.sprintf("AM SINAD %.2f dB", stats.amSINAD);
-        DrawString(str, textFont, leftPos, LEFT_ALIGNED);
+        DrawString(p, str, leftPos, LEFT_ALIGNED);
         leftPos -= textHeight;
         str.sprintf("AM THD %.2f %%", stats.amTHD * 100.0);
-        DrawString(str, textFont, leftPos, LEFT_ALIGNED);
+        DrawString(p, str, leftPos, LEFT_ALIGNED);
     } else if(demodType == DemodTypeFM) {
         str.sprintf("FM SINAD %.2f dB", stats.fmSINAD);
-        DrawString(str, textFont, leftPos, LEFT_ALIGNED);
+        DrawString(p, str, leftPos, LEFT_ALIGNED);
         leftPos -= textHeight;
         str.sprintf("FM THD %.2f %%", stats.fmTHD * 100.0);
-        DrawString(str, textFont, leftPos, LEFT_ALIGNED);
+        DrawString(p, str, leftPos, LEFT_ALIGNED);
     }
 }

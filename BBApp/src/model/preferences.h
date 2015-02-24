@@ -68,6 +68,9 @@ public:
         s.setValue("SweepPrefs/RealTimeUpdate", realTimeAccumulation);
     }
 
+    QString GetDefaultSaveDirectory() const;
+    void SetDefaultSaveDirectory(const QString &dir);
+
     void SetProgramStyle(int newStyle) {
         QFile styleSheet;
 

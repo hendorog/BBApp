@@ -94,15 +94,24 @@ void PhaseNoisePlot::paintEvent(QPaintEvent *)
     glDisableClientState(GL_VERTEX_ARRAY);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    DrawGratText();
     DrawMarkers();
 
-    glDisable(GL_DEPTH_TEST);
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    QPainter p(this);
+    p.setRenderHint(QPainter::TextAntialiasing);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.translate(0.0, height());
+    p.setPen(QPen(GetSession()->colors.text));
+    p.setFont(textFont.Font());
 
-    swapBuffers();
+    DrawTextQueue(p);
+    DrawGratText(p);
+
+    p.end();
+    glPopAttrib();
+
     doneCurrent();
+    swapBuffers();
 }
 
 void PhaseNoisePlot::DrawTraces()
@@ -225,18 +234,8 @@ void PhaseNoisePlot::BuildGraticule()
     innerGratPoints = points.size();
 }
 
-void PhaseNoisePlot::DrawGratText()
+void PhaseNoisePlot::DrawGratText(QPainter &p)
 {
-    glQColor(GetSession()->colors.text);
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0, width(), 0, height(), -1, 1);
-
     QString str;
     const SweepSettings *s = GetSession()->sweep_settings;
     TraceManager *tm = GetSession()->trace_manager;
@@ -247,36 +246,39 @@ void PhaseNoisePlot::DrawGratText()
 
     str = GetSession()->GetTitle();
     if(!str.isNull()) {
-        DrawString(str, GLFont(20), width() / 2, height() - 22, CENTER_ALIGNED);
+        p.setFont(QFont("Arial", 20));
+        DrawString(p, str, width() / 2, height() - 22, CENTER_ALIGNED);
     }
 
-    DrawString("Center " + s->Center().GetFreqString(), textFont,
+    p.setFont(textFont.Font());
+    DrawString(p, "Center " + s->Center().GetFreqString(),
                grat_ll.x() + grat_sz.x()/2, grat_ll.y() - textHeight, CENTER_ALIGNED);
-
-    DrawString("Ref " + s->RefLevel().GetValueString() + "dBc/Hz", textFont,
+    DrawString(p, "Ref " + s->RefLevel().GetValueString() + "dBc/Hz",
                grat_ll.x()+5, grat_ul.y()+textHeight, LEFT_ALIGNED);
     str.sprintf("Div %.1f", div);
-    DrawString(str, textFont, grat_ul.x()+5, grat_ul.y()+2 , LEFT_ALIGNED);
+    DrawString(p, str, grat_ul.x()+5, grat_ul.y()+2 , LEFT_ALIGNED);
     s->GetAttenString(str);
-    DrawString(str, textFont, grat_ll.x() + grat_sz.x()/2, grat_ul.y()+2, CENTER_ALIGNED);
+    DrawString(p, str, grat_ll.x() + grat_sz.x()/2, grat_ul.y()+2, CENTER_ALIGNED);
 
     str = QString("Start ") + Frequency(pow(10.0, startDecade+1)).GetFreqString();
-    DrawString(str, textFont, grat_ll.x()+5, grat_ll.y()-textHeight, LEFT_ALIGNED);
+    DrawString(p, str, grat_ll.x()+5, grat_ll.y()-textHeight, LEFT_ALIGNED);
     str = QString("Stop ") + Frequency(pow(10.0, stopDecade+1)).GetFreqString();
-    DrawString(str, textFont, grat_ll.x()+grat_sz.x()-5, grat_ll.y()-textHeight, RIGHT_ALIGNED);
+    DrawString(p, str, grat_ll.x()+grat_sz.x()-5, grat_ll.y()-textHeight, RIGHT_ALIGNED);
     QVariant elapsed = time.restart();
     str.sprintf("%d pts in %d ms", tm->GetTrace(0)->Length(), elapsed.toInt());
-    DrawString(str, textFont, grat_ll.x()+grat_sz.x()-5,
+    DrawString(p, str, grat_ll.x()+grat_sz.x()-5,
                grat_ll.y()-textHeight*2, RIGHT_ALIGNED);
 
     // y-axis labels
+    p.setFont(divFont.Font());
     for(int i = 0; i <= 8; i += 2) {
         int x_pos = 58, y_pos = (grat_sz.y() / 10) * i + grat_ll.y() - 5;
         QString div_str;
         div_str.sprintf("%.2f", s->RefLevel() - (div*(10-i)));
-        DrawString(div_str, divFont, x_pos, y_pos, RIGHT_ALIGNED);
+        DrawString(p, div_str, x_pos, y_pos, RIGHT_ALIGNED);
     }
 
+    p.setFont(textFont.Font());
     if(GetSession()->device->IsOpen()) {
         // Uncal text strings
         bool uncal = false;
@@ -284,28 +286,23 @@ void PhaseNoisePlot::DrawGratText()
         glColor3f(1.0, 0.0, 0.0);
         if(!GetSession()->device->IsPowered()) {
             uncal = true;
-            DrawString("Low Voltage", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+            DrawString(p, "Low Voltage", uncal_x, uncal_y, LEFT_ALIGNED);
             uncal_y -= textHeight;
         }
         if(GetSession()->device->ADCOverflow()) {
             uncal = true;
-            DrawString("IF Overload", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+            DrawString(p, "IF Overload", uncal_x, uncal_y, LEFT_ALIGNED);
             uncal_y -= textHeight;
         }
         if(GetSession()->device->NeedsTempCal()) {
             uncal = true;
-            DrawString("Device Temp", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+            DrawString(p, "Device Temp", uncal_x, uncal_y, LEFT_ALIGNED);
             uncal_y -= textHeight;
         }
         if(uncal) {
-            DrawString("Uncal", textFont, grat_ul.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
+            DrawString(p, "Uncal", grat_ul.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
         }
     }
-
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
 }
 
 void PhaseNoisePlot::DrawMarkers()
@@ -315,7 +312,8 @@ void PhaseNoisePlot::DrawMarkers()
 
     // Viewport on grat, full pixel scale
     glPushAttrib(GL_VIEWPORT_BIT);
-    glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
+    //glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
+    glViewport(0, 0, width(), height());
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -323,10 +321,11 @@ void PhaseNoisePlot::DrawMarkers()
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, grat_sz.x(), 0, grat_sz.y(), -1, 1);
+    //glOrtho(0, grat_sz.x(), 0, grat_sz.y(), -1, 1);
+    glOrtho(0, width(), 0, height(), -1, 1);
 
-    int x_print = grat_sz.x() - 5;
-    int y_print = grat_sz.y() - 20;
+    int x_print = grat_ll.x() + grat_sz.x() - 5;
+    int y_print = grat_ll.y() + grat_sz.y() - 20;
 
     //tm->SolveMarkers(s);
     tm->SolveMarkersForPhaseNoise(s);
@@ -345,13 +344,13 @@ void PhaseNoisePlot::DrawMarkers()
         }
 
         if(m->InView()) {
-            DrawMarker(m->xRatio() * grat_sz.x(),
-                       m->yRatio() * grat_sz.y(), i + 1);
+            DrawMarker(grat_ll.x() + m->xRatio() * grat_sz.x(),
+                       grat_ll.y() + m->yRatio() * grat_sz.y(), i + 1);
         }
 
         if(m->DeltaActive() && m->DeltaInView()) {
-            DrawDeltaMarker(m->delxRatio() * grat_sz.x(),
-                            m->delyRatio() * grat_sz.y(), i + 1);
+            DrawDeltaMarker(grat_ll.x() + m->delxRatio() * grat_sz.x(),
+                            grat_ll.y() + m->delyRatio() * grat_sz.y(), i + 1);
         }
 
         double freq = pow(10.0, (double)(startDecade+1) + (double)m->Index() / 100.0);
@@ -364,8 +363,11 @@ void PhaseNoisePlot::DrawMarkers()
             QString freqStr = Frequency(freq - delFreq).GetFreqString();
             QString ampStr = QString().sprintf("%.2f dB", m->Amp().Val() - m->DeltaAmp());
 
-            DrawString("Mkr " + QVariant(i+1).toString() + " Delta: " + freqStr + " " + ampStr,
-                       textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
+//            DrawString("Mkr " + QVariant(i+1).toString() + " Delta: " + freqStr + " " + ampStr,
+//                       textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
+            AddTextToRender("Mkr " + QVariant(i+1).toString() + " Delta: " + freqStr + " " + ampStr,
+                            QPoint(x_print, y_print), RIGHT_ALIGNED, textFont.Font(),
+                            GetSession()->colors.text);
             y_print -= 20;
         } else if(m->Active()) {
             glQColor(GetSession()->colors.text);
@@ -373,8 +375,11 @@ void PhaseNoisePlot::DrawMarkers()
             QString freqStr = Frequency(freq).GetFreqString();
             QString ampStr = QString().sprintf("%.2f dBc/Hz", m->Amp().Val());
 
-            DrawString("Mkr " + QVariant(i+1).toString() + ": " + freqStr + " " + ampStr,
-                       textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
+//            DrawString("Mkr " + QVariant(i+1).toString() + ": " + freqStr + " " + ampStr,
+//                       textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
+            AddTextToRender("Mkr " + QVariant(i+1).toString() + ": " + freqStr + " " + ampStr,
+                            QPoint(x_print, y_print), RIGHT_ALIGNED, textFont.Font(),
+                            GetSession()->colors.text);
             y_print -= 20;
         }
     }
@@ -412,8 +417,8 @@ void PhaseNoisePlot::DrawMarker(int x, int y, int num)
     glQColor(GetSession()->colors.markerText);
     QString str;
     str.sprintf("%d", num);
-    DrawString(str, divFont,
-               QPoint(x, y + 10), CENTER_ALIGNED);
+    AddTextToRender(str, QPoint(x, y+10), CENTER_ALIGNED,
+                    divFont.Font(), GetSession()->colors.markerText);
 }
 
 void PhaseNoisePlot::DrawDeltaMarker(int x, int y, int num)
@@ -440,6 +445,7 @@ void PhaseNoisePlot::DrawDeltaMarker(int x, int y, int num)
     glQColor(GetSession()->colors.markerText);
     QString str;
     str.sprintf("R%d", num);
-    DrawString(str, divFont, QPoint(x, y+11), CENTER_ALIGNED);
+    AddTextToRender(str, QPoint(x, y+11), CENTER_ALIGNED,
+                    divFont.Font(), GetSession()->colors.markerText);
 }
 

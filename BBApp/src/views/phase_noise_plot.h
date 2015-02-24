@@ -27,7 +27,7 @@ private:
     void BuildGraticule();
     void DrawTraces();
     void DrawTrace(const Trace *t, const GLVector &v);
-    void DrawGratText();
+    void DrawGratText(QPainter &p);
     void DrawMarkers();
     void DrawMarker(int x, int y, int num);
     void DrawDeltaMarker(int x, int y, int num);

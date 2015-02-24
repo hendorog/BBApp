@@ -66,6 +66,12 @@ void HarmonicsSpectrumPlot::paintEvent(QPaintEvent *)
     glEnable(GL_DEPTH_TEST);
     glEnableClientState(GL_VERTEX_ARRAY);
 
+    glViewport(0, 0, width(), height());
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
     SetGraticuleDimensions(QPoint(60, 50),
                            QPoint(width() - 80, height() - 100));
 
@@ -88,12 +94,9 @@ void HarmonicsSpectrumPlot::paintEvent(QPaintEvent *)
 
     for(int i = 0; i < 5; i++) {
         double freq = 0.0;
-
         harmonics[i].GetSignalPeak(&freq, &markerReadings[i]);
-        markers[i].Place(freq);
-        //markers[i].Place((double)harmonics[i].GetPeakIndex() / harmonics[i].Length());
-        //markers[i].Place(harmonics[i].GetPeakIndex());
 
+        markers[i].Place(freq);
         markers[i].UpdateMarker(&harmonics[i], GetSession()->sweep_settings);
     }
 
@@ -105,10 +108,23 @@ void HarmonicsSpectrumPlot::paintEvent(QPaintEvent *)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     DrawMarkers();
-    DrawGratText();
 
-    swapBuffers();
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    QPainter p(this);
+    p.setRenderHint(QPainter::TextAntialiasing);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.translate(0.0, height());
+    p.setPen(QPen(GetSession()->colors.text));
+    p.setFont(textFont.Font());
+
+    DrawTextQueue(p);
+    DrawGratText(p);
+
+    p.end();
+    glPopAttrib();
+
     doneCurrent();
+    swapBuffers();
 }
 
 void HarmonicsSpectrumPlot::DrawTrace(const Trace *t, const GLVector &v, GLuint vbo)
@@ -189,33 +205,25 @@ void HarmonicsSpectrumPlot::DrawTraces()
     glPopAttrib();
 }
 
-void HarmonicsSpectrumPlot::DrawGratText()
+void HarmonicsSpectrumPlot::DrawGratText(QPainter &p)
 {
-    glQColor(GetSession()->colors.text);
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0, width(), 0, height(), -1, 1);
-
     QString str;
     const SweepSettings *s = GetSession()->sweep_settings;
     int textHeight = textFont.GetTextHeight();
 
     double div = s->RefLevel().IsLogScale() ? s->Div() : (s->RefLevel().Val() / 10.0);
 
+    p.setFont(QFont("Arial", 20));
     str = GetSession()->GetTitle();
     if(!str.isNull()) {
-        DrawString(str, GLFont(20), width() / 2, height() - 22, CENTER_ALIGNED);
+        DrawString(p, str, width() / 2, height() - 22, CENTER_ALIGNED);
     }
 
-    DrawString("Center " + s->Center().GetFreqString(), textFont,
+    p.setFont(textFont.Font());
+    DrawString(p, "Center " + s->Center().GetFreqString(),
                grat_ll.x() + grat_sz.x()/10, grat_ll.y() - textHeight, CENTER_ALIGNED);
     str.sprintf("%.2f %s", markerReadings[0], s->RefLevel().IsLogScale() ? "dBm" : "mV");
-    DrawString(str, textFont, grat_ll.x() + grat_sz.x()/10,
+    DrawString(p, str, grat_ll.x() + grat_sz.x()/10,
                grat_ll.y() - textHeight*2, CENTER_ALIGNED);
     for(int i = 1; i < 5; i++) {
         if(i == 1) str.sprintf("2nd Harmonic");
@@ -223,31 +231,33 @@ void HarmonicsSpectrumPlot::DrawGratText()
         else if(i == 3) str.sprintf("4th Harmonic");
         else if(i == 4) str.sprintf("5th Harmonic");
         int xPos = grat_ll.x() + grat_sz.x()/10 + (i*grat_sz.x()/5);
-        DrawString(str, textFont, xPos, grat_ll.y() - textHeight, CENTER_ALIGNED);
+        DrawString(p, str, xPos, grat_ll.y() - textHeight, CENTER_ALIGNED);
         str.sprintf("%.2f %s", markerReadings[i] - markerReadings[0],
                 s->RefLevel().IsLogScale() ? "dBc" : "mV");
-        DrawString(str, textFont, xPos, grat_ll.y() - textHeight*2, CENTER_ALIGNED);
+        DrawString(p, str, xPos, grat_ll.y() - textHeight*2, CENTER_ALIGNED);
     }
 
-    DrawString("Ref " + s->RefLevel().GetString(), textFont,
+    DrawString(p, "Ref " + s->RefLevel().GetString(),
                grat_ll.x()+5, grat_ul.y()+textHeight, LEFT_ALIGNED);
     str.sprintf("Div %.1f", div);
-    DrawString(str, textFont, grat_ul.x()+5, grat_ul.y()+2 , LEFT_ALIGNED);
-    DrawString("RBW " + s->RBW().GetFreqString(), textFont,
+    DrawString(p, str, grat_ul.x()+5, grat_ul.y()+2 , LEFT_ALIGNED);
+    DrawString(p, "RBW " + s->RBW().GetFreqString(),
                grat_ll.x() + grat_sz.x()/2, grat_ul.y()+textHeight, CENTER_ALIGNED);
     s->GetAttenString(str);
-    DrawString(str, textFont, grat_ll.x() + grat_sz.x()/2, grat_ul.y()+2, CENTER_ALIGNED);
-    DrawString("VBW " + s->VBW().GetFreqString(), textFont,
+    DrawString(p, str, grat_ll.x() + grat_sz.x()/2, grat_ul.y()+2, CENTER_ALIGNED);
+    DrawString(p, "VBW " + s->VBW().GetFreqString(),
                grat_ul.x()+grat_sz.x()-5, grat_ul.y()+textHeight, RIGHT_ALIGNED);
 
     // y-axis labels
+    p.setFont(divFont.Font());
     for(int i = 0; i <= 8; i += 2) {
         int x_pos = 58, y_pos = (grat_sz.y() / 10) * i + grat_ll.y() - 5;
         QString div_str;
         div_str.sprintf("%.2f", s->RefLevel() - (div*(10-i)));
-        DrawString(div_str, divFont, x_pos, y_pos, RIGHT_ALIGNED);
+        DrawString(p, div_str, x_pos, y_pos, RIGHT_ALIGNED);
     }
 
+    p.setFont(textFont.Font());
     if(GetSession()->device->IsOpen()) {
         // Uncal text strings
         bool uncal = false;
@@ -255,28 +265,23 @@ void HarmonicsSpectrumPlot::DrawGratText()
         glColor3f(1.0, 0.0, 0.0);
         if(!GetSession()->device->IsPowered()) {
             uncal = true;
-            DrawString("Low Voltage", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+            DrawString(p, "Low Voltage", uncal_x, uncal_y, LEFT_ALIGNED);
             uncal_y -= textHeight;
         }
         if(GetSession()->device->ADCOverflow()) {
             uncal = true;
-            DrawString("IF Overload", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+            DrawString(p, "IF Overload", uncal_x, uncal_y, LEFT_ALIGNED);
             uncal_y -= textHeight;
         }
         if(GetSession()->device->NeedsTempCal()) {
             uncal = true;
-            DrawString("Device Temp", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+            DrawString(p, "Device Temp", uncal_x, uncal_y, LEFT_ALIGNED);
             uncal_y -= textHeight;
         }
         if(uncal) {
-            DrawString("Uncal", textFont, grat_ul.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
+            DrawString(p, "Uncal", grat_ul.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
         }
     }
-
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
 }
 
 void HarmonicsSpectrumPlot::DrawMarker(int x, int y, int num)
@@ -301,14 +306,17 @@ void HarmonicsSpectrumPlot::DrawMarker(int x, int y, int num)
     glQColor(GetSession()->colors.markerText);
     QString str;
     str.sprintf("%d", num);
-    DrawString(str, divFont,
-               QPoint(x, y + 10), CENTER_ALIGNED);
+    AddTextToRender(str, QPoint(x, y+10), CENTER_ALIGNED,
+                    divFont.Font(), GetSession()->colors.markerText);
+//    DrawString(str, divFont,
+//               QPoint(x, y + 10), CENTER_ALIGNED);
 }
 
 void HarmonicsSpectrumPlot::DrawMarkers()
 {
     glPushAttrib(GL_VIEWPORT_BIT);
-    glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
+    glViewport(0, 0, width(), height());
+    //glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -316,7 +324,8 @@ void HarmonicsSpectrumPlot::DrawMarkers()
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, grat_sz.x(), 0, grat_sz.y(), -1, 1);
+    //glOrtho(0, grat_sz.x(), 0, grat_sz.y(), -1, 1);
+    glOrtho(0, width(), 0, height(), -1, 1);
 
     // Nice lines, doesn't smooth quads
     glEnable(GL_LINE_SMOOTH);
@@ -327,8 +336,8 @@ void HarmonicsSpectrumPlot::DrawMarkers()
 
     for(int i = 0; i < 5; i++) {
         Marker *m = &markers[i];
-        DrawMarker(m->xRatio()*grat_sz.x()/5 + i*grat_sz.x()/5,
-                   m->yRatio()*grat_sz.y(),
+        DrawMarker(grat_ll.x() + m->xRatio()*grat_sz.x()/5 + i*grat_sz.x()/5,
+                   grat_ll.y() + m->yRatio()*grat_sz.y(),
                    i + 1);
     }
 

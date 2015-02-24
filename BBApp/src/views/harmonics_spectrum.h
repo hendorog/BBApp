@@ -11,7 +11,6 @@ public:
     HarmonicsSpectrumPlot(Session *sPtr, QWidget *parent = 0);
     ~HarmonicsSpectrumPlot();
 
-    //std::mutex traceLock[5];
     Trace harmonics[5];
 
 protected:
@@ -21,7 +20,7 @@ protected:
 private:
     void DrawTrace(const Trace *t, const GLVector &v, GLuint vbo);
     void DrawTraces();
-    void DrawGratText();
+    void DrawGratText(QPainter &p);
     void DrawMarker(int x, int y, int num);
     void DrawMarkers();
 

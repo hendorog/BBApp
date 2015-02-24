@@ -47,7 +47,7 @@ protected:
     void Paint();
 
     void RenderGraticule();
-    void RenderGratText();
+    void RenderGratText(QPainter &p);
     void RenderTraces();
     void DrawTrace(const Trace *t, const GLVector &v);
     void RenderMarkers();

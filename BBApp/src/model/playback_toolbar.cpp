@@ -372,7 +372,7 @@ bool PlaybackToolBar::GetTrace(Trace *t)
 
     if(paused || file_io->AtEndOfFile()) {
         timer.Sleep();
-        return true;
+        //return true;
     } else {
         timer.Sleep(prefs->playbackDelay);
     }

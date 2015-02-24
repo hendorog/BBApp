@@ -57,7 +57,8 @@ SOURCES += src/main.cpp \
     src/views/phase_noise_central.cpp \
     src/views/phase_noise_plot.cpp \
     src/widgets/if_output_dialog.cpp \
-    src/widgets/self_test_dialog.cpp
+    src/widgets/self_test_dialog.cpp \
+    src/model/preferences.cpp
 
 HEADERS += src/mainwindow.h \
     src/lib/frequency.h \

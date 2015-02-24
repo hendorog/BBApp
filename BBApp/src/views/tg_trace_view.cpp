@@ -116,10 +116,23 @@ void TGPlot::paintEvent(QPaintEvent *)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     RenderMarkers();
-    RenderText();
 
-    swapBuffers();
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    QPainter p(this);
+    p.setRenderHint(QPainter::TextAntialiasing);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.translate(0.0, height());
+    p.setPen(QPen(GetSession()->colors.text));
+    p.setFont(textFont.Font());
+
+    DrawTextQueue(p);
+    DrawGratText(p);
+
+    p.end();
+    glPopAttrib();
+
     doneCurrent();
+    swapBuffers();
 }
 
 // Build/reload just the graticule border
@@ -238,20 +251,8 @@ void TGPlot::DrawTrace(const Trace *t, const GLVector &v, GLuint vbo)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void TGPlot::RenderText()
+void TGPlot::DrawGratText(QPainter &p)
 {
-    glQColor(GetSession()->colors.text);
-
-    //glViewport(0, 0, size().width(), size().height());
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0, size().width(), 0, size().height(), -1, 1);
-
     const SweepSettings *s = GetSession()->sweep_settings;
     TraceManager *tm = GetSession()->trace_manager;
     QVariant elapsed = time.restart();
@@ -262,8 +263,11 @@ void TGPlot::RenderText()
 
     str = GetSession()->GetTitle();
     if(!str.isNull()) {
-        DrawString(str, GLFont(20), width() / 2, height() - 22, CENTER_ALIGNED);
+        p.setFont(QFont("Arial", 20));
+        DrawString(p, str, width() / 2, height() - 22, CENTER_ALIGNED);
     }
+
+    p.setFont(textFont.Font());
 
     TgCalState tgState = GetSession()->device->GetTgCalState();
     if(tgState == tgCalStateUncalibrated) {
@@ -273,54 +277,58 @@ void TGPlot::RenderText()
     } else {
         str.sprintf("");
     }
-    DrawString(str, textFont, grat_ll.x() + 5, grat_ll.y() + 5, LEFT_ALIGNED);
+    DrawString(p, str, grat_ll.x() + 5, grat_ll.y() + 5, LEFT_ALIGNED);
 
     str.sprintf("%d pts in %d ms", tm->GetTrace(0)->Length(), elapsed.toInt());
-    DrawString(str, textFont, grat_ll.x()+grat_sz.x()-5,
+    DrawString(p, str, grat_ll.x()+grat_sz.x()-5,
                grat_ll.y()-textHeight*2, RIGHT_ALIGNED);
-    DrawString("Center " + s->Center().GetFreqString(), textFont,
+    DrawString(p, "Center " + s->Center().GetFreqString(),
                grat_ll.x() + grat_sz.x()/2, grat_ll.y()-textHeight, CENTER_ALIGNED);
-    DrawString("Span " + s->Span().GetFreqString(), textFont,
+    DrawString(p, "Span " + s->Span().GetFreqString(),
                grat_ll.x() + grat_sz.x()/2, grat_ll.y()-textHeight*2, CENTER_ALIGNED);
-    DrawString("Start " + (s->Start()).GetFreqString(), textFont,
+    DrawString(p, "Start " + (s->Start()).GetFreqString(),
                grat_ll.x()+5, grat_ll.y()-textHeight, LEFT_ALIGNED);
-    DrawString("Stop " + (s->Stop()).GetFreqString(), textFont,
+    DrawString(p, "Stop " + (s->Stop()).GetFreqString(),
                grat_ll.x()+grat_sz.x()-5, grat_ll.y()-textHeight, RIGHT_ALIGNED);
     str.sprintf("%.2f dB", s->RefLevel().Val());
-    DrawString("Ref " + str, textFont,
-               grat_ll.x()+5, grat_ul.y()+textHeight, LEFT_ALIGNED);
+    DrawString(p, "Ref " + str, grat_ll.x()+5, grat_ul.y()+textHeight, LEFT_ALIGNED);
     str.sprintf("Div %.1f", div);
-    DrawString(str, textFont, grat_ul.x()+5, grat_ul.y()+2 , LEFT_ALIGNED);
-    DrawString("Step " + Frequency(tgStepSize).GetFreqString(), textFont,
+    DrawString(p, str, grat_ul.x()+5, grat_ul.y()+2 , LEFT_ALIGNED);
+    DrawString(p, "Step " + Frequency(tgStepSize).GetFreqString(),
                grat_ll.x() + grat_sz.x()/2, grat_ul.y()+textHeight, CENTER_ALIGNED);
-    DrawString("Atten --", textFont, grat_ll.x() + grat_sz.x()/2, grat_ul.y()+2, CENTER_ALIGNED);
-    DrawString("VBW --", textFont, grat_ul.x()+grat_sz.x()-5,
+    DrawString(p, "Atten --", grat_ll.x() + grat_sz.x()/2, grat_ul.y()+2, CENTER_ALIGNED);
+    DrawString(p, "VBW --", grat_ul.x()+grat_sz.x()-5,
                grat_ul.y()+textHeight, RIGHT_ALIGNED);
 
     // y-axis labels
+    p.setFont(divFont.Font());
     for(int i = 0; i <= 8; i += 2) {
         int x_pos = 58, y_pos = (grat_sz.y() / 10) * i + grat_ll.y() - 5;
         QString div_str;
         div_str.sprintf("%.2f", s->RefLevel() - (div*(10-i)));
-        DrawString(div_str, divFont, x_pos, y_pos, RIGHT_ALIGNED);
+        DrawString(p, div_str, x_pos, y_pos, RIGHT_ALIGNED);
     }
 
+    p.setFont(textFont.Font());
     if(tm->GetLimitLine()->Active()) {
         QPoint limitTextLoc(grat_ul.x() + (grat_sz.x() * 0.5),
                             grat_ul.y() - (grat_sz.y() * 0.25));
         if(tm->GetLimitLine()->LimitsPassed()) {
-            glColor3f(0.0, 1.0, 0.0);
-            DrawString("Passed", textFont, limitTextLoc, CENTER_ALIGNED);
+            //glColor3f(0.0, 1.0, 0.0);
+            p.setPen(QColor(0, 255, 0));
+            DrawString(p, "Passed", limitTextLoc, CENTER_ALIGNED);
         } else {
-            glColor3f(1.0, 0.0, 0.0);
-            DrawString("Failed", textFont, limitTextLoc, CENTER_ALIGNED);
+            //glColor3f(1.0, 0.0, 0.0);
+            p.setPen(QColor(255, 0, 0));
+            DrawString(p, "Failed", limitTextLoc, CENTER_ALIGNED);
         }
     }
 
     // Amplitude high warning
     if(GetSession()->trace_manager->LastTraceAboveReference()) {
         glColor3f(1.0, 0.0, 0.0);
-        DrawString("*Warning* : Signal Level Higher Than Ref Level", textFont,
+        p.setPen(QColor(255, 0, 0));
+        DrawString(p, "*Warning* : Signal Level Higher Than Ref Level",
                    (grat_ul.x() + grat_sz.x()) / 2.0, grat_ul.y() - 22, CENTER_ALIGNED);
     }
 
@@ -328,31 +336,27 @@ void TGPlot::RenderText()
         // Uncal text strings
         bool uncal = false;
         int uncal_x = grat_ul.x() + 5, uncal_y = grat_ul.y() - textHeight;
-        glColor3f(1.0, 0.0, 0.0);
+        //glColor3f(1.0, 0.0, 0.0);
+        p.setPen(QColor(255, 0, 0));
         if(!GetSession()->device->IsPowered()) {
             uncal = true;
-            DrawString("Low Voltage", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+            DrawString(p, "Low Voltage", uncal_x, uncal_y, LEFT_ALIGNED);
             uncal_y -= textHeight;
         }
         if(GetSession()->device->ADCOverflow()) {
             uncal = true;
-            DrawString("IF Overload", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+            DrawString(p, "IF Overload", uncal_x, uncal_y, LEFT_ALIGNED);
             uncal_y -= textHeight;
         }
         if(GetSession()->device->NeedsTempCal()) {
             uncal = true;
-            DrawString("Device Temp", textFont, uncal_x, uncal_y, LEFT_ALIGNED);
+            DrawString(p, "Device Temp", uncal_x, uncal_y, LEFT_ALIGNED);
             uncal_y -= textHeight;
         }
         if(uncal) {
-            DrawString("Uncal", textFont, grat_ul.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
+            DrawString(p, "Uncal", grat_ul.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
         }
     }
-
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
 }
 
 void TGPlot::RenderMarkers()
@@ -362,7 +366,8 @@ void TGPlot::RenderMarkers()
 
     // Viewport on grat, full pixel scale
     glPushAttrib(GL_VIEWPORT_BIT);
-    glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
+    //glViewport(grat_ll.x(), grat_ll.y(), grat_sz.x(), grat_sz.y());
+    glViewport(0, 0, width(), height());
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -370,10 +375,11 @@ void TGPlot::RenderMarkers()
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, grat_sz.x(), 0, grat_sz.y(), -1, 1);
+    //glOrtho(0, grat_sz.x(), 0, grat_sz.y(), -1, 1);
+    glOrtho(0, width(), 0, height(), -1, 1);
 
-    int x_print = grat_sz.x() - 5;
-    int y_print = grat_sz.y() - 20;
+    int x_print = grat_ll.x() + grat_sz.x() - 5;
+    int y_print = grat_ll.y() + grat_sz.y() - 20;
 
     tm->SolveMarkers(s);
 
@@ -391,27 +397,33 @@ void TGPlot::RenderMarkers()
         }
 
         if(m->InView()) {
-            DrawMarker(m->xRatio() * grat_sz.x(),
-                       m->yRatio() * grat_sz.y(), i + 1);
+            DrawMarker(grat_ll.x() + m->xRatio() * grat_sz.x(),
+                       grat_ll.y() + m->yRatio() * grat_sz.y(), i + 1);
         }
 
         if(m->DeltaActive() && m->DeltaInView()) {
-            DrawDeltaMarker(m->delxRatio() * grat_sz.x(),
-                            m->delyRatio() * grat_sz.y(), i + 1);
+            DrawDeltaMarker(grat_ll.x() + m->delxRatio() * grat_sz.x(),
+                            grat_ll.y() + m->delyRatio() * grat_sz.y(), i + 1);
         }
 
         // Does not have to be in view to draw the delta values
         if(m->DeltaActive()) {
             glQColor(GetSession()->colors.text);
-            DrawString("Mkr " + QVariant(i+1).toString() + " Delta: " + m->DeltaText(),
-                       textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
+//            DrawString("Mkr " + QVariant(i+1).toString() + " Delta: " + m->DeltaText(),
+//                       textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
+            AddTextToRender("Mkr " + QVariant(i+1).toString() + " Delta: " + m->DeltaText(),
+                            QPoint(x_print, y_print), RIGHT_ALIGNED, textFont.Font(),
+                            GetSession()->colors.text);
             y_print -= 20;
         } else if(m->Active()) {
             QString markerReadout = m->Freq().GetFreqString() + ", " +
                     QString().sprintf("%.2f dB", m->Amp().Val());
             glQColor(GetSession()->colors.text);
-            DrawString("Mkr " + QVariant(i+1).toString() + ": " + markerReadout,
-                       textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
+//            DrawString("Mkr " + QVariant(i+1).toString() + ": " + markerReadout,
+//                       textFont, QPoint(x_print, y_print), RIGHT_ALIGNED);
+            AddTextToRender("Mkr " + QVariant(i+1).toString() + ": " + markerReadout,
+                            QPoint(x_print, y_print), RIGHT_ALIGNED, textFont.Font(),
+                            GetSession()->colors.text);
             y_print -= 20;
         }
     }
@@ -449,8 +461,10 @@ void TGPlot::DrawMarker(int x, int y, int num)
     glQColor(GetSession()->colors.markerText);
     QString str;
     str.sprintf("%d", num);
-    DrawString(str, divFont,
-               QPoint(x, y + 10), CENTER_ALIGNED);
+//    DrawString(str, divFont,
+//               QPoint(x, y + 10), CENTER_ALIGNED);
+    AddTextToRender(str, QPoint(x, y+10), CENTER_ALIGNED,
+                    divFont.Font(), GetSession()->colors.markerText);
 }
 
 void TGPlot::DrawDeltaMarker(int x, int y, int num)
@@ -477,5 +491,7 @@ void TGPlot::DrawDeltaMarker(int x, int y, int num)
     glQColor(GetSession()->colors.markerText);
     QString str;
     str.sprintf("R%d", num);
-    DrawString(str, divFont, QPoint(x, y+11), CENTER_ALIGNED);
+    //DrawString(str, divFont, QPoint(x, y+11), CENTER_ALIGNED);
+    AddTextToRender(str, QPoint(x, y+11), CENTER_ALIGNED,
+                    divFont.Font(), GetSession()->colors.markerText);
 }

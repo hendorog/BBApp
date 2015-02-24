@@ -59,6 +59,10 @@ void DemodSpectrumPlot::paintEvent(QPaintEvent *)
                            QPoint(width() - 80, height() - textHeight*4));
 
     glViewport(0, 0, width(), height());
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
 
     DrawGraticule();
     DrawSpectrum();
@@ -67,10 +71,21 @@ void DemodSpectrumPlot::paintEvent(QPaintEvent *)
     glDisableClientState(GL_VERTEX_ARRAY);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    DrawPlotText();
+    glPushAttrib(GL_ALL_ATTRIB_BITS);
+    QPainter p(this);
+    p.setRenderHint(QPainter::TextAntialiasing);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.translate(0.0, height());
+    p.setPen(QPen(GetSession()->colors.text));
+    p.setFont(textFont.Font());
 
-    swapBuffers();
+    DrawPlotText(p);
+
+    p.end();
+    glPopAttrib();
+
     doneCurrent();
+    swapBuffers();
 }
 
 void DemodSpectrumPlot::DrawSpectrum()
@@ -81,9 +96,8 @@ void DemodSpectrumPlot::DrawSpectrum()
     const DemodSettings *ds = GetSession()->demod_settings;
     double ref, botRef;
 
-    if(sweep.sweepLen <= 2) {
-        return;
-    }
+    if(sweep.sweepLen <= 8) return;
+    if(sweep.iq.size() < sweep.sweepLen) return;
 
     if(ds->InputPower().IsLogScale()) {
         ref = ds->InputPower().ConvertToUnits(AmpUnits::DBM);
@@ -94,7 +108,7 @@ void DemodSpectrumPlot::DrawSpectrum()
     }
 
     // May need to resize the fft if it goes below MAX_FFT_SIZE
-    int fftSize = bb_lib::min2(MAX_FFT_SIZE, (int)sweep.sweepLen/*sweep.iq.size()*/);
+    int fftSize = bb_lib::min2(MAX_FFT_SIZE, (int)sweep.sweepLen);
     fftSize = bb_lib::round_down_power_two(fftSize);
 
     if(fftSize != fft->Length()) {
@@ -103,14 +117,16 @@ void DemodSpectrumPlot::DrawSpectrum()
 
     postTransform.resize(MAX_FFT_SIZE);
     for(int i = 0; i < MAX_FFT_SIZE; i++) {
-        postTransform[i].re = 0.0;
-        postTransform[i].im = 0.0;
+        //postTransform[i].re = 0.0;
+        //postTransform[i].im = 0.0;
     }
 
     if(sweep.sweepLen < fftSize) {
+        Q_ASSERT(false);
         return;
     }
     if(fftSize > MAX_FFT_SIZE) {
+        Q_ASSERT(false);
         return;
     }
 
@@ -189,35 +205,22 @@ void DemodSpectrumPlot::DrawTrace(const GLVector &v)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void DemodSpectrumPlot::DrawPlotText()
+void DemodSpectrumPlot::DrawPlotText(QPainter &p)
 {
     int textHeight = textFont.GetTextHeight();
-
-    glPushAttrib(GL_VIEWPORT_BIT);
-    glViewport(0, 0, width(), height());
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0, width(), 0, height(), -1, 1);
 
     const DemodSettings *ds = GetSession()->demod_settings;
     const IQSweep &sweep = GetSession()->iq_capture;
 
     QString str;
 
-    glQColor(GetSession()->colors.text);
-
     str = "Center " + ds->CenterFreq().GetFreqString();
-    DrawString(str, textFont, QPoint(grat_ll.x() + 5, grat_ll.y() - textHeight), LEFT_ALIGNED);
+    DrawString(p, str, QPoint(grat_ll.x() + 5, grat_ll.y() - textHeight), LEFT_ALIGNED);
     str = "Span " + Frequency(sweep.descriptor.sampleRate).GetFreqString(3, true);
-    DrawString(str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - textHeight), RIGHT_ALIGNED);
+    DrawString(p, str, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - textHeight), RIGHT_ALIGNED);
     str = "FFT Size " + QVariant(fft->Length()).toString() + " pts";
-    DrawString(str, textFont, grat_ul.x() + grat_sz.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
-    DrawString("Div 10 dB", textFont, QPoint(grat_ul.x() + 5, grat_ul.y() + 2), LEFT_ALIGNED);
+    DrawString(p, str, grat_ul.x() + grat_sz.x() - 5, grat_ul.y() + 2, RIGHT_ALIGNED);
+    DrawString(p, "Div 10 dB", QPoint(grat_ul.x() + 5, grat_ul.y() + 2), LEFT_ALIGNED);
 
     double botVal, step;
 
@@ -229,16 +232,10 @@ void DemodSpectrumPlot::DrawPlotText()
         step = ds->InputPower() / 10.0;
     }
 
+    p.setFont(divFont.Font());
     for(int i = 0; i <= 10; i += 2) {
         int x_pos = grat_ul.x() - 2, y_pos = (grat_sz.y() / 10) * i + grat_ll.y() - 5;
         str.sprintf("%.2f", botVal + step * i);
-        DrawString(str, divFont, x_pos, y_pos, RIGHT_ALIGNED);
+        DrawString(p, str, x_pos, y_pos, RIGHT_ALIGNED);
     }
-
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-
-    glPopAttrib();
 }

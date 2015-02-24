@@ -146,6 +146,8 @@ struct ModAnalysisReport {
 
 // Represents a full IQ sweep and all data needed to update all views
 typedef struct IQSweep {
+    IQSweep() : sweepLen(0), dataLen(0), preTrigger(0), triggered(false) {}
+
     DemodSettings settings;
     IQDescriptor descriptor;
     std::vector<complex_f> iq;     // Stores an even number of IQ captures

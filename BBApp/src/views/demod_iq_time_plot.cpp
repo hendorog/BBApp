@@ -4,7 +4,8 @@ DemodIQTimePlot::DemodIQTimePlot(Session *session, QWidget *parent) :
     GLSubView(session, parent),
     textFont(14),
     divFont(12),
-    traceVBO(0)
+    traceVBO(0),
+    yScale(0.0)
 {
     makeCurrent();
 
@@ -101,8 +102,8 @@ void DemodIQTimePlot::DrawIQLines()
     const IQSweep &sweep = GetSession()->iq_capture;
     const std::vector<complex_f> &iq = sweep.iq;
 
-    if(sweep.iq.size() <= 0) return;
-    if(sweep.sweepLen <= 0) return;
+    if(sweep.sweepLen <= 4) return;
+    if(sweep.iq.size() <= 4) return;
 
     glColor3f(1.0, 0.0, 0.0);
 
@@ -225,21 +226,21 @@ void DemodIQTimePlot::DrawPlotText(QPainter &p)
 
     p.endNativePainting();
 
-    DrawString(p, "I", textFont, QPoint(grat_ul.x() + 25, grat_ul.y() + 2), LEFT_ALIGNED);
-    DrawString(p, "Q", textFont, QPoint(grat_ul.x() + 65, grat_ul.y() + 2), LEFT_ALIGNED);
+    DrawString(p, "I", QPoint(grat_ul.x() + 25, grat_ul.y() + 2), LEFT_ALIGNED);
+    DrawString(p, "Q", QPoint(grat_ul.x() + 65, grat_ul.y() + 2), LEFT_ALIGNED);
 
     str = "IF Bandwidth " + Frequency(sweep.descriptor.bandwidth).GetFreqString(3, true);
-    DrawString(p, str, textFont, QPoint(grat_ll.x() + 5, grat_ll.y() - textHeight), LEFT_ALIGNED);
+    DrawString(p, str, QPoint(grat_ll.x() + 5, grat_ll.y() - textHeight), LEFT_ALIGNED);
     str = "Capture Len " + ds->SweepTime().GetString();
-    DrawString(p, str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - textHeight), RIGHT_ALIGNED);
+    DrawString(p, str, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ll.y() - textHeight), RIGHT_ALIGNED);
     str = "Sample Rate " + getSampleRateString(sweep.descriptor.sampleRate);
-    DrawString(p, str, textFont, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ul.y() + 2), RIGHT_ALIGNED);
+    DrawString(p, str, QPoint(grat_ll.x() + grat_sz.x() - 5, grat_ul.y() + 2), RIGHT_ALIGNED);
 
     p.setFont(divFont.Font());
     for(int i = 0; i <= 10; i++) {
         int x_loc = grat_ul.x() - 2,
                 y_loc = grat_ul.y() - (i * grat_sz.y()/10.0) - 5;
         str.sprintf("%.2f", yScale - (i * yScale/5.0));
-        DrawString(p, str, divFont, x_loc, y_loc, RIGHT_ALIGNED);
+        DrawString(p, str, x_loc, y_loc, RIGHT_ALIGNED);
     }
 }

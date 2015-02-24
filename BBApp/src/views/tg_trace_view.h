@@ -24,7 +24,7 @@ private:
     void DrawTraces();
     void DrawTrace(const Trace *t, const GLVector &v, GLuint vbo);
     void RenderMarkers();
-    void RenderText();
+    void DrawGratText(QPainter &p);
     void DrawMarker(int x, int y, int num);
     void DrawDeltaMarker(int x, int y, int num);
 

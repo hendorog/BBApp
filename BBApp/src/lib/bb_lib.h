@@ -313,6 +313,10 @@ void getPeakCorrelation(const complex_f *src,
 double getSignalFrequency(const std::vector<complex_f> &src, double sampleRate);
 QString getSampleRateString(double sampleRate);
 
+// Turn a second value into a string with up to 6 digits of precision
+//  using the unit that keeps digits before the decimal to a max of 3
+QString getPreciseTimeString(double seconds);
+
 namespace bb_lib {
 
 // Returns true if a new value was retrieved
@@ -533,6 +537,15 @@ inline QString get_time_string(int64_t ms_since_epoch) {
 }
 
 } // namespace bb_lib
+
+namespace sh {
+
+const QString GetDefaultImageDirectory();
+void SetDefaultImageDirectory(const QString &dir);
+const QString GetDefaultExportDirectory();
+void SetDefaultExportDirectory(const QString &dir);
+
+} // namespace sh
 
 void normalize_trace(const Trace *t, GLVector &vector, QPoint grat_size);
 void normalize_trace(const Trace *t, GLVector &vector, QPoint grat_size,

@@ -778,7 +778,7 @@ void MainWindow::saveAsImage()
 {
     QString file_name = QFileDialog::getSaveFileName(this,
                                                      tr("Image Save Name"),
-                                                     bb_lib::get_my_documents_path(),
+                                                     sh::GetDefaultImageDirectory(),
                                                      tr("Images (*.png *.jpg *.bmp)"));
     if(file_name.isNull()) return;
 
@@ -786,6 +786,8 @@ void MainWindow::saveAsImage()
     centralStack->CurrentWidget()->GetViewImage(image);
 
     image.save(file_name);
+
+    sh::SetDefaultImageDirectory(QFileInfo(file_name).absoluteDir().absolutePath());
 }
 
 void MainWindow::setTitle()

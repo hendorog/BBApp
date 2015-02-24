@@ -18,14 +18,10 @@ protected:
 private:
     void DrawSpectrum();
     void DrawTrace(const GLVector &v);
-    void DrawPlotText();
+    void DrawPlotText(QPainter &p);
 
     std::unique_ptr<FFT> fft;
     std::vector<complex_f> postTransform;
-
-//    QPoint grat_sz, grat_ul, grat_ll;
-//    GLVector grat, gratBorder;
-//    GLuint gratVBO, gratBorderVBO;
 
     GLVector spectrum, spectrumToDraw;
     GLuint traceVBO;

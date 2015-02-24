@@ -321,7 +321,7 @@ void TraceManager::exportTrace()
 {
     QString fileName = QFileDialog::getSaveFileName(0,
                                                     tr("Export File Name"),
-                                                    bb_lib::get_my_documents_path(),
+                                                    sh::GetDefaultExportDirectory(),
                                                     tr("CSV Files (*.csv)"));
 
     if(fileName.isNull()) return;
@@ -329,6 +329,8 @@ void TraceManager::exportTrace()
     Lock();
     GetActiveTrace()->Export(fileName);
     Unlock();
+
+    sh::SetDefaultExportDirectory(QFileInfo(fileName).absoluteDir().absolutePath());
 }
 
 void TraceManager::clearAll()
@@ -518,8 +520,7 @@ void TraceManager::SetOccupiedBandwidth(bool enabled, double percentPower)
 
 void TraceManager::importPathLoss()
 {
-    QString fileName = QFileDialog::getOpenFileName(0,
-                                                    tr("Select Path-Loss CSV"),
+    QString fileName = QFileDialog::getOpenFileName(0, tr("Select Path-Loss CSV"),
                                                     bb_lib::get_my_documents_path(),
                                                     tr("CSV File (*.csv)"));
     pathLoss.Import(fileName);
@@ -532,8 +533,7 @@ void TraceManager::clearPathLoss()
 
 void TraceManager::importLimitLines()
 {
-    QString fileName = QFileDialog::getOpenFileName(0,
-                                                    tr("Select Path-Loss CSV"),
+    QString fileName = QFileDialog::getOpenFileName(0, tr("Select Path-Loss CSV"),
                                                     bb_lib::get_my_documents_path(),
                                                     tr("CSV File (*.csv)"));
     limitLine.Import(fileName);

@@ -31,12 +31,12 @@ protected:
 
 private:
     void DemodAndDraw();
-    void DrawPlotText();
+    void DrawPlotText(QPainter &p);
     void DrawMarkers();
     void DrawTrace(const GLVector &v);
     void DrawMarker(int x, int y, int num);
     void DrawDeltaMarker(int x, int y, int num);
-    void DrawModAnalysisReport();
+    void DrawModAnalysisReport(QPainter &p);
 
     GLFont textFont, divFont;
 

@@ -9,6 +9,11 @@
 #include <QDir>
 #include <QImage>
 #include <QFileDialog>
+#include <QSettings>
+
+const QString DEFAULT_IMAGE_SAVE_DIR_KEY("DefaultImageSaveDirectory");
+const QString DEFAULT_EXPORT_SAVE_DIR_KEY("DefaultExportSaveDirectory");
+const QString DEFAULT_RECORD_SAVE_DIR_KEY("DefaultRecordingSaveDirectory");
 
 char *persist_vs =
         //"#version 110 \n"
@@ -297,6 +302,31 @@ QString getSampleRateString(double sampleRate)
     return QString().sprintf("%.3f S/s", sampleRate);
 }
 
+QString getPreciseTimeString(double seconds)
+{
+    QString str;
+    bool negative = false;
+
+    if(seconds < 0.0) {
+        negative = true;
+        seconds *= -1.0;
+    }
+
+    if(seconds > 1.0) {
+        str.sprintf("%.3f s", seconds);
+    } else if(seconds > 1.0e-3) {
+        str.sprintf("%.3f ms", seconds * 1.0e3);
+    } else {
+        str.sprintf("%.3f us", seconds * 1.0e6);
+    }
+
+    if(negative) {
+        str.push_front(QChar('-'));
+    }
+
+    return str;
+}
+
 void getPeakCorrelation(const complex_f *src,
                         int len,
                         double centerIn,
@@ -528,6 +558,10 @@ double bb_lib::sa44a_adjust_rbw_on_span(const SweepSettings *ss)
         rbw = sa44_sequence_bw(rbw, false, false);
     }
 
+    if(ss->Mode() != MODE_SWEEPING) {
+        return rbw;
+    }
+
     // Do some clamping at the upper end
     if(rbw > 100.0e3) {
         if(rbw > 150.0e3) {
@@ -568,7 +602,11 @@ double bb_lib::sa44b_adjust_rbw_on_span(const SweepSettings *ss)
         rbw = sa44_sequence_bw(rbw, false, false);
     }
 
-    // Do some clamping at the upper end
+    if(ss->Mode() != MODE_SWEEPING) {
+        return rbw;
+    }
+
+    // clamp to 100kHz or 250kHz at the upper end
     if(rbw > 100.0e3) {
         if(rbw > 150.0e3) {
             rbw = 250.0e3;
@@ -595,7 +633,9 @@ double bb_lib::sa44b_adjust_rbw_on_span(const SweepSettings *ss)
 
     // Mid-range sweep, limit RBW to a specific sweep time
     // All mid-range sweeps, limit to 30Hz
-    if(ss->Span() > 200.0e3 && ss->Span() < 98.0e6 && ss->Start() > 16.0e6) {
+    if(ss->Span() > 200.0e3
+            && ss->Span() < 98.0e6
+            && ss->Start() > 16.0e6) {
         double limitRBW = ss->Span() / 80.0e3;
         if(rbw < limitRBW) rbw = limitRBW;
         if(rbw < 30.0) rbw = 30.0;
@@ -619,6 +659,10 @@ double bb_lib::sa124_adjust_rbw_on_span(const SweepSettings *ss)
     }
     while((ss->Span() / rbw) < 1.0) {
         rbw = sa124_sequence_bw(rbw, false, false);
+    }
+
+    if(ss->Mode() != MODE_SWEEPING) {
+        return rbw;
     }
 
     // Do some clamping at the upper end
@@ -697,6 +741,10 @@ double bb_lib::sa_get_best_rbw(const SweepSettings *ss)
 
     double rbw = sa_auto_bw_lut[best_ix].rbw;
 
+    if(ss->Mode() != MODE_SWEEPING) {
+        return rbw;
+    }
+
     if(ss->Start() < 16.0e6 && ss->Span() > 200.0e3) {
         if(rbw < 6.5e3) {
             return 6.5e3;
@@ -720,6 +768,10 @@ double bb_lib::sa44a_get_best_rbw(const SweepSettings *ss)
     }
 
     double rbw = sa_auto_bw_lut[best_ix].rbw;
+
+    if(ss->Mode() != MODE_SWEEPING) {
+        return rbw;
+    }
 
     if(ss->Span() > 200.0e3 && rbw < 6.5e3) {
         rbw = 6.5e3;
@@ -767,6 +819,38 @@ char* bb_lib::get_gl_shader_source(const char *file_name)
 QString bb_lib::getUserDirectory(const QString &path)
 {
     return QFileDialog::getExistingDirectory(0, "Select Record Directory", path);
+}
+
+const QString sh::GetDefaultImageDirectory()
+{
+    QSettings s(QSettings::IniFormat, QSettings::UserScope,
+                "SignalHound", "Preferences");
+
+    return s.value(DEFAULT_IMAGE_SAVE_DIR_KEY, bb_lib::get_my_documents_path()).toString();
+}
+
+void sh::SetDefaultImageDirectory(const QString &dir)
+{
+    QSettings s(QSettings::IniFormat, QSettings::UserScope,
+                "SignalHound", "Preferences");
+
+    s.setValue(DEFAULT_IMAGE_SAVE_DIR_KEY, dir);
+}
+
+const QString sh::GetDefaultExportDirectory()
+{
+    QSettings s(QSettings::IniFormat, QSettings::UserScope,
+                "SignalHound", "Preferences");
+
+    return s.value(DEFAULT_EXPORT_SAVE_DIR_KEY, bb_lib::get_my_documents_path()).toString();
+}
+
+void sh::SetDefaultExportDirectory(const QString &dir)
+{
+    QSettings s(QSettings::IniFormat, QSettings::UserScope,
+                "SignalHound", "Preferences");
+
+    s.setValue(DEFAULT_EXPORT_SAVE_DIR_KEY, dir);
 }
 
 void normalize_trace(const Trace *t, GLVector &v, QPoint grat_size)
