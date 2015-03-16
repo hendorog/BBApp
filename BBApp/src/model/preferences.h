@@ -30,7 +30,7 @@ public:
         graticule_stipple = true;
 
         sweepDelay = 0;
-        realTimeAccumulation = 32.0;
+        realTimeFrameRate = 30;
     }
 
     void Load() {
@@ -48,7 +48,7 @@ public:
         graticule_stipple = s.value("ViewPrefs/GraticuleStipple", true).toBool();
 
         sweepDelay = s.value("SweepPrefs/Delay", 0).toInt();
-        realTimeAccumulation = s.value("SweepPrefs/RealTimeUpdate", 32.0).toDouble();
+        realTimeFrameRate = s.value("SweepPrefs/RealTimeFrameRate", 30).toInt();
     }
 
     void Save() const {
@@ -65,7 +65,7 @@ public:
         s.setValue("ViewPrefs/GraticuleStipple", graticule_stipple);
 
         s.setValue("SweepPrefs/Delay", sweepDelay);
-        s.setValue("SweepPrefs/RealTimeUpdate", realTimeAccumulation);
+        s.setValue("SweepPrefs/RealTimeFrameRate", realTimeFrameRate);
     }
 
     QString GetDefaultSaveDirectory() const;
@@ -114,7 +114,7 @@ public:
 
     // Arbitrary sweep delay
     int sweepDelay; // In ms [0, 2048]
-    double realTimeAccumulation; // In ms [1.0, 128.0]
+    int realTimeFrameRate; // In fps [30 - 250]
 };
 
 #endif // PREFERENCES_H

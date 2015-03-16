@@ -94,6 +94,8 @@ public:
     // Real-Time and Waterfall trace buffer
     ThreadSafeQueue<GLVector, 32> trace_buffer;
 
+    RealTimeFrame realTimeFrame;
+
     bool LastTraceAboveReference() const { return lastTraceAboveReference; }
 
 protected:

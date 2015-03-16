@@ -2,6 +2,7 @@
 #define DEVICE_H
 
 #include <QObject>
+#include <QSize>
 
 #include "lib/bb_lib.h"
 #include "lib/bb_api.h"
@@ -73,6 +74,7 @@ public:
     virtual bool Reconfigure(const SweepSettings *s, Trace *t) = 0;
     // Returns false on an unfixable error
     virtual bool GetSweep(const SweepSettings *s, Trace *t) = 0;
+    virtual bool GetRealTimeFrame(Trace &t, RealTimeFrame &frame) = 0;
     virtual bool Reconfigure(const DemodSettings *s, IQDescriptor *capture) = 0;
     virtual bool GetIQ(IQCapture *iqc) = 0;
     virtual bool GetIQFlush(IQCapture *iqc, bool flush) = 0;
@@ -122,6 +124,7 @@ public:
     int TimebaseReference() const { return timebase_reference; }
     virtual bool NeedsTempCal() const = 0;
     TgCalState GetTgCalState() const { return tgCalState; }
+    QSize RealTimeFrameSize() const { return rtFrameSize; }
 
 protected:
     bool open;
@@ -144,6 +147,7 @@ protected:
 
     bool adc_overflow;
     TgCalState tgCalState;
+    QSize rtFrameSize;
 
 public slots:
 

@@ -83,7 +83,7 @@ void DemodSettings::LoadDefaults()
 
 bool DemodSettings::Load(QSettings &s)
 {
-    inputPower = s.value("Demod/InputPower", InputPower().Val()).toDouble();
+    inputPower.Load(s, "Demod/InputPower");
     centerFreq = s.value("Demod/CenterFrequency", CenterFreq().Val()).toDouble();
     gain = s.value("Demod/Gain", Gain()).toInt();
     atten = s.value("Demod/Atten", Atten()).toInt();
@@ -94,8 +94,7 @@ bool DemodSettings::Load(QSettings &s)
 
     trigType = (TriggerType)s.value("Demod/TriggerType", TrigType()).toInt();
     trigEdge = (TriggerEdge)s.value("Demod/TriggerEdge", TrigEdge()).toInt();
-    trigAmplitude = s.value("Demod/TriggerAmplitude",
-                            TrigAmplitude().Val()).toDouble();
+    trigAmplitude.Load(s, "Demod/TriggerAmplitude");
     trigPosition = s.value("Demod/TriggerPosition", TrigPosition()).toDouble();
 
     maEnabled = s.value("Demod/MAEnabled", false).toBool();
@@ -107,7 +106,7 @@ bool DemodSettings::Load(QSettings &s)
 
 bool DemodSettings::Save(QSettings &s) const
 {
-    s.setValue("Demod/InputPower", InputPower().Val());
+    inputPower.Save(s, "Demod/InputPower");
     s.setValue("Demod/CenterFrequency", CenterFreq().Val());
     s.setValue("Demod/Gain", Gain());
     s.setValue("Demod/Atten", Atten());
@@ -118,7 +117,7 @@ bool DemodSettings::Save(QSettings &s) const
 
     s.setValue("Demod/TriggerType", TrigType());
     s.setValue("Demod/TriggerEdge", TrigEdge());
-    s.setValue("Demod/TriggerAmplitude", TrigAmplitude().Val());
+    trigAmplitude.Save(s, "Demod/TriggerAmplitude");
     s.setValue("Demod/TriggerPosition", TrigPosition());
 
     s.setValue("Demod/MAEnabled", MAEnabled());

@@ -19,6 +19,7 @@ public:
     // Sweep
     virtual bool Reconfigure(const SweepSettings *s, Trace *t);
     virtual bool GetSweep(const SweepSettings *s, Trace *t);
+    virtual bool GetRealTimeFrame(Trace &t, RealTimeFrame &frame);
     // Stream
     virtual bool Reconfigure(const DemodSettings *s, IQDescriptor *iqc);
     virtual bool GetIQ(IQCapture *iqc);

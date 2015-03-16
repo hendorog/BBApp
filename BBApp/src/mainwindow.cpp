@@ -321,7 +321,7 @@ void MainWindow::InitMenuBar()
     utilities_menu = main_menu->addMenu(tr("Utilities"));
     utilities_menu->addAction(tr("Audio Player"), this, SLOT(startAudioPlayer()));
     utilities_menu->addAction(tr("Measuring Receiever"), this, SLOT(startMeasuringReceiever()));
-    utilities_menu->addAction(tgPanel->toggleViewAction());
+    utilities_menu->addAction(tgPanel->toggleEnableAction());
     utilities_menu->addAction(utilitiesIFOutputString, this, SLOT(startSA124IFOutput()));
     utilities_menu->addAction(utilitiesSelfTestString, this, SLOT(startSelfTest()));
     connect(utilities_menu, SIGNAL(aboutToShow()), this, SLOT(aboutToShowUtilitiesMenu()));
@@ -707,11 +707,9 @@ void MainWindow::disconnectDevice()
     status_bar->UpdateDeviceInfo("");
 }
 
-#include <iostream>
 // Call disconnect AND provide user warning
 void MainWindow::forceDisconnectDevice()
 {
-    std::cout << "USB error found\n";
     disconnectDevice();
     QMessageBox::warning(0, "Connectivity Issues", "Device Connection Issues Detected, Ensure the"
                          " device is connected before opening again via the File Menu");

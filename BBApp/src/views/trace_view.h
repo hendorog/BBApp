@@ -33,6 +33,9 @@ public:
     ~TraceView();
 
     bool HasOpenGL3() const { return hasOpenGL3; }
+    bool CanDrawRealTimePersistence() const {
+        return canDrawRealTimePersistence;
+    }
 
 protected:
     bool InitPersistFBO();
@@ -57,6 +60,7 @@ protected:
     void RenderOccupiedBandwidth();
     void DrawOCBWMarker(int x, int y, bool left);
     void DrawPersistence();
+    void DrawRealTimeFrame();
     void DrawLimitLines(const Trace *limitTrace, const GLVector &v);
     void DrawBackdrop(QPoint pos, QPoint size);
 
@@ -95,16 +99,22 @@ private:
 
     bool persist_on;
     bool hasOpenGL3; // true when gl version greater than 3.*
+    bool canDrawRealTimePersistence;
     bool clear_persistence; // When true, clears buffer next frame update
     std::unique_ptr<GLProgram> persist_program; // Shaders for persistence
+    std::unique_ptr<GLProgram> realTimeShader; // Shader for real-time
     GLuint persist_fbo; // Frame-Buffer-Object for persistent
     GLuint persist_depth; // FBO depth buffer
     GLuint persist_tex; // Offscreen persist buffer
+    GLuint realTimeTexture, realTimeScalar;
 
     WaterfallState waterfall_state;
     GLuint waterfall_tex; // Waterfall spectrum texture
     std::vector<GLVector*> waterfall_verts;
     std::vector<GLVector*> waterfall_coords;
+
+    bool realTimePersistOn;
+    int realTimeIntensity;
 
 public slots:
     void enablePersistence(int enable) { persist_on = (enable == Qt::Checked); }
@@ -113,6 +123,13 @@ public slots:
     void enableWaterfall(int new_state) {
         waterfall_state = (WaterfallState)new_state;
         update(); }
+
+    void enableRealTimePersist(int enable) {
+        realTimePersistOn = (enable == Qt::Checked);
+    }
+    void intensityChanged(int intensity) {
+        realTimeIntensity = intensity;
+    }
 };
 
 /*

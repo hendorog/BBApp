@@ -145,7 +145,7 @@ bool SweepSettings::Load(QSettings &s)
     auto_vbw = s.value("Sweep/AutoVBW", AutoVBW()).toBool();
     native_rbw = s.value("Sweep/NativeRBW", NativeRBW()).toBool();
 
-    refLevel = s.value("Sweep/RefLevel", RefLevel().Val()).toDouble();
+    refLevel.Load(s, "Sweep/RefLevel");
     div = s.value("Sweep/Division", Div()).toDouble();
     attenuation = s.value("Sweep/Attenuation", Atten()).toInt();
     gain = s.value("Sweep/Gain", Gain()).toInt();
@@ -180,7 +180,7 @@ bool SweepSettings::Save(QSettings &s) const
     s.setValue("Sweep/AutoVBW", auto_vbw);
     s.setValue("Sweep/NativeRBW", native_rbw);
 
-    s.setValue("Sweep/RefLevel", refLevel.Val());
+    refLevel.Save(s, "Sweep/RefLevel");
     s.setValue("Sweep/Division", div);
     s.setValue("Sweep/Attenuation", attenuation);
     s.setValue("Sweep/Gain", gain);
@@ -268,19 +268,15 @@ void SweepSettings::setMode(OperationalMode new_mode)
 
     if(mode == BB_REAL_TIME) {
         native_rbw = device_traits::has_native_bandwidths();
-        auto_rbw = true;
+        //auto_rbw = true;
         auto_vbw = true;
         if(bb_lib::clamp(span, Frequency(device_traits::min_real_time_span()),
                          Frequency(device_traits::max_real_time_span()))) {
-            // if(span > maxRealTimeSpan) {
-//            span = maxRealTimeSpan;
             start = center - (maxRealTimeSpan / 2.0);
             stop = center + (maxRealTimeSpan / 2.0);
         }
 
-        AutoBandwidthAdjust(true);
-        // Force settings panel to update?
-        //UpdateProgram(); // Not needed?
+        AutoBandwidthAdjust(/*true*/false);
     }
 
     UpdateProgram();
@@ -513,9 +509,9 @@ void SweepSettings::setNativeRBW(bool native)
 void SweepSettings::setRefLevel(Amplitude new_ref)
 {
     if(mode == MODE_NETWORK_ANALYZER) {
-        new_ref.Clamp(Amplitude(-100, DBM), Amplitude(40.0, DBM));
+        new_ref.Clamp(Amplitude(-130, DBM), Amplitude(40.0, DBM));
     } else {
-        new_ref.Clamp(Amplitude(-100, DBM), Amplitude(20.0, DBM));
+        new_ref.Clamp(Amplitude(-130, DBM), Amplitude(20.0, DBM));
     }
 
     refLevel = new_ref;

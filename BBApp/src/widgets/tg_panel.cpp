@@ -31,8 +31,12 @@ TgCtrlPanel::TgCtrlPanel(const QString &title, QWidget *parent, Session *session
     connect(ampStep, SIGNAL(leftPressed()), this, SLOT(stepAmplitudeDown()));
     connect(ampStep, SIGNAL(rightPressed()), this, SLOT(stepAmplitudeUp()));
 
-    QAction *a = toggleViewAction();
-    connect(a, SIGNAL(toggled(bool)), this, SLOT(becameVisible(bool)));
+    //QAction *a = toggleViewAction();
+    //connect(a, SIGNAL(toggled(bool)), this, SLOT(becameVisible(bool)));
+
+    enableAction = new QAction("Tracking Generator Controls", 0);
+    enableAction->setCheckable(true);
+    connect(enableAction, SIGNAL(toggled(bool)), this, SLOT(becameVisible(bool)));
 
     AppendPage(main_page);
 }
@@ -42,28 +46,26 @@ TgCtrlPanel::~TgCtrlPanel()
 
 }
 
-void TgCtrlPanel::becameVisible(bool checked) {
-    // Software makes the control panel visible once
-    //  at launch, ignore the first entry into this function
-    static bool first = true;
-    if(checked && !first) {
+void TgCtrlPanel::becameVisible(bool checked)
+{
+    if(checked) {
         if(!session_ptr->device->AttachTg()) {
             QMessageBox::warning(0, "Warning",
                                  "Tracking Generator Not Found\n"
                                  "Please connect your tracking generator\n"
                                  "and try again");
-            toggleViewAction()->toggle();
+            enableAction->setChecked(false);
             return;
         }
+        // If everything opened successfully,
+        show();
+        session_ptr->device->SetTg(center->GetFrequency(), amp->GetValue());
+
     } else {
-        first = false;
+        hide();
+        session_ptr->device->SetTg(0.0, -30.0);
     }
-
-    // If everything opened successfully,
-    session_ptr->device->SetTg(center->GetFrequency(),
-                               amp->GetValue());
 }
-
 
 void TgCtrlPanel::changeFrequency(Frequency f)
 {

@@ -72,7 +72,10 @@ TraceView::TraceView(Session *session, QWidget *parent)
       waterfall_state(WaterfallOFF),
       textFont(12),
       divFont(12),
-      hasOpenGL3(false)
+      hasOpenGL3(false),
+      canDrawRealTimePersistence(false),
+      realTimePersistOn(true),
+      realTimeIntensity(25)
 {
     setAutoBufferSwap(false);
     setMouseTracking(true);
@@ -108,7 +111,7 @@ TraceView::TraceView(Session *session, QWidget *parent)
     initializeOpenGLFunctions();
 
     if(!hasOpenGLFeature(QOpenGLFunctions::Buffers)) {
-        // Doesn't have support for Vertext buffers!
+        // Doesn't have support for Vertex buffers!
         // What to do?
     }
 
@@ -131,19 +134,29 @@ TraceView::TraceView(Session *session, QWidget *parent)
     glBufferData(GL_ARRAY_BUFFER, grat_border.size()*sizeof(float),
                  &grat_border[0], GL_STATIC_DRAW);
 
-    // Only make persistence available if framebuffers and shaders
-    //  are available
-    if(hasOpenGLFeature(QOpenGLFunctions::Framebuffers) &&
-            hasOpenGLFeature(QOpenGLFunctions::Shaders)) {
+    // See if we can draw line persistence
+    if(hasOpenGLFeature(QOpenGLFunctions::Framebuffers)
+            && hasOpenGLFeature(QOpenGLFunctions::Shaders)) {
         persist_program = std::unique_ptr<GLProgram>(
                     new GLProgram(persist_vs, persist_fs));
         persist_program->Compile(this);
-
         InitPersistFBO();
         hasOpenGL3 = true;
     }
 
+    // See if we can draw real-time persistence images
+    if(hasOpenGLFeature(QOpenGLFunctions::Shaders)
+            && hasOpenGLFeature(QOpenGLFunctions::NPOTTextures)) {
+        realTimeShader = std::unique_ptr<GLProgram>(
+                    new GLProgram(dot_persist_temp_vs, dot_persist_temp_fs));
+        realTimeShader->Compile(this);
+        realTimeScalar = glGetUniformLocation(realTimeShader->ProgramHandle(), "scale");
+        canDrawRealTimePersistence = true;
+    }
+
     waterfall_tex = get_texture_from_file(":/color_spectrogram.png");
+
+    glGenTextures(1, &realTimeTexture);
 
     doneCurrent();
 
@@ -163,6 +176,10 @@ TraceView::~TraceView()
     glDeleteBuffers(1, &textureVBO);
     glDeleteBuffers(1, &gratVBO);
     glDeleteBuffers(1, &borderVBO);
+
+    glDeleteTextures(1, &waterfall_tex);
+    glDeleteTextures(1, &realTimeTexture);
+
     doneCurrent();
 
     delete swap_thread;
@@ -619,7 +636,11 @@ void TraceView::RenderTraces()
         }
     }
 
-    if(persist_on) {
+    if(GetSession()->sweep_settings->IsRealTime()) {
+        if(realTimePersistOn && canDrawRealTimePersistence) {
+            DrawRealTimeFrame();
+        }
+    } else if(persist_on && HasOpenGL3()) {
         DrawPersistence();
         return;
     }
@@ -1014,7 +1035,7 @@ void TraceView::RenderOccupiedBandwidth()
 void TraceView::DrawPersistence()
 {
     // Draw a single quad over our grat
-    glUseProgram(persist_program->Handle());
+    glUseProgram(persist_program->ProgramHandle());
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, persist_tex);
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -1036,6 +1057,58 @@ void TraceView::DrawPersistence()
     glEnd();
 
     glDisable(GL_BLEND);
+    glDisable(GL_TEXTURE_2D);
+    glPopMatrix();
+
+    glUseProgram(0);
+}
+
+void TraceView::DrawRealTimeFrame()
+{
+    RealTimeFrame &frame = GetSession()->trace_manager->realTimeFrame;
+
+    if(frame.dim.width() <= 0) return;
+    if(frame.dim.height() <= 0) return;
+
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_DEPTH_TEST);
+    glBindTexture(GL_TEXTURE_2D, realTimeTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D,
+                 0,
+                 GL_RGBA,
+                 frame.dim.width(),
+                 256,
+                 0,
+                 GL_RGBA,
+                 GL_UNSIGNED_BYTE,
+                 &frame.rgbFrame[0]);
+
+    // Draw a single quad over our grat
+    glUseProgram(realTimeShader->ProgramHandle());
+    glUniform1f(realTimeScalar, 100.0 / (100 - realTimeIntensity));
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glTranslatef(grat_ll.x(), grat_ll.y(), 0.0);
+    glScalef(grat_sz.x(), grat_sz.y(), 1.0);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0,0); glVertex2f(0,0);
+    glTexCoord2f(0,1); glVertex2f(0,1);
+    glTexCoord2f(1,1); glVertex2f(1,1);
+    glTexCoord2f(1,0); glVertex2f(1,0);
+    glEnd();
+
+    glDisable(GL_BLEND);
+    glBindTexture(GL_TEXTURE_2D, 0);
     glDisable(GL_TEXTURE_2D);
     glPopMatrix();
 
@@ -1133,7 +1206,7 @@ void TraceView::AddToPersistence(const GLVector &v)
 
     // Reduce current color by blending a big full screen quad
     glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_ALPHA);
-    glColor4f(0.0, 0.0, 0.0, /*persistDecay*/2 * .01);
+    glColor4f(0.0, 0.0, 0.0, 0.02);
     glBegin(GL_QUADS);
     glTexCoord2f(0,0); glVertex2f(0,0);
     glTexCoord2f(0,1); glVertex2f(0,1);

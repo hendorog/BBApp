@@ -34,8 +34,9 @@ public:
     // No persistence, waterfall, etc.
 
 protected:
-    void resizeEvent(QResizeEvent *);
-    void keyPressEvent(QKeyEvent *);
+    void resizeEvent(QResizeEvent*);
+    void keyPressEvent(QKeyEvent*);
+    void wheelEvent(QWheelEvent*);
 
 private:
     void Reconfigure();
@@ -44,13 +45,19 @@ private:
 
     bool reconfigure;
     Trace trace;
+    RealTimeFrame rtFrame;
     SweepSettings last_config; // Last known working settings
 
     TraceView *trace_view;
 
     ComboBox *waterfall_combo;
+    // Line persistence
     QCheckBox *persistence_check;
     SHPushButton *persistence_clear;
+    // Real-time persistence
+    QCheckBox *realTimePersistenceCheck;
+    QSlider *intensitySlider;
+    QList<QAction*> sweepOnlyActions, realTimeActions;
 
     PlaybackToolBar *playback;
 

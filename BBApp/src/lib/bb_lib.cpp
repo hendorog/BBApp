@@ -47,34 +47,38 @@ char *persist_fs =
         "} \n"
         ;
 
-//#include "../dialogs/numeric_entry.h"
+char *dot_persist_temp_vs =
+        //"#version 110 \n"
+        "void main() \n"
+        "{ \n"
+          "gl_Position = ftransform(); \n"
+          "gl_TexCoord[0] = gl_MultiTexCoord0; \n"
+        "} \n"
+        ;
 
-// Functions act as intermediary to the numeric entry dialog
-// If some aspect of the NumericEntry() class changes, the only place
-//  to change the code will be here
-//bool sa_lib::GetUserInput(const Frequency &fin, Frequency &fout)
-//{
-//    fout = NumericEntry::GetFrequency(fin);
-//    return (fout != fin);
-//}
+char *dot_persist_temp_fs =
+        //"#version 110 \n"
+        "uniform sampler2D texel; \n"
+        "uniform float scale; \n"
+        "void main() \n"
+        "{ \n"
+            // Get texel value
+            "vec4 px = texture2D( texel, gl_TexCoord[0].xy ); \n"
 
-//bool sa_lib::GetUserInput(const Amplitude &ain, Amplitude &aout)
-//{
-//    aout = NumericEntry::GetAmplitude(ain);
-//    return (aout != ain);
-//}
+            // Get luminance 0-1, all color channels have same value
+            "float L = px.x * scale; \n"
 
-//bool sa_lib::GetUserInput(const Time &tin, Time &tout)
-//{
-//    tout = NumericEntry::GetTime(tin);
-//    return (tin != tout);
-//}
+            // Determine colors
+            "float R = clamp( (L-0.5)*4.0,       0.0, 1.0); \n"
+            "float MG = clamp( 4.0*L - 3.0,      0.0, 1.0 ); \n"
+            "float G =  clamp( 4.0*L,            0.0, 1.0 ) - MG; \n"
+            "float B = clamp( (0.5-L)*4.0,       0.0, 1.0); \n"
+            "float A =  px.w; \n"
 
-//bool sa_lib::GetUserInput(double din, double &dout)
-//{
-//    dout = NumericEntry::GetNumber(din);
-//    return (din != dout);
-//}
+            // Output frag color
+            "gl_FragColor = vec4( R,G,B,A ); \n"
+        "} \n"
+        ;
 
 // Native bw look up table
 bandwidth_lut native_bw_lut[] = {
@@ -665,7 +669,7 @@ double bb_lib::sa124_adjust_rbw_on_span(const SweepSettings *ss)
         return rbw;
     }
 
-    // Do some clamping at the upper end
+    // Do some clamping at the upper end either to 100kHz or 250kHz
     if(rbw > 100.0e3) {
         if(rbw > 150.0e3) {
             if(rbw > 275.0e3) {
@@ -851,6 +855,35 @@ void sh::SetDefaultExportDirectory(const QString &dir)
                 "SignalHound", "Preferences");
 
     s.setValue(DEFAULT_EXPORT_SAVE_DIR_KEY, dir);
+}
+
+#include <QGLWidget>
+
+// Very small class to test if OpenGL compatible, not used currently
+class GLTester : public QGLWidget, public QOpenGLFunctions {
+public:
+    GLTester() : isOpenGLCompatible(false)
+    {
+        makeCurrent();
+        initializeOpenGLFunctions();
+
+        if(hasOpenGLFeature(QOpenGLFunctions::Buffers)) {
+            isOpenGLCompatible = true;
+        }
+
+        doneCurrent();
+    }
+
+    bool IsOpenGLCompatible() const { return isOpenGLCompatible; }
+
+private:
+    bool isOpenGLCompatible;
+};
+
+bool sh::isOpenGLCompatible()
+{
+    GLTester test;
+    return test.IsOpenGLCompatible();
 }
 
 void normalize_trace(const Trace *t, GLVector &v, QPoint grat_size)

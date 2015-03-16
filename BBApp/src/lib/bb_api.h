@@ -16,7 +16,6 @@
 #elif  defined(__GNUC__)
     #define BB_DEPRECATED(comment) __attribute__((deprecated))
 #else
-    #pragma message("Deprecated not implemented for this compiler")
     #define BB_DEPRECATED(comment) comment
 #endif
 
@@ -166,6 +165,8 @@ enum bbStatus
     bbInvalidDetectorErr         = -100,
 
     // General Errors
+    bbTrackingGeneratorNotFound = -16,
+
     bbUSBTimeoutErr              = -15,
     bbDeviceConnectionErr        = -14,
     bbPacketFramingErr           = -13,
@@ -191,7 +192,8 @@ enum bbStatus
     bbNoTriggerFound             = 3,
     bbClampedToUpperLimit        = 4,
     bbClampedToLowerLimit        = 5,
-    bbUncalibratedDevice         = 6
+    bbUncalibratedDevice         = 6,
+    bbDataBreak                  = 7
 };
 
 #ifdef __cplusplus
@@ -216,15 +218,18 @@ BB_API bbStatus bbConfigureIO(int device, unsigned int port1, unsigned int port2
 BB_API bbStatus bbConfigureDemod(int device, int modulationType, double freq, float IFBW,
                                  float audioLowPassFreq, float audioHighPassFreq, float FMDeemphasis);
 BB_API bbStatus bbConfigureIQ(int device, int downsampleFactor, double bandwidth);
+BB_API bbStatus bbConfigureRealTime(int device, double frameScale, int frameRate);
 
 BB_API bbStatus bbInitiate(int device, unsigned int mode, unsigned int flag);
 
 BB_API bbStatus bbFetchTrace_32f(int device, int arraySize, float *min, float *max);
 BB_API bbStatus bbFetchTrace(int device, int arraySize, double *min, double *max);
+BB_API bbStatus bbFetchRealTimeFrame(int device, float *sweep, float *frame);
 BB_API bbStatus bbFetchAudio(int device, float *audio);
 BB_API bbStatus bbFetchRaw(int device, float *buffer, int triggers[64]);
 
 BB_API bbStatus bbQueryTraceInfo(int device, unsigned int *traceLen, double *binSize, double *start);
+BB_API bbStatus bbQueryRealTimeInfo(int device, int *frameWidth, int *frameHeight);
 BB_API bbStatus bbQueryTimestamp(int device, unsigned int *seconds, unsigned int *nanoseconds);
 BB_API bbStatus bbQueryStreamInfo(int device, int *return_len, double *bandwidth, int *samples_per_sec);
 
@@ -246,28 +251,6 @@ BB_API const char* bbGetErrorString(bbStatus status);
 BB_API void bbConvert_32f16s(const float *src, short *dst, int scaleFactor, int len);
 // dst[i] = (float)(src[i] * 2^scaleFactor)
 BB_API void bbConvert_16s32f(const short *src, float *dst, int scaleFactor, int len);
-
-BB_DEPRECATED("Zero-Span functionality is deprecated and set to be removed from the API. "
-              "Contact Signal Hound if this change negatively affects you. "
-              "Consider using IQ streaming to accomplish similar functionality")
-BB_API bbStatus bbConfigureTrigger(int device, unsigned int type, unsigned int edge, double level, double timeout);
-BB_DEPRECATED("Time-Gate functionality is deprecated and set to be removed from the API. "
-              "Contact Signal Hound if this change negatively affects you. "
-              "Consider using IQ streaming to accomplish similar functionality")
-BB_API bbStatus bbConfigureTimeGate(int device, double delay, double length, double timeout);
-BB_DEPRECATED("Raw-Sweep functionality is deprecated and set to be removed from the API. "
-              "Contact Signal Hound if this change negatively affects you. "
-              "Consider using IQ streaming to accomplish similar functionality")
-BB_API bbStatus bbConfigureRawSweep(int device, int start, int ppf, int steps, int stepsize);
-
-BB_DEPRECATED("Raw-Sweep functionality is deprecated and set to be removed from the API. "
-              "Contact Signal Hound if this change negatively affects you. "
-              "Consider using IQ streaming to accomplish similar functionality")
-BB_API bbStatus bbFetchRawSweep(int device, short *buffer);
-BB_DEPRECATED("Raw-Sweep functionality is deprecated and set to be removed from the API. "
-              "Contact Signal Hound if this change negatively affects you. "
-              "Consider using IQ streaming to accomplish similar functionality")
-BB_API bbStatus bbStartRawSweepLoop(int device, void(*sweep_callback)(short *buffer, int len));
 
 #ifdef __cplusplus
 } // extern "C"

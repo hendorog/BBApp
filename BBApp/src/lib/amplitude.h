@@ -2,7 +2,9 @@
 #define AMPLITUDE_H
 
 #include "macros.h"
+
 #include <QString>
+#include <QSettings>
 
 #define UNIT_COUNT 4
 
@@ -44,6 +46,16 @@ public:
         : amplitude(other.Val()), units(other.Units()) {}
     ~Amplitude() {}
     operator double() { return amplitude; }
+
+    void Load(const QSettings &s, const QString &key) {
+        *this = Amplitude(s.value(key, Val()).toDouble(),
+                          (AmpUnits)s.value(key + "Units", Units()).toInt());
+    }
+
+    void Save(QSettings &s, const QString &key) const {
+        s.setValue(key, Val());
+        s.setValue(key + "Units", Units());
+    }
 
     // Comparators, compare values in similar units
     bool operator<(const Amplitude &other) const {
@@ -141,5 +153,6 @@ private:
 
 private:
 };
+
 
 #endif // AMPLITUDE_H

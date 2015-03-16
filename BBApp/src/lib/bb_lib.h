@@ -48,8 +48,8 @@ enum WaterfallState { WaterfallOFF = 0, Waterfall2D = 1, Waterfall3D = 2 };
 enum BBStyleSheet { LIGHT_STYLE_SHEET = 0, DARK_STYLE_SHEET = 1, BLUE_STYLE_SHEET = 2 };
 
 // GLSL shaders
-extern char *persist_vs;
-extern char *persist_fs;
+extern char *persist_vs, *persist_fs;
+extern char *dot_persist_temp_vs, *dot_persist_temp_fs;
 
 // Software Mode/State, one value stored in Settings
 enum OperationalMode {
@@ -102,7 +102,7 @@ public:
 
     bool Compile(QOpenGLFunctions *gl);
     bool Compiled() const { return (compiled == GL_TRUE); }
-    GLuint Handle() const { return program_handle; }
+    GLuint ProgramHandle() const { return program_handle; }
 
     GLShader* GetShader(GLShaderType type) {
         if(type == VERTEX_SHADER)
@@ -130,7 +130,7 @@ private:
     QWaitCondition wait_con;
 };
 
-#if !defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 
     // Windows Event semaphore, At one point I tested this
@@ -544,6 +544,8 @@ const QString GetDefaultImageDirectory();
 void SetDefaultImageDirectory(const QString &dir);
 const QString GetDefaultExportDirectory();
 void SetDefaultExportDirectory(const QString &dir);
+
+bool isOpenGLCompatible();
 
 } // namespace sh
 

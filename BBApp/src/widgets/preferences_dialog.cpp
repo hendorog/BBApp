@@ -64,9 +64,6 @@ void PreferencePanel::tabsChanged()
     scrollWidget->resize(viewportWidth, height);
 }
 
-///
-// Preferences Color Panel
-//
 PreferenceColorPanel::PreferenceColorPanel(const QString &panelTitle,
                                            QWidget *parent) :
     PreferencePanel(panelTitle, parent)
@@ -111,10 +108,9 @@ PreferenceColorPanel::PreferenceColorPanel(const QString &panelTitle,
     sweepDelay = new NumericEntry(tr("Sweep Delay"), 0.0, tr("ms"));
     sweepDelay->setToolTip(tr("Slow down the sweep update rate with an added delay. "
                               "Can help to reduce CPU usage and decrease playback file sizes"));
-    realTimeSweepTime = new NumericEntry(tr("Real-Time Accumulation"), 0.0, tr("ms"));
-    realTimeSweepTime->setToolTip(tr("Change the real-time visual update rate. Shorter times "
-                                     "increase resolution capabilities but also increase processor load. "
-                                     "16-32ms is suggested"));
+    realTimeSweepTime = new NumericEntry(tr("Real-Time Frame Rate"), 0.0, tr("fps"));
+    realTimeSweepTime->setToolTip(tr("Change the real-time update rate. "
+                                     "15-30 fps is suggested"));
 
     dockPage->AddWidget(sweepDelay);
     dockPage->AddWidget(realTimeSweepTime);
@@ -163,7 +159,7 @@ void PreferenceColorPanel::Populate(const Session *session)
     limitLines->SetColor(colors.limitLines);
 
     sweepDelay->SetValue(session->prefs.sweepDelay);
-    realTimeSweepTime->SetValue(session->prefs.realTimeAccumulation);
+    realTimeSweepTime->SetValue(session->prefs.realTimeFrameRate);
 
     playbackDelay->SetValue(session->prefs.playbackDelay);
     maxSaveFileSize->SetValue(session->prefs.playbackMaxFileSize);
@@ -201,10 +197,10 @@ void PreferenceColorPanel::Apply(Session *session)
     session->prefs.sweepDelay = int(sDelay);
     sweepDelay->SetValue(int(sDelay));
 
-    double rtAccum = realTimeSweepTime->GetValue();
-    if(rtAccum < 16.0) rtAccum = 16.0;
-    if(rtAccum > 128.0) rtAccum = 128.0;
-    session->prefs.realTimeAccumulation = rtAccum;
+    int rtAccum = realTimeSweepTime->GetValue();
+    if(rtAccum < 4) rtAccum = 4;
+    if(rtAccum > 30) rtAccum = 30;
+    session->prefs.realTimeFrameRate = rtAccum;
     realTimeSweepTime->SetValue(rtAccum);
 
     double pbDelay = playbackDelay->GetValue();

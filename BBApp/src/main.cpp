@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include <QApplication>
 
+#include "lib/bb_lib.h"
+
 int main(int argc, char *argv[])
 {
     // Step out when the program breaks

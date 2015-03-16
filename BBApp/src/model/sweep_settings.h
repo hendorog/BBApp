@@ -27,6 +27,7 @@ public:
     bool Save(QSettings &s) const;
 
     OperationalMode Mode() const { return mode; }
+    bool IsRealTime() const { return mode == MODE_REAL_TIME; }
 
     // Freq getters
     Frequency Start() const { return start; }

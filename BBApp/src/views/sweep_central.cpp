@@ -48,13 +48,13 @@ SweepCentral::SweepCentral(Session *sPtr,
     persistence_check = new QCheckBox(tr("Persistence"));
     persistence_check->setObjectName("SH_CheckBox");
     persistence_check->setFixedSize(120, 25);
-    tools.push_back(toolBar->addWidget(persistence_check));
+    sweepOnlyActions.push_back(toolBar->addWidget(persistence_check));
     connect(persistence_check, SIGNAL(stateChanged(int)),
             trace_view, SLOT(enablePersistence(int)));
 
     persistence_clear = new SHPushButton(tr("Clear"), toolBar);
     persistence_clear->setFixedSize(100, TOOLBAR_H - 4);
-    tools.push_back(toolBar->addWidget(persistence_clear));
+    sweepOnlyActions.push_back(toolBar->addWidget(persistence_clear));
     connect(persistence_clear, SIGNAL(clicked()), trace_view, SLOT(clearPersistence()));
 
     if(!trace_view->HasOpenGL3()) {
@@ -62,6 +62,41 @@ SweepCentral::SweepCentral(Session *sPtr,
         persistence_check->setToolTip(tr("Persistence requires OpenGL version 3.0 or greater"));
         persistence_clear->setEnabled(false);
         persistence_clear->setToolTip(tr("Persistence requires OpenGL version 3.0 or greater"));
+    }
+
+    realTimePersistenceCheck = new QCheckBox("Persistence");
+    realTimePersistenceCheck->setObjectName("SH_CheckBox");
+    realTimePersistenceCheck->setFixedSize(120, 25);
+    realTimePersistenceCheck->setChecked(true);
+    realTimeActions.push_back(toolBar->addWidget(realTimePersistenceCheck));
+    connect(realTimePersistenceCheck, SIGNAL(stateChanged(int)),
+            trace_view, SLOT(enableRealTimePersist(int)));
+
+    Label *intensityLabel = new Label(tr("Intensity  "), toolBar);
+    intensityLabel->resize(100, 25);
+    realTimeActions.push_back(toolBar->addWidget(intensityLabel));
+    intensitySlider = new QSlider(Qt::Horizontal, this);
+    intensitySlider->setFixedSize(200, 25);
+    intensitySlider->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    intensitySlider->setTracking(true);
+    intensitySlider->setEnabled(true);
+    intensitySlider->setRange(1, 99);
+    intensitySlider->setSliderPosition(25);
+    realTimeActions.push_back(toolBar->addWidget(intensitySlider));
+    connect(intensitySlider, SIGNAL(valueChanged(int)),
+            trace_view, SLOT(intensityChanged(int)));
+
+    if(!trace_view->CanDrawRealTimePersistence()) {
+        realTimePersistenceCheck->setEnabled(false);
+        realTimePersistenceCheck->setToolTip("Real-time persistence is not supported by "
+                                             "your graphics card.");
+        intensitySlider->setEnabled(false);
+        intensitySlider->setToolTip("Real-time persistence is not supported by your "
+                                    "graphics card.");
+    }
+
+    for(QAction *a : realTimeActions) {
+        a->setVisible(false);
     }
 
     trace_view->move(0, 0);
@@ -104,6 +139,14 @@ void SweepCentral::changeMode(int new_state)
 
     session_ptr->sweep_settings->setMode((OperationalMode)new_state);
 
+    if(new_state == MODE_REAL_TIME) {
+        for(QAction *a : sweepOnlyActions) { a->setVisible(false); }
+        for(QAction *a : realTimeActions) { a->setVisible(true); }
+    } else {
+        for(QAction *a : sweepOnlyActions) { a->setVisible(true); }
+        for(QAction *a : realTimeActions) { a->setVisible(false); }
+    }
+
     if(new_state == BB_SWEEPING || new_state == BB_REAL_TIME) {
         StartStreaming();
     }
@@ -112,11 +155,6 @@ void SweepCentral::changeMode(int new_state)
 void SweepCentral::StartStreaming()
 {
     sweeping = true;
-
-    if(session_ptr->sweep_settings->Mode() == BB_REAL_TIME) {
-        persistence_check->setChecked(true);
-        trace_view->enablePersistence(Qt::Checked);
-    }
 
     thread_handle = std::thread(&SweepCentral::SweepThread, this);
 }
@@ -155,15 +193,24 @@ void SweepCentral::keyPressEvent(QKeyEvent *e)
     }
 }
 
+void SweepCentral::wheelEvent(QWheelEvent *we)
+{
+    session_ptr->trace_manager->BumpMarker(we->delta() > 0);
+    trace_view->update();
+}
+
 // Try new settings
 // If new settings fail, revert to old settings
 void SweepCentral::Reconfigure()
 {
-    if(!session_ptr->device->Reconfigure(
-                session_ptr->sweep_settings, &trace)) {
+    if(!session_ptr->device->Reconfigure(session_ptr->sweep_settings, &trace)) {
         *session_ptr->sweep_settings = last_config;
     } else {
         last_config = *session_ptr->sweep_settings;
+    }
+
+    if(last_config.Mode() == MODE_REAL_TIME) {
+        rtFrame.SetDimensions(session_ptr->device->RealTimeFrameSize());
     }
 
     if(sweep_count == 0) {
@@ -184,7 +231,19 @@ void SweepCentral::SweepThread()
         }
 
         if(sweep_count) {
-            if(!session_ptr->device->GetSweep(session_ptr->sweep_settings, &trace)) {
+//            if(!session_ptr->device->GetSweep(session_ptr->sweep_settings, &trace)) {
+//                sweeping = false;
+//                return;
+//            }
+
+            bool sweepSuccess;
+            if(last_config.Mode() == MODE_REAL_TIME) {
+                sweepSuccess = session_ptr->device->GetRealTimeFrame(trace, rtFrame);
+            } else {
+                sweepSuccess = session_ptr->device->GetSweep(&last_config, &trace);
+            }
+
+            if(!sweepSuccess) {
                 sweeping = false;
                 return;
             }
@@ -194,6 +253,10 @@ void SweepCentral::SweepThread()
             }
 
             session_ptr->trace_manager->UpdateTraces(&trace);
+            if(last_config.IsRealTime()) {
+                session_ptr->trace_manager->realTimeFrame = rtFrame;
+            }
+
             emit updateView();
 
             // Non-negative sweep count means we only collect 'n' more sweeps

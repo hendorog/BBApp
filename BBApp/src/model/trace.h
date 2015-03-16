@@ -6,6 +6,7 @@
 #include "lib/macros.h"
 
 #include <QColor>
+#include <QSize>
 
 enum TraceType {
     OFF         = 0,
@@ -45,6 +46,21 @@ struct OccupiedBandwidthInfo {
     int traceLen;
     Frequency bandwidth;
     Amplitude totalPower;
+};
+
+class RealTimeFrame {
+public:
+    RealTimeFrame() : dim(0, 0) {}
+
+    void SetDimensions(QSize s) {
+        dim = s;
+        alphaFrame.resize(dim.width() * dim.height());
+        rgbFrame.resize(alphaFrame.size() * 4);
+    }
+
+    QSize dim;
+    std::vector<float> alphaFrame;
+    std::vector<unsigned char> rgbFrame;
 };
 
 class Trace {

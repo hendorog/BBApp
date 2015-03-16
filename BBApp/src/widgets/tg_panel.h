@@ -14,6 +14,8 @@ public:
     TgCtrlPanel(const QString &title, QWidget *parent, Session *session);
     ~TgCtrlPanel();
 
+    QAction* toggleEnableAction() const { return enableAction; }
+
 protected:
 
 private:
@@ -21,6 +23,9 @@ private:
     FrequencyEntry *center, *freqStepSize;
     NumericEntry *amp, *ampStepSize;
     Session *session_ptr; // Does not own
+
+    // Action to be added to menubar
+    QAction *enableAction;
 
 private slots:
     void becameVisible(bool checked);

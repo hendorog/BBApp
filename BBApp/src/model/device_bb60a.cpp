@@ -151,8 +151,7 @@ bool DeviceBB60A::Reconfigure(const SweepSettings *s, Trace *t)
                 BB_NATIVE_RBW : BB_NON_NATIVE_RBW;
     int rejection = (s->Rejection()) ?
                 BB_SPUR_REJECT : BB_NO_SPUR_REJECT;
-    double sweep_time = (s->Mode() == BB_REAL_TIME) ?
-                (prefs->realTimeAccumulation / 1000.0) : s->SweepTime().Val();
+    double sweep_time = s->SweepTime().Val();
 
     double reference = s->RefLevel().ConvertToUnits(AmpUnits::DBM);
 
@@ -169,13 +168,13 @@ bool DeviceBB60A::Reconfigure(const SweepSettings *s, Trace *t)
         break;
     }
 
-    OperationalMode op = s->Mode();
     int mode;
-    switch(op) {
+    switch(s->Mode()) {
     case MODE_SWEEPING: case MODE_HARMONICS:
         mode = BB_SWEEPING;
         break;
     case MODE_REAL_TIME:
+        bbConfigureRealTime(id, s->Div() * 10.0, prefs->realTimeFrameRate);
         mode = BB_REAL_TIME;
         break;
     default:
@@ -205,6 +204,13 @@ bool DeviceBB60A::Reconfigure(const SweepSettings *s, Trace *t)
     t->SetSize(traceSize);
     t->SetFreq(binSize, startFreq);
     t->SetUpdateRange(0, traceSize);
+
+    if(s->Mode() == MODE_REAL_TIME) {
+        int w = 0, h = 0;
+        bbQueryRealTimeInfo(id, &w, &h);
+        rtFrameSize.setWidth(w);
+        rtFrameSize.setHeight(h);
+    }
 
     bbGetDeviceDiagnostics(id, &last_temp, &voltage, &current);
 
@@ -254,6 +260,53 @@ bool DeviceBB60A::GetSweep(const SweepSettings *s, Trace *t)
         adc_overflow = true;
     } else {
         adc_overflow = false;
+    }
+
+    return true;
+}
+
+bool DeviceBB60A::GetRealTimeFrame(Trace &t, RealTimeFrame &frame)
+{
+    Q_ASSERT(frame.alphaFrame.size() == rtFrameSize.width() * rtFrameSize.height());
+    Q_ASSERT(frame.rgbFrame.size() == frame.alphaFrame.size() * 4);
+
+    // Get new diagnostic info, determine whether to update the
+    //  diagnostic string
+    UpdateDiagnostics();
+
+    // Print new diagnostics only when a value changed
+    if(update_diagnostics_string) {
+        QString diagnostics;
+        diagnostics.sprintf("%.2f C  --  %.2f V", CurrentTemp(), Voltage());
+        MainWindow::GetStatusBar()->SetDiagnostics(diagnostics);
+        update_diagnostics_string = false;
+    }
+
+    lastStatus = bbFetchRealTimeFrame(id, t.Max(), &frame.alphaFrame[0]);
+    if(lastStatus == bbDeviceConnectionErr || lastStatus == bbUSBTimeoutErr) {
+        emit connectionIssues();
+        return false;
+    }
+
+    adc_overflow = (lastStatus == bbADCOverflow);
+
+    // Real-time only returns a max or avg trace
+    // Copy max into min for real-time
+    for(int i = 0; i < t.Length(); i++) {
+        t.Min()[i] = t.Max()[i];
+    }
+
+    // Convert the alpha/intensity frame to a 4 channel image
+    int totalPixels = frame.dim.height() * frame.dim.width();
+    for(int i = 0; i < totalPixels; i++) {
+        int toSet = frame.alphaFrame[i] * 255;
+        if(toSet > 255) toSet = 255;
+        frame.rgbFrame[i*4] = frame.rgbFrame[i*4+1] = frame.rgbFrame[i*4+2] = toSet;
+        if(frame.alphaFrame[i] > 0.0) {
+            frame.rgbFrame[i*4+3] = 255;
+        } else {
+            frame.rgbFrame[i*4+3] = 0;
+        }
     }
 
     return true;

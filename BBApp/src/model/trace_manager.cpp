@@ -235,8 +235,12 @@ void TraceManager::PlaceMarkerPercent(double percent)
         GetActiveMarker()->SetOnTrace(marker_on_trace);
     }
 
+    const Trace *t = GetTrace(marker_on_trace);
     const SweepSettings *s = traces[marker_on_trace].GetSettings();
-    GetActiveMarker()->Place(s->Start() + s->Span() * percent, percent);
+    double span = t->BinSize() * t->Length();
+
+    GetActiveMarker()->Place(t->StartFreq() + span * percent, percent);
+    //GetActiveMarker()->Place(s->Start() + s->Span() * percent, percent);
 
     emit updated();
 }

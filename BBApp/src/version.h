@@ -1,11 +1,11 @@
 #ifndef VERSION_H
 #define VERSION_H
 
-#define VER_FILEVERSION             3,0,3
-#define VER_FILEVERSION_STR         "3.0.3"
+#define VER_FILEVERSION             3,0,5
+#define VER_FILEVERSION_STR         "3.0.5"
 
-#define VER_PRODUCTVERSION          3,0,3
-#define VER_PRODUCTVERSION_STR      "3.0.3"
+#define VER_PRODUCTVERSION          3,0,5
+#define VER_PRODUCTVERSION_STR      "3.0.5"
 
 #define VER_COMPANYNAME_STR         "Signal Hound"
 #define VER_FILEDESCRIPTION_STR     "Spectrum Analyzer Software"

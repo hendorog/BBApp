@@ -145,6 +145,7 @@ SA_API saStatus saConfigIQ(int device, int decimation, double bandwidth);
 SA_API saStatus saConfigAudio(int device, int audioType, double centerFreq,
                               double bandwidth, double audioLowPassFreq,
                               double audioHighPassFreq, double fmDeemphasis);
+SA_API saStatus saConfigRealTime(int device, double yScale, int frameRate);
 SA_API saStatus saEnableExternalReference(int device);
 
 SA_API saStatus saInitiate(int device, int mode, int flag);
@@ -152,10 +153,12 @@ SA_API saStatus saAbort(int device);
 
 SA_API saStatus saQuerySweepInfo(int device, int *sweepLength, double *startFreq, double *binSize);
 SA_API saStatus saQueryStreamInfo(int device, int *returnLen, double *bandwidth, double *samplesPerSecond);
+SA_API saStatus saQueryRealTimeFrameInfo(int device, int *imageWidth, int *imageHeight);
 SA_API saStatus saGetSweep_32f(int device, float *min, float *max);
 SA_API saStatus saGetSweep_64f(int device, double *min, double *max);
 SA_API saStatus saGetPartialSweep_32f(int device, float *min, float *max, int *start, int *stop);
 SA_API saStatus saGetPartialSweep_64f(int device, double *min, double *max, int *start, int *stop);
+SA_API saStatus saGetRealTimeFrame(int device, float *sweep, float *frame);
 SA_API saStatus saGetIQ_32f(int device, float *iq);
 SA_API saStatus saGetIQ_64f(int device, double *iq);
 SA_API saStatus saGetAudio(int device, float *audio);

@@ -197,13 +197,16 @@ bool DeviceSA::Reconfigure(const SweepSettings *s, Trace *t)
     saConfigProcUnits(id, s->ProcessingUnits());
 
     int init_mode = SA_SWEEPING;
-    if(s->Mode() == BB_REAL_TIME) init_mode = SA_REAL_TIME;
+    if(s->Mode() == BB_REAL_TIME) {
+        saConfigRealTime(id, s->Div() * 10.0, prefs->realTimeFrameRate);
+        init_mode = SA_REAL_TIME;
+    }
     if(s->Mode() == MODE_NETWORK_ANALYZER) {
         saConfigTgSweep(id, s->tgSweepSize, s->tgHighRangeSweep, s->tgPassiveDevice);
         init_mode = SA_TG_SWEEP;
     }
 
-    saInitiate(id, init_mode, 0);
+    saStatus initStatus = saInitiate(id, init_mode, 0);
 
     int traceLength = 0;
     double startFreq = 0.0, binSize = 0.0;
@@ -212,6 +215,14 @@ bool DeviceSA::Reconfigure(const SweepSettings *s, Trace *t)
     t->SetSettings(*s);
     t->SetSize(traceLength);
     t->SetFreq(binSize, startFreq);
+    t->SetUpdateRange(0, traceLength);
+
+    if(s->Mode() == MODE_REAL_TIME) {
+        int w = 0, h = 0;
+        saQueryRealTimeFrameInfo(id, &w, &h);
+        rtFrameSize.setWidth(w);
+        rtFrameSize.setHeight(h);
+    }
 
     return true;
 }
@@ -239,6 +250,43 @@ bool DeviceSA::GetSweep(const SweepSettings *s, Trace *t)
     if(s->Mode() == MODE_NETWORK_ANALYZER && tgCalState == tgCalStatePending) {
         if(stopIx >= t->Length()) {
             tgCalState = tgCalStateCalibrated;
+        }
+    }
+
+    adc_overflow = (status == saCompressionWarning);
+
+    return true;
+}
+
+bool DeviceSA::GetRealTimeFrame(Trace &t, RealTimeFrame &frame)
+{
+    Q_ASSERT(frame.alphaFrame.size() == rtFrameSize.width() * rtFrameSize.height());
+    Q_ASSERT(frame.rgbFrame.size() == frame.alphaFrame.size() * 4);
+
+    // TODO check return value, emit error if not good
+    saStatus status = saGetRealTimeFrame(id, t.Max(), &frame.alphaFrame[0]);
+
+    if(status == saUSBCommErr) {
+        emit connectionIssues();
+        return false;
+    }
+
+    // Real-time only returns a max or avg trace
+    // Copy max into min for real-time
+    for(int i = 0; i < t.Length(); i++) {
+        t.Min()[i] = t.Max()[i];
+    }
+
+    // Convert the alpha/intensity frame to a 4 channel image
+    int totalPixels = frame.dim.height() * frame.dim.width();
+    for(int i = 0; i < totalPixels; i++) {
+        int toSet = frame.alphaFrame[i] * 255;
+        if(toSet > 255) toSet = 255;
+        frame.rgbFrame[i*4] = frame.rgbFrame[i*4+1] = frame.rgbFrame[i*4+2] = toSet;
+        if(frame.alphaFrame[i] > 0.0) {
+            frame.rgbFrame[i*4+3] = 255;
+        } else {
+            frame.rgbFrame[i*4+3] = 0;
         }
     }
 
